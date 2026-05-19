@@ -34,7 +34,7 @@ pull_nasapower <- function(lon, lat, years) {
     community  = "ag",
     lonlat     = c(lon, lat),
     pars       = c("T2M_MAX", "T2M_MIN", "RH2M", "WS2M",
-                   "ALLSKY_SFC_SW_DWN", "ALLSKY_SFC_LW_DWN"),
+                   "ALLSKY_SFC_SW_DWN"),
     dates      = c(paste0(min(years), "-01-01"), paste0(max(years), "-12-31")),
     temporal_api = "daily"
   )
@@ -46,79 +46,69 @@ raw_list <- sites %>%
   ungroup()
 
 ## ── 3. FAO-56 Penman-Monteith ETo ─────────────────────────────────────────────
-# ETo [mm/day] = (0.408·Δ·(Rn-G) + γ·(900/(T+273))·u2·(es-ea))
-#                / (Δ + γ·(1+0.34·u2))
 # Reference: Allen et al. (1998), FAO Irrigation & Drainage Paper 56.
+# WS2M from NASA POWER is already in m/s; no unit conversion applied.
 
-calc_eto <- function(df, elev_m) {
+calc_eto <- function(df, lat, elev_m) {
+
+  LAT <- lat
+  ALT <- elev_m
 
   df %>%
     mutate(
-      ## Basic met variables
-      Tmax   = T2M_MAX,
-      Tmin   = T2M_MIN,
-      Tmean  = (Tmax + Tmin) / 2,
-      RH     = RH2M,
-      u2     = WS2M,
-      Rs     = ALLSKY_SFC_SW_DWN,   # MJ m-2 day-1
-      Rl_down = ALLSKY_SFC_LW_DWN,  # MJ m-2 day-1
+      Tmax     = T2M_MAX,
+      Tmin     = T2M_MIN,
+      RH_avg   = RH2M,
+      Rad_down = ALLSKY_SFC_SW_DWN,          # MJ m-2 day-1
+      WS       = WS2M,                        # m/s from NASA POWER
 
-      ## Atmospheric pressure (kPa) – FAO eq. 7
-      P      = 101.3 * ((293 - 0.0065 * elev_m) / 293) ^ 5.26,
+      ## solar geometry
+      decl     = 23.45 * sin(((360 * (DOY - 80)) / 365) * (pi / 180)),
+      hn       = (acos(-1 * (tan(LAT * (pi / 180)) * tan(decl * (pi / 180))))) *
+                 (180 / pi),
+      N        = (2 / 15) * hn,
+      dD       = 1 + 0.033 * cos(((DOY * 360) / 365) * (pi / 180)),
+      Qo       = 37.6 * dD *
+                 ((pi / 180) * hn * sin(LAT * (pi / 180)) * sin(decl * (pi / 180)) +
+                  cos(LAT * (pi / 180)) * cos(decl * (pi / 180)) * sin(hn * (pi / 180))),
 
-      ## Psychrometric constant γ (kPa °C-1) – FAO eq. 8
-      gamma  = 0.000665 * P,
+      ## vapour pressures
+      tmed     = (Tmax + Tmin) / 2,
+      es       = 0.6108 * 10 ^ (7.5 * tmed / (237.3 + tmed)),
+      ea       = es * (RH_avg / 100),
+      vpd      = es - ea,
 
-      ## Saturation vapour pressure (kPa) – FAO eq. 11 & 12
-      es_max = 0.6108 * exp(17.27 * Tmax / (Tmax + 237.3)),
-      es_min = 0.6108 * exp(17.27 * Tmin / (Tmin + 237.3)),
-      es     = (es_max + es_min) / 2,
+      ## net radiation
+      BOC      = Rad_down * (1 - 0.23),
+      Qgo      = (0.75 + 2e-5 * ALT) * Qo,
+      BOL      = -4.903e-9 * ((tmed + 273) ^ 4 *
+                  (0.34 - 0.14 * ea ^ 0.5) *
+                  (1.35 * (Rad_down / Qgo) - 0.35)),
+      Rn       = BOC + BOL,
 
-      ## Actual vapour pressure from mean RH – FAO eq. 19
-      ea     = RH / 100 * es,
+      ## slope of vapour pressure curve
+      s.vapor  = (4098 * es) / (tmed + 237.3) ^ 2,
 
-      ## Slope of saturation vapour pressure curve Δ (kPa °C-1) – FAO eq. 13
-      Delta  = 4098 * (0.6108 * exp(17.27 * Tmean / (Tmean + 237.3))) /
-               (Tmean + 237.3) ^ 2,
-
-      ## Net solar (shortwave) radiation Rns (MJ m-2 day-1) – FAO eq. 38
-      ## albedo α = 0.23 for grass reference surface
-      Rns    = (1 - 0.23) * Rs,
-
-      ## Net longwave radiation Rnl (MJ m-2 day-1) – FAO eq. 39
-      ## Stefan-Boltzmann σ = 4.903e-9 MJ K-4 m-2 day-1
-      sigma  = 4.903e-9,
-      Rnl    = sigma *
-               ((( Tmax + 273.16) ^ 4 + (Tmin + 273.16) ^ 4) / 2) *
-               (0.34 - 0.14 * sqrt(ea)) *
-               pmax(0, (1.35 * (Rs / (0.75 * Rs + 0.00001)) - 0.35)),
-
-      ## Net radiation Rn (MJ m-2 day-1) – FAO eq. 40
-      Rn     = Rns - Rnl,
-
-      ## Soil heat flux G ≈ 0 for daily time-step – FAO eq. 42
-      G      = 0,
-
-      ## FAO-56 PM ETo (mm day-1)
-      ETo    = (0.408 * Delta * (Rn - G) +
-                gamma * (900 / (Tmean + 273)) * u2 * (es - ea)) /
-               (Delta + gamma * (1 + 0.34 * u2))
+      ## FAO-56 PM ETo (mm day-1); γ = 0.062 kPa °C-1
+      ETo      = (0.408 * Rn * s.vapor +
+                  0.062 * 900 * WS * (es - ea) / (tmed + 273)) /
+                 (s.vapor + 0.062 * (1 + 0.34 * WS))
     ) %>%
-    select(YEAR, DOY, YYYYMMDD, Tmax, Tmin, Tmean, RH, u2,
-           Rs, Rn, es, ea, ETo)
+    select(YEAR, DOY, YYYYMMDD, Tmax, Tmin, tmed, RH_avg, WS,
+           Rad_down, Qo, Rn, es, ea, vpd, ETo)
 }
 
 ## Apply ETo calculation to each site
 eto_list <- raw_list %>%
   rowwise() %>%
-  mutate(eto = list(calc_eto(data, elev_m))) %>%
+  mutate(eto = list(calc_eto(data, lat, elev_m))) %>%
   ungroup()
 
 ## Combine into a single tidy data frame
 eto_all <- eto_list %>%
   select(site, lat, lon, eto) %>%
   unnest(eto) %>%
-  mutate(Date = as.Date(YYYYMMDD),
+  mutate(Date  = as.Date(YYYYMMDD),
          Month = month(Date),
          Year  = year(Date))
 
