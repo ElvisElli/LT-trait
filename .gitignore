@@ -1,0 +1,17 @@
+# R artifacts
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+.Ruserdata
+
+# R package build
+*.tar.gz
+*.zip
+
+# Large intermediate data — keep CSVs and figures, exclude raw downloads
+nasapower_ETo_daily.csv
+
+# OS
+.DS_Store
+Thumbs.db
