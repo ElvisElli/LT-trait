@@ -1,281 +1,281 @@
-"Genotype","Quadrant","Expected_WUE","Replication","Pot","Day","Treatment","Temperature","RH","VPD","RelTranspiration","Transpiration_ml","TranspLeafArea","DryMatter_leaf","DryMatter_stem","DryMatter_rep","DryMatter_total","LeafArea_squarecm","VPD_target","Plasticity","WUE_class","Genotype_label","Facet_label","Day_label"
+"Genotype","Quadrant","Expected_WUE","Replication","Pot","Day","Treatment","Temperature","RH","VPD","RelTranspiration","Transpiration_ml","TranspLeafArea","DryMatter_leaf","DryMatter_stem","DryMatter_rep","DryMatter_total","LeafArea_squarecm","VPD_target","Plasticity","WUE_class","Genotype_short","Facet_label","Day_label","Day_f"
 "PI398617","Q1","Plastic, High WUE",1,17,1,1,31.88,78.01,1,0.381381381381387,12.7000000000003,42.9579418072111,5.1,2.9,0,8,1407.8,"1.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",1,17,1,2,31.95,68.73,1.5,0.585585585585582,19.5,30.3758757598642,5.1,2.9,0,8,1407.8,"1.5","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",1,17,1,3,31.86,56.77,2,0.384384384384374,12.7999999999997,29.7130738453447,5.1,2.9,0,8,1407.8,"2.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",1,17,1,4,31.99,43.94,2.7,1,33.3000000000002,39.0328846778699,5.1,2.9,0,8,1407.8,"2.7","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",1,17,1,5,32.04,29.82,3.3,0.750750750750747,25,56.9173214435326,5.1,2.9,0,8,1407.8,"3.3","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",2,23,1,1,31.88,78.01,1,0.356756756756752,13.1999999999998,45.0082293455695,5,3,0,8,1396.57,"1.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",2,23,1,2,31.95,68.73,1.5,0.513513513513513,19,29.835000513162,5,3,0,8,1396.57,"1.5","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",2,23,1,3,31.86,56.77,2,0.354054054054052,13.0999999999999,30.6540005272486,5,3,0,8,1396.57,"2.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",2,23,1,4,31.99,43.94,2.7,1,37,43.7186146133463,5,3,0,8,1396.57,"2.7","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",2,23,1,5,32.04,29.82,3.3,0.702702702702703,26,59.670001026324,5,3,0,8,1396.57,"3.3","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",3,28,1,1,31.88,78.01,1,0.410256410256418,12.8000000000002,46.0838784192084,5.4,2.8,0,8.2,1322.64,"1.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",3,28,1,2,31.95,68.73,1.5,0.618589743589739,19.2999999999997,32.0000615462319,5.4,2.8,0,8.2,1322.64,"1.5","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",3,28,1,3,31.86,56.77,2,0.43589743589745,13.6000000000004,33.6028280140066,5.4,2.8,0,8.2,1322.64,"2.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",3,28,1,4,31.99,43.94,2.7,1,31.1999999999998,38.9260482934519,5.4,2.8,0,8.2,1322.64,"2.7","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",3,28,1,5,32.04,29.82,3.3,0.753205128205133,23.5,56.947100360274,5.4,2.8,0,8.2,1322.64,"3.3","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",4,30,1,1,31.88,78.01,1,0.389312977099226,10.1999999999998,47.6302547378086,3.1,1.7,0,4.8,1019.76,"1.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",4,30,1,2,31.95,68.73,1.5,0.625954198473279,16.4000000000001,35.2680162790284,3.1,1.7,0,4.8,1019.76,"1.5","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",4,30,1,3,31.86,56.77,2,0.400763358778622,10.5,33.6488247138504,3.1,1.7,0,4.8,1019.76,"2.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",4,30,1,4,31.99,43.94,2.7,1,26.2000000000003,42.3965672632224,3.1,1.7,0,4.8,1019.76,"2.7","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",4,30,1,5,32.04,29.82,3.3,0.759541984732803,19.8999999999996,62.5461395642603,3.1,1.7,0,4.8,1019.76,"3.3","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 1"
+Plastic, High WUE","Day 1","Day 1"
 "PI423802","Q3","Nonplastic, Low WUE",1,19,1,1,31.88,78.01,1,0.364583333333337,7,50.3342192155915,1.9,1.2,0,3.1,662.24,"1.0","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 1"
+Nonplastic, Low WUE","Day 1","Day 1"
 "PI423802","Q3","Nonplastic, Low WUE",1,19,1,2,31.95,68.73,1.5,0.56770833333332,10.8999999999996,36.0949335164427,1.9,1.2,0,3.1,662.24,"1.5","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 1"
+Nonplastic, Low WUE","Day 1","Day 1"
 "PI423802","Q3","Nonplastic, Low WUE",1,19,1,3,31.86,56.77,2,0.380208333333346,7.30000000000018,36.0235098307674,1.9,1.2,0,3.1,662.24,"2.0","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 1"
+Nonplastic, Low WUE","Day 1","Day 1"
 "PI423802","Q3","Nonplastic, Low WUE",1,19,1,4,31.99,43.94,2.7,1,19.1999999999998,47.8424261851162,1.9,1.2,0,3.1,662.24,"2.7","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 1"
+Nonplastic, Low WUE","Day 1","Day 1"
 "PI423802","Q3","Nonplastic, Low WUE",1,19,1,5,32.04,29.82,3.3,0.661458333333354,12.7000000000003,61.4658253882717,1.9,1.2,0,3.1,662.24,"3.3","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 1"
+Nonplastic, Low WUE","Day 1","Day 1"
 "PI423802","Q3","Nonplastic, Low WUE",2,22,1,1,31.88,78.01,1,0.385892116182574,9.30000000000018,54.5417437875205,2.8,1.5,0,4.3,811.96,"1.0","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 1"
+Nonplastic, Low WUE","Day 1","Day 1"
 "PI423802","Q3","Nonplastic, Low WUE",2,22,1,2,31.95,68.73,1.5,0.502074688796669,12.0999999999999,32.6802893237328,2.8,1.5,0,4.3,811.96,"1.5","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 1"
+Nonplastic, Low WUE","Day 1","Day 1"
 "PI423802","Q3","Nonplastic, Low WUE",2,22,1,3,31.86,56.77,2,0.381742738589198,9.19999999999982,37.0281288205374,2.8,1.5,0,4.3,811.96,"2.0","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 1"
+Nonplastic, Low WUE","Day 1","Day 1"
 "PI423802","Q3","Nonplastic, Low WUE",2,22,1,4,31.99,43.94,2.7,1,24.1000000000004,48.9789852919976,2.8,1.5,0,4.3,811.96,"2.7","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 1"
+Nonplastic, Low WUE","Day 1","Day 1"
 "PI423802","Q3","Nonplastic, Low WUE",2,22,1,5,32.04,29.82,3.3,0.759336099585039,18.2999999999997,72.2373591726751,2.8,1.5,0,4.3,811.96,"3.3","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 1"
+Nonplastic, Low WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",1,20,1,1,31.88,78.01,1,0.403999999999996,10.0999999999999,53.5939804939132,4.1,2.2,0.1,6.4,897.4,"1.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",1,20,1,2,31.95,68.73,1.5,0.556000000000004,13.9000000000001,33.9675241144986,4.1,2.2,0.1,6.4,897.4,"1.5","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",1,20,1,3,31.86,56.77,2,0.348000000000011,8.70000000000027,31.6819395464904,4.1,2.2,0.1,6.4,897.4,"2.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",1,20,1,4,31.99,43.94,2.7,1,25,45.9707214314032,4.1,2.2,0.1,6.4,897.4,"2.7","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",1,20,1,5,32.04,29.82,3.3,0.755999999999985,18.8999999999996,67.502700108003,4.1,2.2,0.1,6.4,897.4,"3.3","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",2,24,1,1,31.88,78.01,1,0.35463258785942,11.0999999999999,40.3012792933113,5.4,2.6,0.2,8.2,1311.55,"1.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",2,24,1,2,31.95,68.73,1.5,0.514376996805106,16.0999999999999,26.9200697982231,5.4,2.6,0.2,8.2,1311.55,"1.5","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",2,24,1,3,31.86,56.77,2,0.380191693290736,11.9000000000001,29.6510913719562,5.4,2.6,0.2,8.2,1311.55,"2.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",2,24,1,4,31.99,43.94,2.7,1,31.3000000000002,39.3810110300804,5.4,2.6,0.2,8.2,1311.55,"2.7","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",2,24,1,5,32.04,29.82,3.3,0.79872204472843,25,61.0942816729863,5.4,2.6,0.2,8.2,1311.55,"3.3","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",3,25,1,1,31.88,78.01,1,0.395833333333334,11.4000000000001,46.7669859539054,5.7,2.9,0.2,8.8,1160.77,"1.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",3,25,1,2,31.95,68.73,1.5,0.548611111111114,15.8000000000002,29.8501191510962,5.7,2.9,0.2,8.8,1160.77,"1.5","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",3,25,1,3,31.86,56.77,2,0.371527777777769,10.6999999999998,30.1242453383851,5.7,2.9,0.2,8.8,1160.77,"2.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",3,25,1,4,31.99,43.94,2.7,1,28.8000000000002,40.9424368955502,5.7,2.9,0.2,8.8,1160.77,"2.7","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",3,25,1,5,32.04,29.82,3.3,0.763888888888884,22,60.7465910669818,5.7,2.9,0.2,8.8,1160.77,"3.3","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",4,31,1,1,31.88,78.01,1,0.407079646017725,4.60000000000036,46.0435572051197,2,1.2,0,3.2,475.74,"1.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",4,31,1,2,31.95,68.73,1.5,0.663716814159281,7.5,34.5721789655119,2,1.2,0,3.2,475.74,"1.5","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",4,31,1,3,31.86,56.77,2,0.433628318584032,4.89999999999964,33.6592926712567,2,1.2,0,3.2,475.74,"2.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",4,31,1,4,31.99,43.94,2.7,1,11.3000000000002,39.1954947796463,2,1.2,0,3.2,475.74,"2.7","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI603465C","Q4","Nonplastic, High WUE",4,31,1,5,32.04,29.82,3.3,0.920353982300878,10.4000000000001,70.0662827034381,2,1.2,0,3.2,475.74,"3.3","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 1"
+Nonplastic, High WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",1,18,1,1,31.88,78.01,1,0.395437262357415,10.4000000000001,47.9965590159233,3.3,1.9,0,5.2,1031.82,"1.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",1,18,1,2,31.95,68.73,1.5,0.604562737642585,15.9000000000001,33.7931238516716,3.3,1.9,0,5.2,1031.82,"1.5","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",1,18,1,3,31.86,56.77,2,0.384030418250944,10.0999999999999,31.988656885612,3.3,1.9,0,5.2,1031.82,"2.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",1,18,1,4,31.99,43.94,2.7,1,26.3000000000002,42.0609601810332,3.3,1.9,0,5.2,1031.82,"2.7","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",1,18,1,5,32.04,29.82,3.3,0.756653992395436,19.9000000000001,61.8150949604113,3.3,1.9,0,5.2,1031.82,"3.3","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",2,21,1,1,31.88,78.01,1,0.356643356643351,10.1999999999998,46.8072628351701,3.7,1.6,0,5.3,1037.69,"1.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",2,21,1,2,31.95,68.73,1.5,0.534965034965043,15.3000000000002,32.3339644585066,3.7,1.6,0,5.3,1037.69,"1.5","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",2,21,1,3,31.86,56.77,2,0.367132867132868,10.5,33.06741463269,3.7,1.6,0,5.3,1037.69,"2.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",2,21,1,4,31.99,43.94,2.7,1,28.5999999999999,45.4805572684974,3.7,1.6,0,5.3,1037.69,"2.7","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",2,21,1,5,32.04,29.82,3.3,0.755244755244754,21.5999999999999,66.7162343578226,3.7,1.6,0,5.3,1037.69,"3.3","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",3,26,1,1,31.88,78.01,1,0.393103448275865,11.4000000000001,53.7189790566669,3.4,1.6,0,5,1010.55,"1.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",3,26,1,2,31.95,68.73,1.5,0.565517241379313,16.4000000000001,35.5894436501924,3.4,1.6,0,5,1010.55,"1.5","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",3,26,1,3,31.86,56.77,2,0.386206896551718,11.1999999999998,36.2191946856087,3.4,1.6,0,5,1010.55,"2.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",3,26,1,4,31.99,43.94,2.7,1,29,47.3551882425886,3.4,1.6,0,5,1010.55,"2.7","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",3,26,1,5,32.04,29.82,3.3,0.682758620689661,19.8000000000002,62.7990089174598,3.4,1.6,0,5,1010.55,"3.3","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",4,32,1,1,31.88,78.01,1,0.344696969696965,9.09999999999991,45.9975090579706,3.1,1.2,0,4.3,942.08,"1.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",4,32,1,2,31.95,68.73,1.5,0.541666666666672,14.3000000000002,33.2876710287952,3.1,1.2,0,4.3,942.08,"1.5","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",4,32,1,3,31.86,56.77,2,0.393939393939396,10.4000000000001,36.0764776925266,3.1,1.2,0,4.3,942.08,"2.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",4,32,1,4,31.99,43.94,2.7,1,26.4000000000001,46.2427356866123,3.1,1.2,0,4.3,942.08,"2.7","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI070229","Q2","Plastic, Low WUE",4,32,1,5,32.04,29.82,3.3,0.738636363636361,19.5,66.3425611413043,3.1,1.2,0,4.3,942.08,"3.3","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 1"
+Plastic, Low WUE","Day 1","Day 1"
 "PI398617","Q1","Plastic, High WUE",1,17,2,1,32.06,77.4,1.1,0.465408805031447,7.4,25.0306117616815,5.1,2.9,0,8,1407.8,"1.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",1,17,2,2,31.89,66.86,1.6,0.729559748427673,11.6,39.2371751939872,5.1,2.9,0,8,1407.8,"1.5","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",1,17,2,3,31.94,55.73,2.1,0.773584905660377,12.3,41.6049357660382,5.1,2.9,0,8,1407.8,"2.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",1,17,2,4,31.86,42.36,2.7,0.893081761006289,14.2,48.0317144616051,5.1,2.9,0,8,1407.8,"2.7","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",1,17,2,5,31.92,26.74,3.5,1,15.9,53.781990136586,5.1,2.9,0,8,1407.8,"3.3","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",2,23,2,1,32.06,77.4,1.1,0.610810810810811,11.3,38.5297720912835,5,3,0,8,1396.57,"1.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",2,23,2,2,31.89,66.86,1.6,0.648648648648649,12,40.9165721323365,5,3,0,8,1396.57,"1.5","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",2,23,2,3,31.94,55.73,2.1,0.72972972972973,13.5,46.0311436488785,5,3,0,8,1396.57,"2.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",2,23,2,4,31.86,42.36,2.7,0.913513513513513,16.9,57.6241724197072,5,3,0,8,1396.57,"2.7","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",2,23,2,5,31.92,26.74,3.5,1,18.5,63.0797153706854,5,3,0,8,1396.57,"3.3","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",3,28,2,1,32.06,77.4,1.1,0.531791907514451,9.2,33.1227876138056,5.4,2.8,0,8.2,1322.64,"1.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",3,28,2,2,31.89,66.86,1.6,0.653179190751445,11.3,40.6834239169568,5.4,2.8,0,8.2,1322.64,"1.5","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",3,28,2,3,31.94,55.73,2.1,0.803468208092486,13.9,50.0442117208584,5.4,2.8,0,8.2,1322.64,"2.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",3,28,2,4,31.86,42.36,2.7,0.965317919075144,16.7,60.1250601250601,5.4,2.8,0,8.2,1322.64,"2.7","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",3,28,2,5,31.92,26.74,3.5,1,17.3,62.2852419259605,5.4,2.8,0,8.2,1322.64,"3.3","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",4,30,2,1,32.06,77.4,1.1,0.55,6.6,30.8195765950532,3.1,1.7,0,4.8,1019.76,"1.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",4,30,2,2,31.89,66.86,1.6,0.691666666666667,8.3,38.7579523846881,3.1,1.7,0,4.8,1019.76,"1.5","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",4,30,2,3,31.94,55.73,2.1,1,12.4,57.9034469361605,3.1,1.7,0,4.8,1019.76,"2.0","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",4,30,2,4,31.86,42.36,2.7,0.966666666666667,11.6,54.1677406822147,3.1,1.7,0,4.8,1019.76,"2.7","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI398617","Q1","Plastic, High WUE",4,30,2,5,31.92,26.74,3.5,0.967741935483871,12,56.0355938091876,3.1,1.7,0,4.8,1019.76,"3.3","Plastic","High WUE","PI398617","PI398617
-(Plastic, High WUE)","Day 2"
+Plastic, High WUE","Day 2","Day 2"
 "PI423802","Q3","Nonplastic, Low WUE",1,19,2,1,32.06,77.4,1.1,0.574468085106383,5.4,38.8292548234563,1.9,1.2,0,3.1,662.24,"1.0","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 2"
+Nonplastic, Low WUE","Day 2","Day 2"
 "PI423802","Q3","Nonplastic, Low WUE",1,19,2,2,31.89,66.86,1.6,0.723404255319149,6.8,48.8960986665746,1.9,1.2,0,3.1,662.24,"1.5","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 2"
+Nonplastic, Low WUE","Day 2","Day 2"
 "PI423802","Q3","Nonplastic, Low WUE",1,19,2,3,31.94,55.73,2.1,0.78,7.3,52.49,1.9,1.2,0,3.1,662.24,"2.0","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 2"
+Nonplastic, Low WUE","Day 2","Day 2"
 "PI423802","Q3","Nonplastic, Low WUE",1,19,2,4,31.86,42.36,2.7,0.904255319148936,8.5,61.1201233332183,1.9,1.2,0,3.1,662.24,"2.7","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 2"
+Nonplastic, Low WUE","Day 2","Day 2"
 "PI423802","Q3","Nonplastic, Low WUE",1,19,2,5,31.92,26.74,3.5,1,9.4,67.5916658037943,1.9,1.2,0,3.1,662.24,"3.3","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 2"
+Nonplastic, Low WUE","Day 2","Day 2"
 "PI423802","Q3","Nonplastic, Low WUE",2,22,2,1,32.06,77.4,1.1,0.821782178217822,8.3,48.6770401544528,2.8,1.5,0,4.3,811.96,"1.0","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 2"
+Nonplastic, Low WUE","Day 2","Day 2"
 "PI423802","Q3","Nonplastic, Low WUE",2,22,2,2,31.89,66.86,1.6,0.801980198019802,8.1,47.5040994278395,2.8,1.5,0,4.3,811.96,"1.5","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 2"
+Nonplastic, Low WUE","Day 2","Day 2"
 "PI423802","Q3","Nonplastic, Low WUE",2,22,2,3,31.94,55.73,2.1,0.801980198019802,8.1,47.5040994278395,2.8,1.5,0,4.3,811.96,"2.0","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 2"
+Nonplastic, Low WUE","Day 2","Day 2"
 "PI423802","Q3","Nonplastic, Low WUE",2,22,2,4,31.86,42.36,2.7,1,10.1,59.2335066939727,2.8,1.5,0,4.3,811.96,"2.7","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 2"
+Nonplastic, Low WUE","Day 2","Day 2"
 "PI423802","Q3","Nonplastic, Low WUE",2,22,2,5,31.92,26.74,3.5,1,10.1,59.2335066939727,2.8,1.5,0,4.3,811.96,"3.3","Nonplastic","Low WUE","PI423802","PI423802
-(Nonplastic, Low WUE)","Day 2"
+Nonplastic, Low WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",1,20,2,1,32.06,77.4,1.1,0.637931034482759,0.637931034482759,39.2668767975209,4.1,2.2,0.1,6.4,897.4,"1.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",1,20,2,2,31.89,66.86,1.6,0.71551724137931,0.71551724137931,44.0425780296518,4.1,2.2,0.1,6.4,897.4,"1.5","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",1,20,2,3,31.94,55.73,2.1,0.724137931034483,0.724137931034483,44.5732114998886,4.1,2.2,0.1,6.4,897.4,"2.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",1,20,2,4,31.86,42.36,2.7,0.931034482758621,0.931034482758621,57.308414785571,4.1,2.2,0.1,6.4,897.4,"2.7","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",1,20,2,5,31.92,26.74,3.5,1,1,61.5534825474652,4.1,2.2,0.1,6.4,897.4,"3.3","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",2,24,2,1,32.06,77.4,1.1,0.528301886792453,8.4,30.4982654111547,5.4,2.6,0.2,8.2,1311.55,"1.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",2,24,2,2,31.89,66.86,1.6,0.60377358490566,9.6,34.8551604698911,5.4,2.6,0.2,8.2,1311.55,"1.5","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",2,24,2,3,31.94,55.73,2.1,0.742138364779874,11.8,42.8428014109079,5.4,2.6,0.2,8.2,1311.55,"2.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",2,24,2,4,31.86,42.36,2.7,0.830188679245283,13.2,47.9258456461003,5.4,2.6,0.2,8.2,1311.55,"2.7","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",2,24,2,5,31.92,26.74,3.5,1,15.9,57.7288595282572,5.4,2.6,0.2,8.2,1311.55,"3.3","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",3,25,2,1,32.06,77.4,1.1,0.696969696969697,9.2,37.7417781382391,5.7,2.9,0.2,8.8,1160.77,"1.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",3,25,2,2,31.89,66.86,1.6,0.643939393939394,8.5,34.8701211059818,5.7,2.9,0.2,8.8,1160.77,"1.5","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",3,25,2,3,31.94,55.73,2.1,0.689393939393939,9.1,37.3315414193452,5.7,2.9,0.2,8.8,1160.77,"2.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",3,25,2,4,31.86,42.36,2.7,0.810606060606061,10.7,43.8953289216477,5.7,2.9,0.2,8.8,1160.77,"2.7","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",3,25,2,5,31.92,26.74,3.5,1,13.2,54.1512468939952,5.7,2.9,0.2,8.8,1160.77,"3.3","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",4,31,2,1,32.06,77.4,1.1,0.538461538461538,3.5,35.0331413517187,2,1.2,0,3.2,475.74,"1.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",4,31,2,2,31.89,66.86,1.6,0.661538461538462,4.3,43.0407165178259,2,1.2,0,3.2,475.74,"1.5","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",4,31,2,3,31.94,55.73,2.1,0.769230769230769,5,50.0473447881696,2,1.2,0,3.2,475.74,"2.0","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",4,31,2,4,31.86,42.36,2.7,0.876923076923077,5.7,57.0539730585134,2,1.2,0,3.2,475.74,"2.7","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI603465C","Q4","Nonplastic, High WUE",4,31,2,5,31.92,26.74,3.5,1,6.5,65.0615482246205,2,1.2,0,3.2,475.74,"3.3","Nonplastic","High WUE","PI603465C","PI603465C
-(Nonplastic, High WUE)","Day 2"
+Nonplastic, High WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",1,18,2,1,32.06,77.4,1.1,0.642276422764228,7.9,36.4589246370953,3.3,1.9,0,5.2,1031.82,"1.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",1,18,2,2,31.89,66.86,1.6,0.739837398373984,9.1,41.9969891389325,3.3,1.9,0,5.2,1031.82,"1.5","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",1,18,2,3,31.94,55.73,2.1,0.910569105691057,11.2,51.6886020171477,3.3,1.9,0,5.2,1031.82,"2.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",1,18,2,4,31.86,42.36,2.7,1,12.3,56.7651611438318,3.3,1.9,0,5.2,1031.82,"2.7","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",1,18,2,5,31.92,26.74,3.5,1,12.3,56.7651611438318,3.3,1.9,0,5.2,1031.82,"3.3","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",2,21,2,1,32.06,77.4,1.1,0.715447154471545,8.8,40.3827365636769,3.7,1.6,0,5.3,1037.69,"1.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",2,21,2,2,31.89,66.86,1.6,0.764227642276423,9.4,43.1361049657458,3.7,1.6,0,5.3,1037.69,"1.5","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",2,21,2,3,31.94,55.73,2.1,0.861788617886179,10.6,48.6428417698836,3.7,1.6,0,5.3,1037.69,"2.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",2,21,2,4,31.86,42.36,2.7,0.902439024390244,11.1,50.9373154382743,3.7,1.6,0,5.3,1037.69,"2.7","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",2,21,2,5,31.92,26.74,3.5,1,12.3,56.4440522424121,3.7,1.6,0,5.3,1037.69,"3.3","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",3,26,2,1,32.06,77.4,1.1,0.626829268292683,7.71,36.3309937304297,3.4,1.6,0,5,1010.55,"1.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",3,26,2,2,31.89,66.86,1.6,0.682926829268293,8.4,39.5824056207016,3.4,1.6,0,5,1010.55,"1.5","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",3,26,2,3,31.94,55.73,2.1,0.83739837398374,10.3,48.5355687968127,3.4,1.6,0,5,1010.55,"2.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",3,26,2,4,31.86,42.36,2.7,0.91869918699187,11.3,53.2477599421343,3.4,1.6,0,5,1010.55,"2.7","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",3,26,2,5,31.92,26.74,3.5,1,12.3,57.9599510874559,3.4,1.6,0,5,1010.55,"3.3","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",4,32,2,1,32.06,77.4,1.1,0.508064516129032,6.3,31.8444293478261,3.1,1.2,0,4.3,942.08,"1.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",4,32,2,2,31.89,66.86,1.6,0.669354838709677,8.3,41.9537719979296,3.1,1.2,0,4.3,942.08,"1.5","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",4,32,2,3,31.94,55.73,2.1,0.725806451612903,9,45.4920419254658,3.1,1.2,0,4.3,942.08,"2.0","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",4,32,2,4,31.86,42.36,2.7,0.951612903225806,11.8,59.6451216356108,3.1,1.2,0,4.3,942.08,"2.7","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"
 "PI070229","Q2","Plastic, Low WUE",4,32,2,5,31.92,26.74,3.5,1,12.4,62.6779244306418,3.1,1.2,0,4.3,942.08,"3.3","Plastic","Low WUE","PI070229","PI070229
-(Plastic, Low WUE)","Day 2"
+Plastic, Low WUE","Day 2","Day 2"

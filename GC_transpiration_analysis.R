@@ -1,317 +1,358 @@
-## GC_transpiration_analysis.R
-## Growth-chamber VPD vs. transpiration analysis — GC Experiment 3
-## Target journal: Agricultural Water Management
-## -------------------------------------------------------------
+# ==============================================================================
+# GC Transpiration Analysis — Growth Chamber VPD vs Transpiration
+# Experiment: GC Experiment 3 (Part 3), Second time GC
+# Target journal: Agricultural Water Management
+# ==============================================================================
 
 setwd("/home/user/LT-trait")
 
-# ── 0. Packages ──────────────────────────────────────────────
 suppressPackageStartupMessages({
   library(readxl)
   library(dplyr)
   library(tidyr)
   library(ggplot2)
   library(RColorBrewer)
-  library(segmented)
+  library(scales)
 })
 
 dir.create("experimental_data/GC_analysis", recursive = TRUE, showWarnings = FALSE)
 
-# ── 1. Load & clean ──────────────────────────────────────────
+# ── Colour / theme constants ───────────────────────────────────────────────────
+COL_PLASTIC    <- "#d95f02"
+COL_NONPLASTIC <- "#31a354"
+GENO_COLS      <- brewer.pal(4, "Set1")          # 4 genotype colours
+VPD_THRESHOLD  <- 2.0                            # Sinclair 2008 reference
+
+base_theme <- theme_bw(base_size = 12) +
+  theme(
+    strip.background = element_rect(fill = "grey92", colour = "grey70"),
+    panel.grid.minor = element_blank(),
+    legend.position  = "bottom"
+  )
+
+# ==============================================================================
+# 1. LOAD & CLEAN
+# ==============================================================================
+cat("Loading data...\n")
+
 DATA_PATH <- "experimental_data/data-analysis/data-analysis/Second time GC/Part 3/GC experiment 3.xlsx"
 
 raw <- read_excel(DATA_PATH, sheet = "Final")
 
-# VPD target labels
-vpd_labels <- c("1" = "1.0", "2" = "1.5", "3" = "2.0", "4" = "2.7", "5" = "3.3")
+cat("Raw dimensions:", nrow(raw), "x", ncol(raw), "\n")
 
-gc <- raw %>%
+df <- raw %>%
   mutate(
-    VPD_target = factor(vpd_labels[as.character(Treatment)],
-                        levels = c("1.0", "1.5", "2.0", "2.7", "3.3")),
-    # Parse Expected_WUE into Plasticity and WUE_class
+    # VPD target labels from Treatment code
+    VPD_target = factor(
+      case_when(
+        Treatment == 1 ~ "1.0",
+        Treatment == 2 ~ "1.5",
+        Treatment == 3 ~ "2.0",
+        Treatment == 4 ~ "2.7",
+        Treatment == 5 ~ "3.3"
+      ),
+      levels = c("1.0", "1.5", "2.0", "2.7", "3.3")
+    ),
+    # Parse Expected_WUE into two columns
     Plasticity = case_when(
-      grepl("^Plastic,", Expected_WUE)    ~ "Plastic",
-      grepl("^Nonplastic,", Expected_WUE) ~ "Nonplastic",
-      TRUE ~ NA_character_
+      grepl("^Plastic,",    Expected_WUE) ~ "Plastic",
+      grepl("^Nonplastic,", Expected_WUE) ~ "Nonplastic"
     ),
     WUE_class = case_when(
       grepl("High WUE", Expected_WUE) ~ "High WUE",
-      grepl("Low WUE",  Expected_WUE) ~ "Low WUE",
-      TRUE ~ NA_character_
+      grepl("Low WUE",  Expected_WUE) ~ "Low WUE"
     ),
-    # Short genotype labels (used as secondary axis info)
-    Genotype_label = Genotype,
+    # Short genotype labels (keep PI numbers)
+    Genotype_short = Genotype,
     # Facet label: Genotype + Expected_WUE
-    Facet_label = paste0(Genotype, "\n(", Expected_WUE, ")"),
+    Facet_label = paste0(Genotype, "\n", Expected_WUE),
     Day_label = paste("Day", Day),
-    # Ensure numeric
-    VPD             = as.numeric(VPD),
-    RelTranspiration = as.numeric(RelTranspiration),
-    TranspLeafArea  = as.numeric(TranspLeafArea),
-    DryMatter_total = as.numeric(DryMatter_total),
-    Replication     = as.integer(Replication),
-    Day             = as.integer(Day)
+    # Ensure Day and Treatment are factors where needed
+    Day_f      = factor(Day, labels = c("Day 1", "Day 2")),
+    Plasticity = factor(Plasticity, levels = c("Plastic", "Nonplastic")),
+    WUE_class  = factor(WUE_class,  levels = c("High WUE", "Low WUE"))
   )
 
-# Fix factor ordering for Facet_label (match Quadrant Q1-Q4 order)
-quad_order <- c("Q1", "Q2", "Q3", "Q4")
-geno_order <- gc %>%
-  distinct(Genotype, Quadrant) %>%
-  arrange(match(Quadrant, quad_order)) %>%
-  pull(Genotype)
-
-gc <- gc %>%
+# Fix Genotype factor order to match Quadrant
+geno_order <- c("PI398617", "PI070229", "PI423802", "PI603465C")
+df <- df %>%
   mutate(
     Genotype = factor(Genotype, levels = geno_order),
     Facet_label = factor(Facet_label,
-                         levels = gc %>%
-                           distinct(Genotype, Facet_label) %>%
-                           arrange(match(Genotype, geno_order)) %>%
-                           pull(Facet_label))
+      levels = df %>%
+        distinct(Genotype, Facet_label) %>%
+        arrange(match(Genotype, geno_order)) %>%
+        pull(Facet_label)
+    )
   )
+
+cat("Clean data dimensions:", nrow(df), "x", ncol(df), "\n")
+cat("Genotypes:", levels(df$Genotype), "\n")
+cat("VPD_target levels:", levels(df$VPD_target), "\n")
+cat("Plasticity levels:", levels(df$Plasticity), "\n\n")
 
 # Save clean CSV
-write.csv(gc, "experimental_data/GC_analysis/GC3_clean.csv", row.names = FALSE)
-cat("Clean data saved: experimental_data/GC_analysis/GC3_clean.csv\n")
-cat("Rows:", nrow(gc), " | Cols:", ncol(gc), "\n\n")
+write.csv(df, "experimental_data/GC_analysis/GC3_clean.csv", row.names = FALSE)
+cat("Saved GC3_clean.csv\n\n")
 
-# ── Common theme ─────────────────────────────────────────────
-my_theme <- theme_bw(base_size = 12) +
-  theme(
-    strip.background   = element_rect(fill = "grey92", colour = "grey70"),
-    panel.grid.minor   = element_blank(),
-    legend.position    = "bottom",
-    legend.title       = element_text(face = "bold"),
-    strip.text         = element_text(size = 10)
-  )
+# ==============================================================================
+# 2. FIGURES
+# ==============================================================================
 
-plasticity_cols <- c("Plastic" = "#d95f02", "Nonplastic" = "#31a354")
-geno_cols       <- brewer.pal(4, "Set1")
-names(geno_cols) <- geno_order
-
-save_fig <- function(plot, name, width_cm, height_cm) {
+save_fig <- function(p, name, width_cm, height_cm) {
   base <- file.path("experimental_data/GC_analysis", name)
-  ggsave(paste0(base, ".png"),  plot, width = width_cm, height = height_cm,
+  ggsave(paste0(base, ".png"),  plot = p, width = width_cm, height = height_cm,
          units = "cm", dpi = 150)
-  ggsave(paste0(base, ".tiff"), plot, width = width_cm, height = height_cm,
+  ggsave(paste0(base, ".tiff"), plot = p, width = width_cm, height = height_cm,
          units = "cm", dpi = 300, compression = "lzw")
-  cat("Saved:", base, ".png/.tiff\n")
+  cat("  Saved", name, ".png/.tiff\n")
 }
 
-# ── Fig A — VPD vs Relative Transpiration ────────────────────
-figA <- ggplot(gc, aes(x = VPD, y = RelTranspiration, colour = Plasticity)) +
-  geom_jitter(alpha = 0.4, height = 0.01, width = 0, size = 1.8) +
-  geom_smooth(method = "loess", se = TRUE, span = 0.85, linewidth = 0.9) +
-  geom_vline(xintercept = 2.0, linetype = "dashed", colour = "grey40", linewidth = 0.6) +
-  scale_colour_manual(values = plasticity_cols) +
+# ── Fig A — VPD vs Relative Transpiration ─────────────────────────────────────
+cat("Plotting Fig A...\n")
+
+figA <- ggplot(df, aes(x = VPD, y = RelTranspiration, colour = Plasticity)) +
+  geom_vline(xintercept = VPD_THRESHOLD, linetype = "dashed",
+             colour = "grey40", linewidth = 0.7) +
+  geom_point(alpha = 0.4,
+             position = position_jitter(width = 0, height = 0.01, seed = 42),
+             size = 1.8) +
+  geom_smooth(method = "loess", se = TRUE, linewidth = 1) +
+  scale_colour_manual(
+    values = c(Plastic = COL_PLASTIC, Nonplastic = COL_NONPLASTIC),
+    name   = "Plasticity"
+  ) +
+  facet_wrap(~ Facet_label, ncol = 2) +
   scale_x_continuous(breaks = c(1.0, 1.5, 2.0, 2.7, 3.3)) +
   scale_y_continuous(limits = c(0, NA)) +
-  facet_wrap(~ Facet_label, ncol = 2) +
   labs(
-    x      = "Measured VPD (kPa)",
-    y      = "Relative Transpiration",
-    colour = "Plasticity",
-    title  = "Fig A — VPD vs Relative Transpiration by Genotype",
-    caption = "Dashed line: VPD = 2.0 kPa reference threshold (Sinclair 2008)"
+    x     = "VPD (kPa)",
+    y     = "Relative Transpiration",
+    title = "VPD vs Relative Transpiration by Genotype",
+    caption = "Dashed line: VPD = 2.0 kPa (Sinclair 2008 threshold)"
   ) +
-  my_theme
+  base_theme
 
 save_fig(figA, "GC3_Fig_A_VPD_RelTransp", width_cm = 20, height_cm = 18)
 
-# ── Fig B — Mean ± SE by VPD treatment × Genotype × Day ─────
-sumB <- gc %>%
-  group_by(Genotype, Day_label, VPD_target) %>%
+# ── Fig B — Mean +/- SE summary by Genotype x Day ────────────────────────────
+cat("Plotting Fig B...\n")
+
+sum_B <- df %>%
+  group_by(Genotype, Day_f, VPD_target) %>%
   summarise(
     mean_RT = mean(RelTranspiration, na.rm = TRUE),
-    se_RT   = sd(RelTranspiration,   na.rm = TRUE) / sqrt(sum(!is.na(RelTranspiration))),
+    se_RT   = sd(RelTranspiration, na.rm = TRUE) / sqrt(n()),
+    n       = n(),
     .groups = "drop"
   )
 
-figB <- ggplot(sumB, aes(x = VPD_target, y = mean_RT,
-                          colour = Genotype, group = Genotype)) +
-  geom_hline(yintercept = 1.0, linetype = "dotted", colour = "grey50") +
-  geom_errorbar(aes(ymin = mean_RT - se_RT, ymax = mean_RT + se_RT),
-                width = 0.15, linewidth = 0.5) +
-  geom_line(linewidth = 0.8) +
+figB <- ggplot(sum_B, aes(x = VPD_target, y = mean_RT,
+                           colour = Genotype, group = Genotype)) +
+  geom_hline(yintercept = 1.0, linetype = "dashed", colour = "grey50") +
+  geom_line(linewidth = 0.9) +
   geom_point(size = 2.5) +
-  scale_colour_manual(values = geno_cols) +
-  scale_y_continuous(limits = c(0, NA)) +
-  facet_wrap(~ Day_label, ncol = 2) +
+  geom_errorbar(aes(ymin = mean_RT - se_RT, ymax = mean_RT + se_RT),
+                width = 0.15, linewidth = 0.7) +
+  scale_colour_manual(values = setNames(GENO_COLS, geno_order)) +
+  facet_wrap(~ Day_f) +
   labs(
-    x      = "Target VPD (kPa)",
-    y      = "Mean Relative Transpiration ± SE",
-    colour = "Genotype",
-    title  = "Fig B — Summary: Mean ± SE by VPD Treatment × Genotype × Day"
+    x     = "Target VPD (kPa)",
+    y     = "Mean Relative Transpiration +/- SE",
+    title = "Mean Relative Transpiration by Genotype and Day",
+    colour = "Genotype"
   ) +
-  my_theme
+  base_theme
 
 save_fig(figB, "GC3_Fig_B_summary", width_cm = 20, height_cm = 12)
 
-# ── Fig C — Transpiration per leaf area vs VPD ───────────────
-gcC <- gc %>% filter(!is.na(TranspLeafArea))
+# ── Fig C — Transpiration per Leaf Area vs VPD ────────────────────────────────
+cat("Plotting Fig C...\n")
 
-figC <- ggplot(gcC, aes(x = VPD, y = TranspLeafArea, colour = Plasticity)) +
-  geom_jitter(alpha = 0.4, height = 0, width = 0, size = 1.8) +
-  geom_smooth(method = "loess", se = TRUE, span = 0.85, linewidth = 0.9) +
-  geom_vline(xintercept = 2.0, linetype = "dashed", colour = "grey40", linewidth = 0.6) +
-  scale_colour_manual(values = plasticity_cols) +
-  scale_x_continuous(breaks = c(1.0, 1.5, 2.0, 2.7, 3.3)) +
-  facet_wrap(~ Facet_label, ncol = 2) +
-  labs(
-    x      = "Measured VPD (kPa)",
-    y      = expression("Transpiration / Leaf Area (ml cm"^{-2}*")"),
-    colour = "Plasticity",
-    title  = "Fig C — VPD vs Transpiration per Leaf Area by Genotype",
-    caption = "Dashed line: VPD = 2.0 kPa reference threshold"
+df_C <- df %>% filter(!is.na(TranspLeafArea))
+cat("  Rows after filtering NA TranspLeafArea:", nrow(df_C), "\n")
+
+figC <- ggplot(df_C, aes(x = VPD, y = TranspLeafArea, colour = Plasticity)) +
+  geom_vline(xintercept = VPD_THRESHOLD, linetype = "dashed",
+             colour = "grey40", linewidth = 0.7) +
+  geom_point(alpha = 0.4,
+             position = position_jitter(width = 0, height = 0, seed = 42),
+             size = 1.8) +
+  geom_smooth(method = "loess", se = TRUE, linewidth = 1) +
+  scale_colour_manual(
+    values = c(Plastic = COL_PLASTIC, Nonplastic = COL_NONPLASTIC),
+    name   = "Plasticity"
   ) +
-  my_theme
+  facet_wrap(~ Facet_label, ncol = 2) +
+  scale_x_continuous(breaks = c(1.0, 1.5, 2.0, 2.7, 3.3)) +
+  labs(
+    x     = "VPD (kPa)",
+    y     = "Transpiration per Leaf Area (ml/cm2)",
+    title = "Transpiration per Leaf Area vs VPD by Genotype",
+    caption = "Dashed line: VPD = 2.0 kPa (Sinclair 2008 threshold)"
+  ) +
+  base_theme
 
 save_fig(figC, "GC3_Fig_C_TranspLeafArea", width_cm = 20, height_cm = 18)
 
-# ── Fig D — WUE Quadrant plot ─────────────────────────────────
-sumD <- gc %>%
+# ── Fig D — WUE Quadrant plot ─────────────────────────────────────────────────
+cat("Plotting Fig D...\n")
+
+sum_D <- df %>%
   group_by(Quadrant, Plasticity, WUE_class, VPD_target) %>%
-  summarise(mean_RT = mean(RelTranspiration, na.rm = TRUE), .groups = "drop")
+  summarise(
+    mean_RT = mean(RelTranspiration, na.rm = TRUE),
+    .groups = "drop"
+  )
 
-quad_cols <- c("Q1" = "#e41a1c", "Q2" = "#377eb8", "Q3" = "#4daf4a", "Q4" = "#984ea3")
+# Colour each quadrant distinctly
+quad_cols <- c(Q1 = "#1b9e77", Q2 = "#d95f02", Q3 = "#7570b3", Q4 = "#e7298a")
 
-figD <- ggplot(sumD, aes(x = VPD_target, y = mean_RT,
-                          colour = Quadrant, group = Quadrant)) +
-  geom_hline(yintercept = 1.0, linetype = "dotted", colour = "grey50") +
-  geom_line(linewidth = 0.9) +
+figD <- ggplot(sum_D, aes(x = VPD_target, y = mean_RT,
+                           colour = Quadrant, group = Quadrant)) +
+  geom_hline(yintercept = 1.0, linetype = "dashed", colour = "grey50") +
+  geom_line(linewidth = 1) +
   geom_point(size = 2.5) +
-  scale_colour_manual(values = quad_cols) +
-  scale_y_continuous(limits = c(0, NA)) +
+  scale_colour_manual(values = quad_cols,
+                      labels = c(Q1 = "Q1: PI398617 (Plastic, High WUE)",
+                                 Q2 = "Q2: PI070229 (Plastic, Low WUE)",
+                                 Q3 = "Q3: PI423802 (Nonplastic, Low WUE)",
+                                 Q4 = "Q4: PI603465C (Nonplastic, High WUE)")) +
   facet_grid(Plasticity ~ WUE_class) +
   labs(
     x      = "Target VPD (kPa)",
     y      = "Mean Relative Transpiration",
-    colour = "Quadrant",
-    title  = "Fig D — WUE Quadrant: Plasticity × WUE class (Chamarthi et al. 2022 framework)"
+    title  = "VPD Response by Plasticity x WUE Class (Chamarthi et al. 2022 quadrants)",
+    colour = "Quadrant"
   ) +
-  my_theme +
-  theme(legend.position = "right")
+  base_theme +
+  theme(legend.position = "bottom",
+        legend.direction = "vertical")
 
 save_fig(figD, "GC3_Fig_D_quadrant", width_cm = 20, height_cm = 14)
 
-# ── Fig E — Dry matter by genotype × treatment ───────────────
-gcE <- gc %>%
-  distinct(Pot, Genotype, Expected_WUE, VPD_target, DryMatter_total) %>%
-  mutate(Expected_WUE = factor(Expected_WUE,
-                                levels = c("Plastic, High WUE", "Plastic, Low WUE",
-                                           "Nonplastic, High WUE", "Nonplastic, Low WUE")))
+# ── Fig E — Dry matter by genotype x treatment ────────────────────────────────
+cat("Plotting Fig E...\n")
 
-figE <- ggplot(gcE, aes(x = Genotype, y = DryMatter_total, fill = Expected_WUE)) +
-  geom_boxplot(alpha = 0.7, outlier.size = 1.5) +
+# Unique pot-level rows (DryMatter_total is pot-level, not per-measurement)
+dm_df <- df %>%
+  distinct(Pot, Genotype, Expected_WUE, VPD_target, .keep_all = TRUE) %>%
+  filter(!is.na(DryMatter_total))
+
+cat("  Unique pot rows for dry matter:", nrow(dm_df), "\n")
+
+figE <- ggplot(dm_df, aes(x = Genotype, y = DryMatter_total, fill = Expected_WUE)) +
+  geom_boxplot(outlier.size = 1.5, alpha = 0.8) +
   scale_fill_brewer(palette = "Set2", name = "Expected WUE") +
-  facet_wrap(~ VPD_target, ncol = 5,
-             labeller = labeller(VPD_target = function(x) paste("VPD", x, "kPa"))) +
+  facet_wrap(~ VPD_target, labeller = labeller(VPD_target = function(x) paste("VPD:", x, "kPa"))) +
   labs(
     x     = "Genotype",
     y     = "Total Dry Matter (g)",
-    title = "Fig E — Total Dry Matter by Genotype × VPD Treatment"
+    title = "Dry Matter by Genotype and VPD Treatment"
   ) +
-  my_theme +
-  theme(axis.text.x = element_text(angle = 35, hjust = 1))
+  base_theme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
 
-save_fig(figE, "GC3_Fig_E_drymatter", width_cm = 24, height_cm = 12)
+save_fig(figE, "GC3_Fig_E_drymatter", width_cm = 22, height_cm = 14)
 
-# ── 3. Statistics ─────────────────────────────────────────────
-cat("\n═══════════════════════════════════════════\n")
-cat("STATISTICAL RESULTS\n")
-cat("═══════════════════════════════════════════\n\n")
+# ==============================================================================
+# 3. STATISTICS
+# ==============================================================================
+cat("\n=== STATISTICS ===\n\n")
 
-## A) Segmented regression: RelTranspiration ~ VPD per Genotype × Day
-seg_results <- list()
+# ── 3a. Segmented (or piecewise) regression by Genotype x Day ─────────────────
+has_segmented <- requireNamespace("segmented", quietly = TRUE)
+if (has_segmented) {
+  library(segmented)
+  cat("Using 'segmented' package for breakpoint estimation\n\n")
+} else {
+  cat("'segmented' package not available — fitting piecewise lm at VPD = 2.0\n\n")
+}
 
-for (geno in levels(gc$Genotype)) {
-  for (day in c(1, 2)) {
-    sub <- gc %>%
-      filter(Genotype == geno, Day == day) %>%
-      filter(!is.na(VPD), !is.na(RelTranspiration))
+stats_list <- list()
 
-    if (nrow(sub) < 6) next
+for (geno in levels(df$Genotype)) {
+  for (d in c(1, 2)) {
+    sub <- df %>% filter(Genotype == geno, Day == d, !is.na(RelTranspiration), !is.na(VPD))
 
-    cat(sprintf("─── %s  Day %d (n=%d) ───\n", geno, day, nrow(sub)))
+    if (nrow(sub) < 6) {
+      cat("Skipping", geno, "Day", d, "-- insufficient data\n")
+      next
+    }
 
-    seg_fit <- tryCatch({
-      lm0 <- lm(RelTranspiration ~ VPD, data = sub)
-      seg  <- segmented(lm0, seg.Z = ~VPD,
-                        psi = list(VPD = 2.0),
-                        control = seg.control(display = FALSE, it.max = 100))
-      bp   <- seg$psi[, "Est."]
-      sl   <- slope(seg)$VPD
-      cat(sprintf("  Breakpoint: %.3f kPa\n", bp))
-      cat(sprintf("  Slope below BP: %.4f  |  above BP: %.4f\n",
-                  sl[1, "Est."], sl[2, "Est."]))
-      list(method = "segmented", genotype = geno, day = day,
-           breakpoint = bp,
-           slope_below = sl[1, "Est."], slope_above = sl[2, "Est."],
-           se_below = sl[1, "Std. Err."], se_above = sl[2, "Std. Err."])
-    }, error = function(e) {
-      # Fallback: two separate linear models split at VPD = 2.0
-      cat(sprintf("  [segmented failed: %s] — using two-lm fallback\n", conditionMessage(e)))
-      sub_lo <- filter(sub, VPD <= 2.0)
-      sub_hi <- filter(sub, VPD >  2.0)
-      sl_lo  <- if (nrow(sub_lo) > 1) coef(lm(RelTranspiration ~ VPD, data = sub_lo))["VPD"] else NA
-      sl_hi  <- if (nrow(sub_hi) > 1) coef(lm(RelTranspiration ~ VPD, data = sub_hi))["VPD"] else NA
-      cat(sprintf("  Slope ≤ 2.0 kPa: %.4f  |  > 2.0 kPa: %.4f\n",
-                  ifelse(is.na(sl_lo), NA, sl_lo),
-                  ifelse(is.na(sl_hi), NA, sl_hi)))
-      list(method = "two_lm", genotype = geno, day = day,
-           breakpoint = 2.0,
-           slope_below = sl_lo, slope_above = sl_hi,
-           se_below = NA, se_above = NA)
-    })
+    row_base <- data.frame(Genotype = geno, Day = d,
+                           n = nrow(sub),
+                           stringsAsFactors = FALSE)
 
-    seg_results[[paste(geno, day)]] <- seg_fit
-    cat("\n")
+    seg_done <- FALSE
+    if (has_segmented) {
+      tryCatch({
+        lm0 <- lm(RelTranspiration ~ VPD, data = sub)
+        seg  <- segmented(lm0, seg.Z = ~VPD, psi = list(VPD = 2.0))
+        bp   <- seg$psi["VPD", "Est."]
+        sl   <- slope(seg)$VPD
+        sl1  <- sl[1, "Est."]
+        sl2  <- sl[2, "Est."]
+        cat(sprintf("%-12s Day %d | Breakpoint: %.2f kPa | Slope below: %.3f | Slope above: %.3f\n",
+                    geno, d, bp, sl1, sl2))
+        row_base$method      <- "segmented"
+        row_base$breakpoint  <- round(bp, 3)
+        row_base$slope_below <- round(sl1, 4)
+        row_base$slope_above <- round(sl2, 4)
+        seg_done <- TRUE
+      }, error = function(e) {
+        cat(sprintf("%-12s Day %d | segmented failed: %s -- falling back to piecewise\n",
+                    geno, d, conditionMessage(e)))
+      })
+    }
+
+    if (!seg_done) {
+      # Piecewise at fixed VPD = 2.0
+      lo  <- sub %>% filter(VPD <= VPD_THRESHOLD)
+      hi  <- sub %>% filter(VPD >  VPD_THRESHOLD)
+      sl_lo <- if (nrow(lo) >= 2) coef(lm(RelTranspiration ~ VPD, data = lo))["VPD"] else NA
+      sl_hi <- if (nrow(hi) >= 2) coef(lm(RelTranspiration ~ VPD, data = hi))["VPD"] else NA
+      cat(sprintf("%-12s Day %d | Breakpoint: 2.00 kPa (fixed) | Slope below: %.3f | Slope above: %.3f\n",
+                  geno, d,
+                  ifelse(is.na(sl_lo), NA_real_, sl_lo),
+                  ifelse(is.na(sl_hi), NA_real_, sl_hi)))
+      row_base$method      <- "piecewise_fixed"
+      row_base$breakpoint  <- 2.0
+      row_base$slope_below <- round(sl_lo, 4)
+      row_base$slope_above <- round(sl_hi, 4)
+    }
+
+    stats_list[[paste(geno, d)]] <- row_base
   }
 }
 
-seg_df <- do.call(rbind, lapply(seg_results, function(x) {
-  data.frame(Genotype    = x$genotype,
-             Day         = x$day,
-             Method      = x$method,
-             Breakpoint  = round(x$breakpoint, 3),
-             Slope_below = round(x$slope_below, 4),
-             Slope_above = round(x$slope_above, 4),
-             SE_below    = round(x$se_below, 4),
-             SE_above    = round(x$se_above, 4),
-             stringsAsFactors = FALSE)
-}))
-rownames(seg_df) <- NULL
+stats_df <- bind_rows(stats_list)
+write.csv(stats_df, "experimental_data/GC_analysis/GC3_stats_summary.csv", row.names = FALSE)
+cat("\nSaved GC3_stats_summary.csv\n\n")
 
-cat("Segmented regression summary:\n")
-print(seg_df)
+# ── 3b. ANOVA: RelTranspiration ~ Genotype x VPD + Day ───────────────────────
+cat("=== ANOVA: RelTranspiration ~ Genotype * VPD + Day ===\n")
 
-## B) ANOVA: RelTranspiration ~ Genotype × VPD + Day
-cat("\n═══════════════════════════════════════════\n")
-cat("ANOVA: RelTranspiration ~ Genotype * VPD + Day\n")
-cat("═══════════════════════════════════════════\n")
-aov_mod  <- aov(RelTranspiration ~ Genotype * VPD + as.factor(Day), data = gc)
-aov_tbl  <- summary(aov_mod)
-print(aov_tbl)
+aov_mod <- aov(RelTranspiration ~ Genotype * VPD + Day, data = df)
+aov_tab <- summary(aov_mod)
+print(aov_tab)
 
-## Save stats CSV
-write.csv(seg_df, "experimental_data/GC_analysis/GC3_stats_summary.csv", row.names = FALSE)
-cat("\nStats saved: experimental_data/GC_analysis/GC3_stats_summary.csv\n")
+# Also fit as lm for cleaner F-table
+lm_mod  <- lm(RelTranspiration ~ Genotype * VPD + factor(Day), data = df)
+cat("\n=== LM summary (RelTranspiration ~ Genotype * VPD + Day) ===\n")
+print(summary(lm_mod))
 
-# ── 4. Descriptive summary ────────────────────────────────────
-cat("\n═══════════════════════════════════════════\n")
-cat("DESCRIPTIVE SUMMARY\n")
-cat("═══════════════════════════════════════════\n\n")
-desc <- gc %>%
-  group_by(Genotype, Expected_WUE) %>%
-  summarise(
-    n          = n(),
-    mean_RT    = round(mean(RelTranspiration, na.rm = TRUE), 3),
-    sd_RT      = round(sd(RelTranspiration,   na.rm = TRUE), 3),
-    mean_Tla   = round(mean(TranspLeafArea,   na.rm = TRUE), 2),
-    mean_DM    = round(mean(DryMatter_total,  na.rm = TRUE), 2),
-    .groups = "drop"
-  )
-print(desc)
-
-cat("\n── Analysis complete ──\n")
+# ==============================================================================
+# DONE
+# ==============================================================================
+cat("\n=== All figures and statistics complete ===\n")
+cat("Output directory: experimental_data/GC_analysis/\n")
+cat("Files produced:\n")
+cat("  GC3_clean.csv\n")
+cat("  GC3_Fig_A_VPD_RelTransp.png/.tiff\n")
+cat("  GC3_Fig_B_summary.png/.tiff\n")
+cat("  GC3_Fig_C_TranspLeafArea.png/.tiff\n")
+cat("  GC3_Fig_D_quadrant.png/.tiff\n")
+cat("  GC3_Fig_E_drymatter.png/.tiff\n")
+cat("  GC3_stats_summary.csv\n")
