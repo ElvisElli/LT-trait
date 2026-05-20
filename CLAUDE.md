@@ -8,9 +8,9 @@ Agronomic analysis for **limited-transpiration (LT) soybean** trait evaluation, 
 
 Two main pipelines:
 
-1. **`nasapower_PM_ETo.R`** — Downloads daily NASA POWER climate data for three US sites (Fayetteville AR, Columbia MO, Lincoln NE), computes FAO-56 Penman-Monteith ETo, then merges with DSSAT SSM simulation output to compare seasonal crop water demand (SUMETT) against atmospheric evaporative demand.
+1. **`nasapower_PM_ETo.R`** — Downloads daily NASA POWER climate data for three US sites (Fayetteville AR, Columbia MO, Lincoln NE), computes FAO-56 Penman-Monteith ETo, then merges with Sinclair SSM simulation output to compare seasonal crop water demand (SUMETT) against atmospheric evaporative demand.
 
-2. **`soyeban-ssm-11-9.R`** — Reads DSSAT SSM simulation output (`SoybeanSSM_sims2.xlsx`) and produces yield, ET, and transpiration figures comparing LT and non-LT soybean under rainfed and irrigated conditions across AR, MO, NE.
+2. **`soyeban-ssm-11-9.R`** — Reads Sinclair SSM simulation output (`SoybeanSSM_sims2.xlsx`) and produces yield, ET, and transpiration figures comparing LT and non-LT soybean under rainfed and irrigated conditions across AR, MO, NE.
 
 ## Running scripts
 
@@ -33,7 +33,7 @@ Rscript build_bridge_fig.R
 
 ## Key data file
 
-`SoybeanSSM_sims2.xlsx` — DSSAT SSM simulation output (1990–2019, 6 locations, 2 160 rows). Required columns:
+`SoybeanSSM_sims2.xlsx` — Sinclair SSM simulation output (1990–2019, 6 locations, 2 160 rows). Required columns:
 
 | Column | Description |
 |---|---|

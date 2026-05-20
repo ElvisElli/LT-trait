@@ -179,7 +179,7 @@ soybean genotypes (Rainfed and Irrigated treatments) on two dates (August 9 and 
 ## 6. Integration with Process-Based Modelling
 
 A key deliverable for leveraging this project toward extramural funding was combining
-controlled-environment physiological measurements with DSSAT SSM crop model simulations to
+controlled-environment physiological measurements with Sinclair SSM crop model simulations to
 identify the field-scale consequences of the LT trait. Thirty years (1990–2019) of SSM
 simulations across six US locations (Arkansas, Missouri, Nebraska) combined with NASA POWER
 FAO-56 ETo revealed that:

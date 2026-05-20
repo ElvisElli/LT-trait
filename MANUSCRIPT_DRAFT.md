@@ -32,7 +32,7 @@ isotope discrimination, and whole-season water budgets. The limited-transpiratio
 vapour pressure deficit (VPD) — offers a well-characterised physiological basis
 for a genotype-specific Kc. Here we tested whether the LT trait translates from
 leaf-level stomatal physiology to a measurable difference in seasonal Kc at the
-field scale. We combined 30 years (1990–2019) of DSSAT SSM crop model simulations
+field scale. We combined 30 years (1990–2019) of Sinclair SSM crop model simulations
 across six locations in Arkansas, Missouri, and Nebraska with NASA POWER-derived
 daily FAO-56 Penman-Monteith ETo computed over planting-date-specific growing
 windows to derive seasonal crop coefficients for LT and non-LT soybean genotypes
@@ -140,7 +140,7 @@ demand relevant to current and projected soybean production environments.
 ### 2.2 Crop simulations
 
 Seasonal crop evapotranspiration (SUMETT, mm) and grain yield (kg ha⁻¹) were
-obtained from DSSAT SSM (Decision Support System for Agrotechnology Transfer —
+obtained from Sinclair SSM (Decision Support System for Agrotechnology Transfer —
 Simplified Soybean Model; Boote et al., [year]) simulations spanning 1990–2019
 (n = 2 160 simulation-years). Two contrasting genotypic classes were simulated:
 (i) non-limited transpiration (non-LT), represented by standard MG3 and MG4
@@ -381,7 +381,7 @@ for irrigation management accuracy.
 
 Several limitations of this study should be acknowledged. First, Kc values were
 derived from crop model simulations rather than from direct field measurement of
-ET, and the DSSAT SSM simulations used fixed soil water parameters across
+ET, and the Sinclair SSM simulations used fixed soil water parameters across
 locations; site-specific soil calibration and flux tower validation could alter
 the magnitude of Kc differences. Second, the use of a single representative site
 per state for ETo calculation, rather than individual site-specific weather
@@ -398,7 +398,7 @@ predict Kc variability within the LT germplasm class.
 
 ## 5. Conclusions
 
-Using 30 years of multi-location DSSAT SSM simulations combined with NASA POWER
+Using 30 years of multi-location Sinclair SSM simulations combined with NASA POWER
 planting-date-specific FAO-56 ETo, and drawing on the convergent evidence from
 leaf-level hydraulics (Sinclair et al., 2008) and carbon isotope genomics
 (Chamarthi et al., 2022), we demonstrate that:
@@ -475,5 +475,5 @@ ANCOVA genotype × ETo interaction: p < 0.001
 Non-LT Kc exceeds FAO-56 reference (1.15) by 55%; LT Kc exceeds it by 10%.
 
 ---
-*Draft prepared with Claude Code — all statistics computed from DSSAT SSM
+*Draft prepared with Claude Code — all statistics computed from Sinclair SSM
 simulations and NASA POWER ETo. Prose requires author review and refinement.*

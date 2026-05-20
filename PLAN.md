@@ -15,7 +15,7 @@ genotypes exhibit genotype-dependent water use across the US Mid-South and Midwe
 
 ## Core argument
 FAO-56 assigns a fixed seasonal Kc per crop, independent of genotype. Using 30 years
-of DSSAT SSM simulations at 6 locations and NASA POWER ETo, we show that:
+of Sinclair SSM simulations at 6 locations and NASA POWER ETo, we show that:
 1. LT genotypes have Kc = 1.06 vs Non-LT Kc = 1.48 under potential (irrigated) conditions — a 28% difference
 2. LT genotypes save 246–344 mm of irrigation water per season
 3. Despite lower water use, LT genotypes yield 3.6–14.7% MORE under rainfed conditions
