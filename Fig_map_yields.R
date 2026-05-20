@@ -1,152 +1,190 @@
 ## Map figure: water-limited (rainfed) vs potential (irrigated) yield
-## as pie charts at AR, MO, NE sites — LT vs non-LT soybean
+## Pie charts via ggforce::geom_arc_bar at 6 locations — LT vs non-LT soybean
 
 setwd("/home/user/LT-trait")
 
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(ggforce)
 library(maps)
 library(readxl)
 
-## ── Helper: generate pie polygon coordinates ──────────────────────────────────
-
-make_pie <- function(cx, cy, r, values, labels, n_pts = 100) {
-  total  <- sum(values)
-  angles <- cumsum(c(0, values / total * 2 * pi)) - pi / 2  # start from top
-  purrr::map_dfr(seq_along(values), function(i) {
-    theta <- seq(angles[i], angles[i + 1], length.out = n_pts)
-    tibble(
-      x     = c(cx, cx + r * cos(theta), cx),
-      y     = c(cy, cy + r * sin(theta), cy),
-      slice = labels[i]
-    )
-  })
-}
-
-## ── Site coordinates ──────────────────────────────────────────────────────────
+## ── Site coordinates (2 per state) ───────────────────────────────────────────
 
 sites <- tibble(
-  State = c("AR",   "MO",   "NE"),
-  lat   = c(36.08,  38.95,  40.82),
-  lon   = c(-94.17, -92.33, -96.70),
-  label = c("Fayetteville\nAR", "Columbia\nMO", "Lincoln\nNE")
+  Location = c("Jonesboro", "Marianna",
+                "Columbia",  "Norborne",
+                "Lincoln",   "North Platte"),
+  State    = c("AR", "AR", "MO", "MO", "NE", "NE"),
+  lat      = c(35.84, 34.78, 38.95, 39.30, 40.81, 41.12),
+  lon      = c(-90.70, -90.76, -92.33, -93.67, -96.70, -100.77)
 )
 
-## ── Yield data from SSM ───────────────────────────────────────────────────────
+## ── Yield data ────────────────────────────────────────────────────────────────
 
 ssm.model <- read_excel("SoybeanSSM_sims2.xlsx")
 
 yield_data <- ssm.model %>%
   filter(Crop %in% c("SOYBEAN-MG4", "SOYBEAN-LT1.5-MG4",
                      "SOYBEAN-LT1.5-MG3", "SOYBEAN-MG3")) %>%
-  mutate(
-    Genotype = ifelse(Crop %in% c("SOYBEAN-MG4", "SOYBEAN-MG3"),
-                      "Non-LT", "LT"),
-    State = case_when(
-      grepl("AR", Manag, ignore.case = TRUE) ~ "AR",
-      grepl("MO", Manag, ignore.case = TRUE) ~ "MO",
-      grepl("NE", Manag, ignore.case = TRUE) ~ "NE",
-      TRUE ~ NA_character_
-    )
-  ) %>%
-  filter(!is.na(State)) %>%
-  group_by(State, Genotype, water_mgmt) %>%
+  mutate(Genotype = ifelse(Crop %in% c("SOYBEAN-MG4", "SOYBEAN-MG3"),
+                           "Non-limited transpiration",
+                           "Limited transpiration"),
+         Genotype = factor(Genotype,
+                           levels = c("Non-limited transpiration",
+                                      "Limited transpiration"))) %>%
+  group_by(Location, Genotype, water_mgmt) %>%
   summarise(Yield = mean(Yield_kgha, na.rm = TRUE), .groups = "drop") %>%
   pivot_wider(names_from = water_mgmt, values_from = Yield) %>%
-  left_join(sites, by = "State") %>%
+  left_join(sites, by = "Location") %>%
   ## offset LT west, non-LT east so pies don't overlap
-  mutate(lon_pie = ifelse(Genotype == "LT", lon - 1.4, lon + 1.4),
-         ## radius scaled to potential (irrigated) yield
-         radius  = Irrigated / max(Irrigated) * 1.6)
+  mutate(lon_pie = ifelse(Genotype == "Limited transpiration",
+                          lon - 1.2, lon + 1.2),
+         ## radius in map-degree units, scaled to potential yield
+         r = Irrigated / max(Irrigated) * 1.4)
 
-## ── Build pie polygons ────────────────────────────────────────────────────────
+## ── Build geom_arc_bar pie data ───────────────────────────────────────────────
+## geom_arc_bar needs: x0, y0, r, r0, start, end, fill
 
-pie_polys <- yield_data %>%
-  rowwise() %>%
-  mutate(poly = list(
-    make_pie(
-      cx     = lon_pie,
-      cy     = lat,
-      r      = radius,
-      values = c(Rainfed, Irrigated - Rainfed),   # rainfed + extra for irrigated
-      labels = c("Water-limited\n(Rainfed)", "Extra potential\n(Irrigated)")
-    ) %>% mutate(Genotype = Genotype, State = State)
-  )) %>%
-  ungroup() %>%
-  select(poly) %>%
-  unnest(poly)
+make_arcs <- function(df) {
+  df %>%
+    rowwise() %>%
+    mutate(
+      total       = Irrigated,
+      frac_rain   = Rainfed  / total,
+      frac_irr    = 1 - frac_rain,
+      ## water-limited slice (rainfed)
+      start_rain  = -pi / 2,
+      end_rain    = start_rain + frac_rain * 2 * pi,
+      ## potential-gain slice (irrigated beyond rainfed)
+      start_irr   = end_rain,
+      end_irr     = start_rain + 2 * pi
+    ) %>%
+    ungroup() %>%
+    ## pivot to one row per slice
+    select(Location, Genotype, State, lat, lon, lon_pie, r,
+           Rainfed, Irrigated,
+           start_rain, end_rain, start_irr, end_irr) %>%
+    pivot_longer(cols = c(start_rain, start_irr),
+                 names_to  = "slice_start_col",
+                 values_to = "start") %>%
+    mutate(
+      end   = ifelse(slice_start_col == "start_rain", end_rain, end_irr),
+      slice = ifelse(slice_start_col == "start_rain",
+                     "Water-limited (Rainfed)",
+                     "Potential gain (Irrigated)")
+    ) %>%
+    select(Location, Genotype, State, lat, lon, lon_pie, r,
+           Rainfed, Irrigated, start, end, slice)
+}
 
-## Assign fill colours per genotype × slice
-pie_polys <- pie_polys %>%
-  mutate(fill_key = paste(Genotype, slice, sep = " — "))
+arc_data <- make_arcs(yield_data)
 
-fill_vals <- c(
-  "Non-LT — Water-limited\n(Rainfed)"     = "#74c476",   # light green
-  "Non-LT — Extra potential\n(Irrigated)"  = "#006d2c",   # dark green
-  "LT — Water-limited\n(Rainfed)"         = "#fdae6b",   # light orange
-  "LT — Extra potential\n(Irrigated)"     = "#d95f02"    # dark orange
+## ── Colour palette ────────────────────────────────────────────────────────────
+
+fill_colours <- c(
+  "Non-limited transpiration|Water-limited (Rainfed)"   = "#a1d99b",
+  "Non-limited transpiration|Potential gain (Irrigated)" = "#238b45",
+  "Limited transpiration|Water-limited (Rainfed)"       = "#fdae6b",
+  "Limited transpiration|Potential gain (Irrigated)"    = "#d95f02"
 )
 
-## ── Base map ─────────────────────────────────────────────────────────────────
+arc_data <- arc_data %>%
+  mutate(fill_key = paste(Genotype, slice, sep = "|"))
 
-us_states <- map_data("state")
+## ── Bubble summary for geom_point legend ─────────────────────────────────────
+
+bubble_ref <- tibble(
+  lon_pie = -104, lat = c(34.5, 36.5, 38.5),
+  r_raw   = yield_data$Irrigated[c(1,3,5)],   # example yields
+  r       = yield_data$r[c(1,3,5)],
+  label   = paste0(round(yield_data$Irrigated[c(1,3,5)]), " kg/ha")
+)
+
+## ── Map layers ────────────────────────────────────────────────────────────────
+
+us_states   <- map_data("state")
 focus_states <- c("arkansas", "missouri", "nebraska")
-
-## crop to relevant extent
-xlim <- c(-105, -84)
-ylim <- c(32,   46)
 
 p_map <- ggplot() +
 
-  ## all CONUS states — light grey background
+  ## base CONUS
   geom_polygon(data = us_states,
                aes(x = long, y = lat, group = group),
-               fill = "grey93", colour = "white", linewidth = 0.4) +
+               fill = "grey95", colour = "white", linewidth = 0.35) +
 
-  ## highlight the three study states
+  ## highlight study states
   geom_polygon(data = filter(us_states, region %in% focus_states),
                aes(x = long, y = lat, group = group),
-               fill = "grey82", colour = "white", linewidth = 0.4) +
+               fill = "#deebf7", colour = "white", linewidth = 0.35) +
 
-  ## pie polygons
-  geom_polygon(data = pie_polys,
-               aes(x = x, y = y, group = interaction(Genotype, State, slice),
-                   fill = fill_key),
-               colour = "grey20", linewidth = 0.25) +
+  ## site dot (geom_point) — size proportional to potential (irrigated) yield,
+  ## drawn beneath pies as a subtle anchor
+  geom_point(data = yield_data,
+             aes(x = lon_pie, y = lat,
+                 size  = Irrigated,
+                 shape = Genotype),
+             colour = "grey40", fill = NA, stroke = 0.8,
+             show.legend = TRUE) +
 
-  ## site labels
+  ## pie charts via geom_arc_bar
+  geom_arc_bar(data = arc_data,
+               aes(x0 = lon_pie, y0 = lat,
+                   r0 = 0, r = r,
+                   start = start, end = end,
+                   fill  = fill_key),
+               colour = "grey25", linewidth = 0.2) +
+
+  ## state labels
+  annotate("text",
+           x = c(-92.5, -93.5, -99.5),
+           y = c(34.1,  37.0,  42.8),
+           label = c("Arkansas", "Missouri", "Nebraska"),
+           fontface = "bold", size = 3.2, colour = "grey30") +
+
+  ## location labels
   geom_text(data = sites,
-            aes(x = lon, y = lat - 2.4, label = label),
-            size = 3, fontface = "bold", colour = "grey20") +
+            aes(x = lon, y = lat, label = Location),
+            nudge_y = -1.05, size = 2.5, colour = "grey20", fontface = "italic") +
 
-  ## genotype labels above each pie
-  geom_text(data = yield_data,
-            aes(x = lon_pie, y = lat + radius + 0.35,
-                label = ifelse(Genotype == "LT",
-                               "Limited\ntranspiration",
-                               "Non-limited\ntranspiration")),
-            size = 2.4, colour = "grey20", linewidth = 0.3) +
-
+  ## scales
   scale_fill_manual(
-    values = fill_vals,
-    labels = c("Non-LT — Water-limited\n(Rainfed)"    = "Non-LT  |  Water-limited (rainfed)",
-               "Non-LT — Extra potential\n(Irrigated)" = "Non-LT  |  Potential gain (irrigated)",
-               "LT — Water-limited\n(Rainfed)"        = "LT  |  Water-limited (rainfed)",
-               "LT — Extra potential\n(Irrigated)"    = "LT  |  Potential gain (irrigated)"),
-    breaks = c("Non-LT — Water-limited\n(Rainfed)",
-               "Non-LT — Extra potential\n(Irrigated)",
-               "LT — Water-limited\n(Rainfed)",
-               "LT — Extra potential\n(Irrigated)")
+    values = fill_colours,
+    labels = c(
+      "Non-limited transpiration|Water-limited (Rainfed)"    = "Non-LT  —  Water-limited (rainfed)",
+      "Non-limited transpiration|Potential gain (Irrigated)"  = "Non-LT  —  Potential gain (irrigated)",
+      "Limited transpiration|Water-limited (Rainfed)"        = "LT  —  Water-limited (rainfed)",
+      "Limited transpiration|Potential gain (Irrigated)"     = "LT  —  Potential gain (irrigated)"
+    ),
+    breaks = c(
+      "Non-limited transpiration|Water-limited (Rainfed)",
+      "Non-limited transpiration|Potential gain (Irrigated)",
+      "Limited transpiration|Water-limited (Rainfed)",
+      "Limited transpiration|Potential gain (Irrigated)"
+    ),
+    name = "Yield component"
   ) +
 
-  coord_fixed(1.3, xlim = xlim, ylim = ylim) +
+  scale_size_continuous(
+    name   = "Potential yield (kg ha⁻¹)",
+    range  = c(2, 8),
+    breaks = c(2000, 3000, 4000),
+    labels = c("2 000", "3 000", "4 000")
+  ) +
+
+  scale_shape_manual(
+    name   = "Genotype",
+    values = c("Non-limited transpiration" = 21,
+               "Limited transpiration"      = 24)
+  ) +
+
+  coord_fixed(1.3, xlim = c(-105, -84), ylim = c(32, 46)) +
 
   labs(
-    x    = NULL, y = NULL,
-    fill = NULL,
-    title    = "Water-limited vs. potential soybean yield",
-    subtitle = "Pie area ∝ potential (irrigated) yield  |  Inner slice = water-limited (rainfed) yield"
+    x        = NULL, y = NULL,
+    title    = "Water-limited vs. potential soybean yield across six locations",
+    subtitle = "Pie area ∝ potential (irrigated) yield  ·  Inner slice = water-limited (rainfed) yield"
   ) +
 
   theme_bw(base_size = 11) +
@@ -155,15 +193,24 @@ p_map <- ggplot() +
     axis.ticks       = element_blank(),
     panel.grid       = element_blank(),
     legend.position  = "bottom",
-    legend.key.size  = unit(0.7, "lines"),
+    legend.box       = "vertical",
+    legend.key.size  = unit(0.75, "lines"),
+    legend.title     = element_text(face = "bold", size = 9),
     plot.title       = element_text(face = "bold", size = 12),
-    plot.subtitle    = element_text(colour = "grey40", size = 9)
+    plot.subtitle    = element_text(colour = "grey40", size = 9),
+    panel.border     = element_rect(colour = "grey70")
   ) +
-  guides(fill = guide_legend(nrow = 2, byrow = TRUE))
+  guides(
+    fill  = guide_legend(order = 1, nrow = 2, byrow = TRUE,
+                         override.aes = list(colour = NA)),
+    size  = guide_legend(order = 2),
+    shape = guide_legend(order = 3,
+                         override.aes = list(size = 3, stroke = 1))
+  )
 
 ggsave("Fig_map_yields.png",  plot = p_map,
-       width = 20, height = 16, units = "cm", dpi = 150, bg = "white")
+       width = 22, height = 17, units = "cm", dpi = 150, bg = "white")
 ggsave("Fig_map_yields.tiff", plot = p_map,
-       width = 20, height = 16, units = "cm", dpi = 300,
+       width = 22, height = 17, units = "cm", dpi = 300,
        compression = "lzw", bg = "white")
 message("Saved: Fig_map_yields (.png + .tiff)")
