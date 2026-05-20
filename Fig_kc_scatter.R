@@ -3,8 +3,8 @@
 setwd("/home/user/LT-trait")
 library(dplyr); library(tidyr); library(ggplot2); library(readxl); library(scales)
 
-eto <- read.csv("nasapower_ETo_seasonal.csv")
-ssm <- read_excel("SoybeanSSM_sims2.xlsx")
+pdoy_eto <- read.csv("nasapower_ETo_pdoy.csv")
+ssm      <- read_excel("SoybeanSSM_sims2.xlsx")
 
 d <- ssm %>%
   filter(Crop %in% c("SOYBEAN-MG4","SOYBEAN-LT1.5-MG4",
@@ -20,9 +20,10 @@ d <- ssm %>%
       grepl("NE",Manag) ~ "NE")
   ) %>%
   rename(Year = Pyear) %>%
-  left_join(eto, by = c("State","Year")) %>%
-  filter(!is.na(ETo_season_mm), !is.na(SUMETT)) %>%
-  mutate(Kc = SUMETT / ETo_season_mm)
+  left_join(pdoy_eto, by = c("State","Year","Planting_date")) %>%
+  filter(!is.na(ETo_pdoy_mm), !is.na(SUMETT)) %>%
+  mutate(Kc = SUMETT / ETo_pdoy_mm) %>%
+  rename(ETo_season_mm = ETo_pdoy_mm)
 
 ## Kc annotations per genotype
 kc_labels <- d %>%
@@ -69,7 +70,7 @@ p <- ggplot(d, aes(x = ETo_season_mm, y = SUMETT,
        y        = "Seasonal crop ET — SUMETT (mm)",
        colour   = NULL, fill = NULL,
        title    = "Genotype-dependent crop coefficient under irrigated conditions",
-       subtitle = "Slope of SUMETT on ETo approximates seasonal Kc  ·  Dotted line = Kc 1.0") +
+       subtitle = "Planting-date-specific ETo (Pdoy → R7 physiological maturity)  ·  Dotted line = Kc 1.0") +
   theme_bw(base_size = 12) +
   theme(legend.position  = "bottom",
         strip.background = element_rect(fill = "grey92", colour = NA),
