@@ -7,10 +7,11 @@ library(dplyr); library(tidyr); library(ggplot2); library(readxl)
 library(lme4); library(lmerTest); library(nlme)
 library(segmented)
 
-dir.create("experimental_data/GC_analysis", recursive = TRUE, showWarnings = FALSE)
+dir.create("experimental_data/stats",   recursive = TRUE, showWarnings = FALSE)
+dir.create("experimental_data/figures", recursive = TRUE, showWarnings = FALSE)
 
 ## ── Load combined clean data ──────────────────────────────────────────────────
-d <- read.csv("experimental_data/GC_analysis/GC_combined_clean.csv") %>%
+d <- read.csv("experimental_data/cleaned_data/GC_combined_clean.csv") %>%
   filter(!is.na(RelTranspiration), !is.na(VPD)) %>%
   mutate(
     Genotype    = factor(Genotype),
@@ -142,9 +143,9 @@ results <- d2 %>%
 print(as.data.frame(results[, c("Experiment","Genotype","Best_model","Lin_R2","Bilin_R2",
                                  "LP_R2","Bilin_BP","LP_BP","dAIC_best")]), digits = 3)
 
-write.csv(results, "experimental_data/GC_analysis/GC_model_comparison.csv",
+write.csv(results, "experimental_data/stats/GC_model_comparison.csv",
           row.names = FALSE)
-cat("\nSaved: GC_model_comparison.csv\n")
+cat("\nSaved: experimental_data/stats/GC_model_comparison.csv\n")
 
 ## ── Figure: fitted curves overlaid on data ───────────────────────────────────
 ## Generate smooth prediction lines for each model × genotype
@@ -235,9 +236,9 @@ p_models <- ggplot() +
         plot.title         = element_text(face = "bold", size = 11),
         plot.subtitle      = element_text(colour = "grey40", size = 8.5))
 
-ggsave("experimental_data/GC_analysis/GC_Fig_model_fits.png",
+ggsave("experimental_data/figures/GC_Fig_model_fits.png",
        plot = p_models, width = 26, height = 14, units = "cm", dpi = 150, bg = "white")
-ggsave("experimental_data/GC_analysis/GC_Fig_model_fits.tiff",
+ggsave("experimental_data/figures/GC_Fig_model_fits.tiff",
        plot = p_models, width = 26, height = 14, units = "cm", dpi = 300,
        compression = "lzw", bg = "white")
 
@@ -275,9 +276,9 @@ p_aic <- ggplot(aic_long,
         plot.subtitle    = element_text(colour = "grey40", size = 8.5),
         axis.text.y      = element_text(size = 8))
 
-ggsave("experimental_data/GC_analysis/GC_Fig_AIC_heatmap.png",
+ggsave("experimental_data/figures/GC_Fig_AIC_heatmap.png",
        plot = p_aic, width = 20, height = 14, units = "cm", dpi = 150, bg = "white")
-ggsave("experimental_data/GC_analysis/GC_Fig_AIC_heatmap.tiff",
+ggsave("experimental_data/figures/GC_Fig_AIC_heatmap.tiff",
        plot = p_aic, width = 20, height = 14, units = "cm", dpi = 300,
        compression = "lzw", bg = "white")
 
