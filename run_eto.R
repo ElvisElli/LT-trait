@@ -1,5 +1,5 @@
-## Headless runner — sources the ETo pipeline without RStudio dependencies.
-## Skips SSM merge (SoybeanSSM_sims2.xlsx not available in this environment).
+## Headless runner — ETo pipeline + merged Kc plot (requires SoybeanSSM_sims2.xlsx).
+## Saves PNG (for GitHub preview) alongside TIFF (for publication).
 
 setwd("/home/user/LT-trait")
 
@@ -10,6 +10,7 @@ library(ggplot2)
 library(lubridate)
 library(scales)
 library(purrr)
+library(readxl)
 
 ## ── 1. Site parameters ────────────────────────────────────────────────────────
 
@@ -129,13 +130,98 @@ p_clim <- eto_clim %>%
         plot.title       = element_text(face = "bold"))
 
 ggsave("ETo_climatology_growingseason.tiff", plot = p_clim,
-       width = 20, height = 13, units = "cm",
-       dpi = 300, compression = "lzw", bg = "white")
-message("Saved: ETo_climatology_growingseason.tiff")
+       width = 20, height = 13, units = "cm", dpi = 300,
+       compression = "lzw", bg = "white")
+ggsave("ETo_climatology_growingseason.png", plot = p_clim,
+       width = 20, height = 13, units = "cm", dpi = 150, bg = "white")
+message("Saved: ETo_climatology_growingseason (.tiff + .png)")
 
-## ── 6. Export CSVs ────────────────────────────────────────────────────────────
+## ── 6. Load and process SSM data ─────────────────────────────────────────────
+
+ssm.model <- read_excel("SoybeanSSM_sims2.xlsx")
+
+ssm_proc <- ssm.model %>%
+  filter(Crop %in% c("SOYBEAN-MG4", "SOYBEAN-LT1.5-MG4",
+                     "SOYBEAN-LT1.5-MG3", "SOYBEAN-MG3")) %>%
+  mutate(
+    Genotype = ifelse(Crop %in% c("SOYBEAN-MG4", "SOYBEAN-MG3"),
+                      "Non-limited transpiration", "Limited transpiration"),
+    Genotype = factor(Genotype,
+                      levels = c("Non-limited transpiration", "Limited transpiration")),
+    State = case_when(
+      grepl("AR", Manag, ignore.case = TRUE) ~ "AR",
+      grepl("MO", Manag, ignore.case = TRUE) ~ "MO",
+      grepl("NE", Manag, ignore.case = TRUE) ~ "NE",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(State)) %>%
+  rename(Year = Pyear)
+
+## ── 7. Merge ETo with SSM data ────────────────────────────────────────────────
+
+merged <- ssm_proc %>%
+  left_join(eto_seasonal, by = c("State", "Year")) %>%
+  filter(!is.na(ETo_season_mm), !is.na(SUMETT))
+
+## ── 8. Main plot: crop ET vs ETo — LT vs non-LT ──────────────────────────────
+
+kc_slopes <- merged %>%
+  group_by(Genotype, water_mgmt) %>%
+  summarise(
+    slope = coef(lm(SUMETT ~ ETo_season_mm))[["ETo_season_mm"]],
+    x_pos = quantile(ETo_season_mm, 0.75, na.rm = TRUE),
+    y_pos = quantile(SUMETT,        0.10, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(label = paste0("Kc = ", round(slope, 2)))
+
+p_main <- merged %>%
+  ggplot(aes(x = ETo_season_mm, y = SUMETT,
+             colour = Genotype, fill = Genotype)) +
+  geom_point(alpha = 0.45, shape = 21, size = 2.2,
+             stroke = 0.3, colour = "grey20") +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1.1, alpha = 0.15) +
+  geom_text(data = kc_slopes,
+            aes(x = x_pos, y = y_pos, label = label, colour = Genotype),
+            size = 3.3, fontface = "italic", show.legend = FALSE) +
+  facet_grid(water_mgmt ~ State) +
+  scale_colour_manual(values = c("Non-limited transpiration" = "#31a354",
+                                 "Limited transpiration"      = "#d95f02")) +
+  scale_fill_manual(values   = c("Non-limited transpiration" = "#31a354",
+                                 "Limited transpiration"      = "#d95f02")) +
+  scale_x_continuous(breaks = breaks_pretty(4)) +
+  scale_y_continuous(breaks = breaks_pretty(4)) +
+  labs(
+    x       = "Seasonal ETo (mm, DOY 120–300)",
+    y       = "Season crop evapotranspiration — SUMETT (mm)",
+    colour  = NULL, fill = NULL,
+    title   = "Crop water demand relative to atmospheric evaporative demand",
+    subtitle = "Kc slope: how much crop ET rises per unit of ETo — lower slope = more water conservative"
+  ) +
+  theme_bw(base_size = 12) +
+  theme(
+    legend.position  = "bottom",
+    legend.key.size  = unit(0.8, "lines"),
+    strip.background = element_rect(fill = "grey92", colour = NA),
+    strip.text       = element_text(face = "bold", size = 10),
+    panel.grid.minor = element_blank(),
+    plot.title       = element_text(face = "bold", size = 12),
+    plot.subtitle    = element_text(colour = "grey40", size = 9),
+    axis.title       = element_text(size = 10)
+  )
+
+ggsave("ETo_vs_cropET_LT_nonLT.tiff", plot = p_main,
+       width = 26, height = 18, units = "cm", dpi = 300,
+       compression = "lzw", bg = "white")
+ggsave("ETo_vs_cropET_LT_nonLT.png", plot = p_main,
+       width = 26, height = 18, units = "cm", dpi = 150, bg = "white")
+message("Saved: ETo_vs_cropET_LT_nonLT (.tiff + .png)")
+
+## ── 9. Export CSVs ────────────────────────────────────────────────────────────
 
 write.csv(eto_daily,    "nasapower_ETo_daily.csv",    row.names = FALSE)
 write.csv(eto_seasonal, "nasapower_ETo_seasonal.csv", row.names = FALSE)
-message("Saved: nasapower_ETo_daily.csv, nasapower_ETo_seasonal.csv")
-message("Done. Run nasapower_PM_ETo.R in RStudio with SoybeanSSM_sims2.xlsx to generate the merged Kc plot.")
+write.csv(merged,       "merged_ETo_cropET.csv",      row.names = FALSE)
+message("Saved CSVs: daily, seasonal, merged")
+message("All done.")
