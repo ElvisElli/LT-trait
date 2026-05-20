@@ -1,0 +1,9 @@
+"Genotype","Day","Method","Breakpoint","Slope_below","Slope_above","SE_below","SE_above"
+"PI398617",1,"two_lm",2,0.0093,-0.4307,NA,NA
+"PI398617",2,"two_lm",2,0.2825,0.1155,NA,NA
+"PI070229",1,"two_lm",2,0.0104,-0.4445,NA,NA
+"PI070229",2,"two_lm",2,0.1819,0.1161,NA,NA
+"PI423802",1,"two_lm",2,0.0057,-0.4827,NA,NA
+"PI423802",2,"two_lm",2,0.1291,0.1445,NA,NA
+"PI603465C",1,"two_lm",2,-0.007,-0.3171,NA,NA
+"PI603465C",2,"two_lm",2,0.1116,0.1909,NA,NA
