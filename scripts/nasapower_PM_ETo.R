@@ -18,10 +18,9 @@ library(nasapower)
 library(tidyverse)
 library(lubridate)
 library(readxl)
-library(rstudioapi)
 
 ## Set working directory ====
-setwd(dirname(getActiveDocumentContext()$path))
+setwd("/home/user/LT-trait")
 
 
 ## ── 1. Site parameters ────────────────────────────────────────────────────────
@@ -134,7 +133,7 @@ eto_seasonal <- eto_daily %>%
 
 ## ── 5. Load and process SSM simulation data ───────────────────────────────────
 
-ssm.model <- read_excel("SoybeanSSM_sims2.xlsx")
+ssm.model <- read_excel("data/SoybeanSSM_sims2.xlsx")
 
 ssm_proc <- ssm.model %>%
   filter(Crop %in% c("SOYBEAN-MG4", "SOYBEAN-LT1.5-MG4",
@@ -184,7 +183,7 @@ p_main <- merged %>%
   geom_text(data = kc_slopes,
             aes(x = x_pos, y = y_pos, label = label, colour = Genotype),
             size = 3.3, fontface = "italic", show.legend = FALSE) +
-  facet_grid(water_mgmt ~ State) +
+  facet_grid(Genotype ~ State) +
   scale_colour_manual(values = c("Non-limited transpiration" = "#31a354",
                                  "Limited transpiration"      = "#d95f02")) +
   scale_fill_manual(values   = c("Non-limited transpiration" = "#31a354",
@@ -196,7 +195,7 @@ p_main <- merged %>%
     y        = "Season crop evapotranspiration — SUMETT (mm)",
     colour   = NULL, fill = NULL,
     title    = "Crop water demand relative to atmospheric evaporative demand",
-    subtitle = "Kc slope: how much crop ET rises per unit of ETo — lower slope = more water conservative"
+    subtitle = "Kc slope: how much crop ET rises per unit of ETo — lower slope = more water conservative\n(cf. Marin et al. 2016, 2019: Kc decreases at high ETo environments)"
   ) +
   theme_bw(base_size = 12) +
   theme(
@@ -212,10 +211,69 @@ p_main <- merged %>%
 
 p_main
 
-ggsave("ETo_vs_cropET_LT_nonLT.tiff",
+ggsave("figures/Fig_kc_seasonal_scatter.png",
        plot = p_main,
        width = 26, height = 18, units = "cm",
-       dpi = 600, compression = "lzw", bg = "white")
+       dpi = 150, bg = "white")
+
+
+## ── 7b. Marin-style daily ETc vs ETo scatter (following Marin et al. 2016, 2019) ──
+## Convert seasonal totals to mean daily values:
+## ETc_daily = SUMETT / R7.PM  (mm d-1, over the crop cycle)
+## ETo_daily = ETo_season_mm / 181  (mm d-1, DOY 120-300 mean)
+## The regression slope = seasonal Kc; Marin et al. found Kc inversely related to ETo
+
+daily_etc <- merged %>%
+  filter(!is.na(R7.PM), R7.PM > 0, !is.na(SUMETT)) %>%
+  mutate(
+    ETc_daily = SUMETT / R7.PM,
+    ETo_daily = ETo_season_mm / 181,
+    Genotype  = factor(Genotype, levels = c("Non-limited transpiration","Limited transpiration"))
+  )
+
+kc_daily <- daily_etc %>%
+  group_by(Genotype, water_mgmt) %>%
+  summarise(
+    Kc_slope = coef(lm(ETc_daily ~ ETo_daily))[["ETo_daily"]],
+    x_pos    = quantile(ETo_daily, 0.75),
+    y_pos    = quantile(ETc_daily, 0.15),
+    .groups  = "drop"
+  ) %>%
+  mutate(label = paste0("Kc = ", round(Kc_slope, 2)))
+
+p_daily <- daily_etc %>%
+  ggplot(aes(x = ETo_daily, y = ETc_daily,
+             colour = Genotype, fill = Genotype)) +
+  geom_point(alpha = 0.35, shape = 21, size = 1.8,
+             stroke = 0.3, colour = "grey20") +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1.1, alpha = 0.15) +
+  geom_text(data = kc_daily,
+            aes(x = x_pos, y = y_pos, label = label, colour = Genotype),
+            size = 3.3, fontface = "italic", show.legend = FALSE) +
+  facet_wrap(water_mgmt ~ Genotype, nrow = 2, labeller = label_wrap_gen(20)) +
+  scale_colour_manual(values = c("Non-limited transpiration" = "#31a354",
+                                 "Limited transpiration"      = "#d95f02")) +
+  scale_fill_manual(values   = c("Non-limited transpiration" = "#31a354",
+                                 "Limited transpiration"      = "#d95f02")) +
+  labs(
+    x        = expression(Mean~daily~ETo~(mm~d^{-1})),
+    y        = expression(Mean~daily~crop~ET~(mm~d^{-1})),
+    colour   = NULL, fill = NULL,
+    title    = "Daily crop ET vs reference ET: LT limits water use at high evaporative demand",
+    subtitle = "Following Marin et al. (2016, 2019): Kc slope from lm(ETc ~ ETo); each point = one simulation year"
+  ) +
+  theme_bw(base_size = 12) +
+  theme(
+    legend.position   = "bottom",
+    strip.background  = element_rect(fill = "grey92", colour = NA),
+    strip.text        = element_text(face = "bold", size = 9),
+    panel.grid.minor  = element_blank(),
+    plot.title        = element_text(face = "bold", size = 12),
+    plot.subtitle     = element_text(colour = "grey40", size = 9)
+  )
+
+ggsave("figures/Fig_marin_daily_etc_eto.png",
+       plot = p_daily, width = 24, height = 18, units = "cm", dpi = 150, bg = "white")
 
 
 ## ── 8. Growing-season ETo climatology by site ─────────────────────────────────
@@ -246,13 +304,13 @@ eto_clim %>%
         panel.grid.minor = element_blank(),
         plot.title       = element_text(face = "bold"))
 
-ggsave("ETo_climatology_growingseason.tiff",
+ggsave("figures/ETo_climatology_growingseason.png",
        width = 20, height = 13, units = "cm",
-       dpi = 600, compression = "lzw", bg = "white")
+       dpi = 150, bg = "white")
 
 
 ## ── 9. Export ──────────────────────────────────────────────────────────────────
 
-write_csv(eto_daily,    "nasapower_ETo_daily.csv")
-write_csv(eto_seasonal, "nasapower_ETo_seasonal.csv")
-write_csv(merged,       "merged_ETo_cropET.csv")
+write_csv(eto_daily,    "data/nasapower_ETo_daily.csv")
+write_csv(eto_seasonal, "data/nasapower_ETo_seasonal.csv")
+write_csv(merged,       "data/merged_ETo_cropET.csv")
