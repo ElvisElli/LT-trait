@@ -10,6 +10,18 @@
 
 ## Script was created on: 2026-05-19 ====
 
+## ── Path configuration ────────────────────────────────────────────────────────
+## Cloud / Linux: runs as-is, no changes needed
+## Windows (local): edit the two paths below and uncomment them
+# project_root <- "C:/Users/YourName/Projects/LT-trait"   # ← git repo location
+# box_data     <- "C:/Users/YourName/Box/LT-trait-data"   # ← large files in Box
+if (.Platform$OS.type == "windows") {
+  # setwd(project_root)                                    # ← uncomment on Windows
+} else {
+  setwd("/home/user/LT-trait")
+}
+## ─────────────────────────────────────────────────────────────────────────────
+
 ## Cleaning up environment ====
 rm(list=ls())
 

@@ -1,6 +1,10 @@
 ## Fig 6 — Kc summary: LT vs Non-LT vs FAO-56 standard, by state
 
-setwd("/home/user/LT-trait")
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 library(dplyr); library(ggplot2); library(readxl)
 
 pdoy_eto <- read.csv("data/nasapower_ETo_pdoy.csv")   # cols: State, Year, Planting_date, ETo_pdoy_mm

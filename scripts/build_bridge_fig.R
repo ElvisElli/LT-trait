@@ -2,7 +2,11 @@
 ## Panel A — Sinclair et al. (2008) leaf transpiration vs VPD curves
 ## Panel B — Our seasonal Kc scatter (SUMETT vs ETo) from SSM simulations
 
-setwd("/home/user/LT-trait")
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 
 library(dplyr)
 library(tidyr)

@@ -1,6 +1,10 @@
 ## Fig 4 — Water productivity (yield / SUMETT) by genotype × water_mgmt × state
 
-setwd("/home/user/LT-trait")
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 library(dplyr); library(ggplot2); library(readxl)
 
 ssm <- read_excel("data/SoybeanSSM_sims2.xlsx")

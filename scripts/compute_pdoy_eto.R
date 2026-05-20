@@ -1,11 +1,18 @@
 ## Compute planting-date-specific seasonal ETo using actual Pdoy + R7.PM windows
 ## Output: nasapower_ETo_pdoy.csv — one row per State x Year x Planting_date
 
-setwd("/home/user/LT-trait")
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 library(dplyr); library(readxl)
 
 ## ── Daily ETo (3 representative sites, one per state) ────────────────────────
-eto_daily <- read.csv("nasapower_ETo_daily.csv") %>%
+## nasapower_ETo_daily.csv is NOT tracked in git (~7 MB). On Windows, point to
+## your Box folder: eto_daily_path <- file.path(box_data, "nasapower_ETo_daily.csv")
+eto_daily_path <- if (exists("box_data")) file.path(box_data, "nasapower_ETo_daily.csv") else "nasapower_ETo_daily.csv"
+eto_daily <- read.csv(eto_daily_path) %>%
   mutate(Date = as.Date(YYYYMMDD))
 
 ## State abbreviation from site name

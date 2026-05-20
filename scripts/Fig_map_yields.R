@@ -2,7 +2,11 @@
 ## Part 1 (p):  pie-chart map (preserved, path fixed)
 ## Part 2 (p2): cleaner facet_grid map — 2×2 panels (primary output)
 
-setwd("/home/user/LT-trait")
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 library(dplyr); library(tidyr); library(ggplot2); library(ggforce)
 library(maps); library(readxl); library(ggrepel)
 

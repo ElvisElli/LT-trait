@@ -2,7 +2,11 @@
 ## Fits all three model types per genotype × experiment using lme4 / nlme
 ## Output: model comparison table + fitted-curve figures
 
-setwd("/home/user/LT-trait")
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 library(dplyr); library(tidyr); library(ggplot2); library(readxl)
 library(lme4); library(lmerTest); library(nlme)
 library(segmented)
