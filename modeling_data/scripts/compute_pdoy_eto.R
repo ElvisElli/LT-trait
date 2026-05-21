@@ -1,11 +1,18 @@
 ## Compute planting-date-specific seasonal ETo using actual Pdoy + R7.PM windows
 ## Output: nasapower_ETo_pdoy.csv — one row per State x Year x Planting_date
 
-setwd("/home/user/LT-trait")
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 library(dplyr); library(readxl)
 
 ## ── Daily ETo (3 representative sites, one per state) ────────────────────────
-eto_daily <- read.csv("nasapower_ETo_daily.csv") %>%
+## nasapower_ETo_daily.csv is NOT tracked in git (~7 MB). On Windows, point to
+## your Box folder: eto_daily_path <- file.path(box_data, "nasapower_ETo_daily.csv")
+eto_daily_path <- if (exists("box_data")) file.path(box_data, "nasapower_ETo_daily.csv") else "modeling_data/data/nasapower_ETo_daily.csv"
+eto_daily <- read.csv(eto_daily_path) %>%
   mutate(Date = as.Date(YYYYMMDD))
 
 ## State abbreviation from site name
@@ -17,7 +24,7 @@ eto_daily <- eto_daily %>%
   ))
 
 ## ── Growing-season windows from SSM (Pdoy + R7.PM, capped at DOY 330) ────────
-ssm <- read_excel("SoybeanSSM_sims2.xlsx") %>%
+ssm <- read_excel("modeling_data/data/SoybeanSSM_sims2.xlsx") %>%
   mutate(State = case_when(
     grepl("AR", Manag) ~ "AR",
     grepl("MO", Manag) ~ "MO",
@@ -52,7 +59,7 @@ pdoy_eto <- windows %>%
                                            pdoy_start, pdoy_end)) %>%
   ungroup()
 
-write.csv(pdoy_eto, "nasapower_ETo_pdoy.csv", row.names = FALSE)
+write.csv(pdoy_eto, "modeling_data/data/nasapower_ETo_pdoy.csv", row.names = FALSE)
 message("Saved: nasapower_ETo_pdoy.csv (", nrow(pdoy_eto), " rows)")
 
 ## Quick summary

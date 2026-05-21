@@ -1,6 +1,10 @@
 ## Standalone figure: Sinclair et al. (2008) leaf transpiration vs VPD
 
-setwd("/home/user/LT-trait")
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 
 library(dplyr)
 library(ggplot2)
@@ -68,9 +72,8 @@ p <- ggplot(sinclair, aes(x = VPD, y = Tr,
   guides(colour   = guide_legend(order = 1, override.aes = list(linewidth = 1.2)),
          linetype = guide_legend(order = 2))
 
-ggsave("Fig_sinclair_lt_trait.png",  plot = p,
+ggsave("modeling_data/figures/Fig_sinclair_lt_trait.png",  plot = p,
        width = 16, height = 13, units = "cm", dpi = 150, bg = "white")
-ggsave("Fig_sinclair_lt_trait.tiff", plot = p,
+ggsave("modeling_data/figures/Fig_sinclair_lt_trait.png", plot = p,
        width = 16, height = 13, units = "cm", dpi = 300,
-       compression = "lzw", bg = "white")
-message("Saved: Fig_sinclair_lt_trait (.png + .tiff)")
+message("Saved: figures/Fig_sinclair_lt_trait.png")

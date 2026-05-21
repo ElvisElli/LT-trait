@@ -236,6 +236,34 @@ if (file.exists("figures/SC_field_Fig_SC_vs_Yield.png")) {
 }
 ```
 
+# Data Quality Audit Findings
+
+A systematic audit of all Excel source files (GC1 `Data_analysis.xlsx`, GC2 `GC_experiment_2.xlsx`, GC3 `GC_experiment_3.xlsx`) was completed after initial data processing. Key findings and corrections applied to `GC_combined_clean.csv` are documented below.
+
+## Critical Issues (Applied)
+
+| Issue | File | Details | Action |
+|---|---|---|---|
+| VPD error, GC3 Day 2 T4 | GC3 Final sheet | Day 2 T4 VPD recorded as 2.7 kPa; actual logger value = 2.506 kPa (14 rows affected) | Corrected to 2.506 kPa |
+| SC outliers, GC1 | GC1 Final-ee | PI603457A pots 6 & 13 (Day 1, T2): SC ~10⁶ mol m⁻² s⁻¹ — impossible values, likely unit-conversion error in Excel | Values excluded (NA) |
+| E_apparent column | GC1 Final-ee | All 180 rows: values ~10⁶ mmol m⁻² s⁻¹, unphysical (median 2,066,174) | Column not used in analysis |
+
+## Moderate Issues (Documented)
+
+| Issue | File | Details |
+|---|---|---|
+| Missing replication | GC1 | PI471938 has 3 reps (scale W7 absent); all other genotypes have 4. Unbalanced design. |
+| Missing replication | GC3 | PI423802 has 2 reps (germination failure in 2 pots) |
+| GC2 — no transpiration data | GC2 | No Final sheet; only Tracking VPD and Tracking Weights sheets exist. GC2 is excluded from all analysis. |
+
+## GC2 VPD Level Confirmation
+
+GC2 Tracking VPD sheet confirms six treatment levels: T1 = 0.978, T2 = 1.527, T3 = 1.969, T4 = 2.422, T5 = 2.839, T6 = 3.355 kPa (Day 1). These are consistent with GC1 targets but GC2 transpiration data cannot be reconstructed without post-hoc weight differencing from the Tracking Weights sheet.
+
+## Stomatal Conductance vs VPD Relationship
+
+All GC1 genotypes show **decreasing SC with increasing VPD** (Pearson r = −0.32 to −0.62). This is physiologically real: stomata close in response to higher atmospheric demand. The negative SC–RelTranspiration correlation at the individual observation level does not indicate data error — it reflects the fact that atmospheric demand drives total transpiration upward even as stomatal aperture decreases.
+
 # Data Summary Table
 
 ```{r data-summary}

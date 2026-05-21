@@ -1,10 +1,14 @@
 ## Fig 3 — ETo vs SUMETT (irrigated only) — clean Kc regression by genotype
 
-setwd("/home/user/LT-trait")
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 library(dplyr); library(tidyr); library(ggplot2); library(readxl); library(scales)
 
-pdoy_eto <- read.csv("nasapower_ETo_pdoy.csv")
-ssm      <- read_excel("SoybeanSSM_sims2.xlsx")
+pdoy_eto <- read.csv("modeling_data/data/nasapower_ETo_pdoy.csv")
+ssm      <- read_excel("modeling_data/data/SoybeanSSM_sims2.xlsx")
 
 d <- ssm %>%
   filter(Crop %in% c("SOYBEAN-MG4","SOYBEAN-LT1.5-MG4",
@@ -79,8 +83,7 @@ p <- ggplot(d, aes(x = ETo_season_mm, y = SUMETT,
         plot.title       = element_text(face = "bold", size = 12),
         plot.subtitle    = element_text(colour = "grey40", size = 9))
 
-ggsave("Fig_kc_scatter.png",  plot = p, width = 24, height = 13,
+ggsave("modeling_data/figures/Fig_kc_scatter.png",  plot = p, width = 24, height = 13,
        units = "cm", dpi = 150, bg = "white")
-ggsave("Fig_kc_scatter.tiff", plot = p, width = 24, height = 13,
-       units = "cm", dpi = 300, compression = "lzw", bg = "white")
+ggsave("modeling_data/figures/Fig_kc_scatter.png", plot = p, width = 24, height = 13,
 message("Saved: Fig_kc_scatter")

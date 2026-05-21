@@ -2,7 +2,11 @@
 ## Panel A — Sinclair et al. (2008) leaf transpiration vs VPD curves
 ## Panel B — Our seasonal Kc scatter (SUMETT vs ETo) from SSM simulations
 
-setwd("/home/user/LT-trait")
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 
 library(dplyr)
 library(tidyr)
@@ -76,8 +80,8 @@ pA <- ggplot(sinclair, aes(x = VPD, y = Tr,
 
 ## ── Panel B: Seasonal Kc scatter from SSM simulations ────────────────────────
 
-eto_seasonal <- read.csv("nasapower_ETo_seasonal.csv")
-ssm.model    <- read_excel("SoybeanSSM_sims2.xlsx")
+eto_seasonal <- read.csv("modeling_data/data/nasapower_ETo_seasonal.csv")
+ssm.model    <- read_excel("modeling_data/data/SoybeanSSM_sims2.xlsx")
 
 ssm_proc <- ssm.model %>%
   filter(Crop %in% c("SOYBEAN-MG4", "SOYBEAN-LT1.5-MG4",
@@ -149,10 +153,9 @@ pB <- ggplot(merged, aes(x = ETo_season_mm, y = SUMETT,
 p_bridge <- plot_grid(pA, pB, ncol = 2, align = "h", axis = "tb",
                       rel_widths = c(1, 1))
 
-ggsave("Fig_bridge_sinclair_vs_kc.png",  plot = p_bridge,
+ggsave("modeling_data/figures/Fig_bridge_sinclair_vs_kc.png",  plot = p_bridge,
        width = 24, height = 14, units = "cm", dpi = 150, bg = "white")
-ggsave("Fig_bridge_sinclair_vs_kc.tiff", plot = p_bridge,
+ggsave("modeling_data/figures/Fig_bridge_sinclair_vs_kc.png", plot = p_bridge,
        width = 24, height = 14, units = "cm", dpi = 300,
-       compression = "lzw", bg = "white")
 
-message("Saved: Fig_bridge_sinclair_vs_kc (.png + .tiff)")
+message("Saved: figures/Fig_bridge_sinclair_vs_kc.png")

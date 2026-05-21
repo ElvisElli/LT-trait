@@ -3,7 +3,11 @@
 ## and field stomatal conductance data.
 ## Outputs saved to: experimental_data/GC_analysis/
 
-setwd("/home/user/LT-trait")
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 
 # ─── packages ─────────────────────────────────────────────────────────────────
 suppressPackageStartupMessages({

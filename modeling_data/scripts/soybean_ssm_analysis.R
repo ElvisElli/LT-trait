@@ -11,19 +11,21 @@
 rm(list=ls())
 
 ## Libraries ====
-library(rstudioapi)
 library(tidyverse)
 library(readxl)
 library(cowplot)
 
 
-## Set working directory ====
-setwd(dirname(getActiveDocumentContext()$path))
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 
 source("plot_theme.R")
 
 
-ssm.model <- read_excel("SoybeanSSM_sims2.xlsx")
+ssm.model <- read_excel("modeling_data/data/SoybeanSSM_sims2.xlsx")
 
 str(ssm.model)
 
@@ -66,7 +68,7 @@ plot1 %>%
   scale_fill_manual(values = c("#31a354","#f7fcb9"))+
   labs(x=element_blank(),y="Seed yield (kg/ha)")
 
-ggsave("p1.tiff",width=20,height=15,units ="cm",dpi=600,compression="lzw",bg="white")
+ggsave("modeling_data/figures/Fig_ssm_yield_rainclass.png",width=20,height=15,units ="cm",dpi=600,compression="lzw",bg="white")
 
 ##for USB, 12/12====
 plot1 %>%  
@@ -81,7 +83,7 @@ plot1 %>%
   scale_fill_manual(values = c("#31a354","#f7fcb9"))+
   labs(x=element_blank(),y="Seed yield (kg/ha)")
 
-ggsave("p1.USB.tiff",width=20,height=10,units ="cm",dpi=600,compression="lzw",bg="white")
+ggsave("modeling_data/figures/Fig_ssm_yield_USB.png",width=20,height=10,units ="cm",dpi=600,compression="lzw",bg="white")
 
 ##for discussion
 plot1 %>% 
@@ -149,7 +151,7 @@ plot2 %>%
   scale_colour_manual(values = c("#31a354","#f7fcb9"))+
   labs(x='Season temperature (°C)',y="Season nonwater limited evapotranspiration (mm)")
 
-ggsave("p2.tiff",width=20,height=20,units ="cm",dpi=600,compression="lzw",bg="white")
+ggsave("modeling_data/figures/Fig_ssm_et_temperature.png",width=20,height=20,units ="cm",dpi=600,compression="lzw",bg="white")
 
 ##plot 3
 
@@ -189,7 +191,7 @@ plot3 %>%
   labs(x=element_blank(),y="Crop evapotranspiration (mm)")
   
 
-ggsave("p3.tiff",width=20,height=15,units ="cm",dpi=600,compression="lzw",bg="white")
+ggsave("modeling_data/figures/Fig_ssm_et_stage.png",width=20,height=15,units ="cm",dpi=600,compression="lzw",bg="white")
 
 ##one more plot with year to year variability, and send presentation to co-authors
 

@@ -1,9 +1,13 @@
 ## Fig 4 — Water productivity (yield / SUMETT) by genotype × water_mgmt × state
 
-setwd("/home/user/LT-trait")
+## ── Path configuration ────────────────────────────────────────────────────────
+## Windows (local): edit and uncomment the line below
+# project_root <- "C:/Users/YourName/Projects/LT-trait"
+if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
+## ─────────────────────────────────────────────────────────────────────────────
 library(dplyr); library(ggplot2); library(readxl)
 
-ssm <- read_excel("SoybeanSSM_sims2.xlsx")
+ssm <- read_excel("modeling_data/data/SoybeanSSM_sims2.xlsx")
 
 d <- ssm %>%
   filter(Crop %in% c("SOYBEAN-MG4","SOYBEAN-LT1.5-MG4",
@@ -60,8 +64,7 @@ p <- ggplot(d, aes(x = Genotype, y = WP, fill = Genotype)) +
         plot.subtitle    = element_text(colour = "grey40", size = 9),
         axis.text.x      = element_text(size = 9))
 
-ggsave("Fig_water_productivity.png",  plot = p, width = 18, height = 14,
+ggsave("modeling_data/figures/Fig_water_productivity.png",  plot = p, width = 18, height = 14,
        units = "cm", dpi = 150, bg = "white")
-ggsave("Fig_water_productivity.tiff", plot = p, width = 18, height = 14,
-       units = "cm", dpi = 300, compression = "lzw", bg = "white")
+ggsave("modeling_data/figures/Fig_water_productivity.png", plot = p, width = 18, height = 14,
 message("Saved: Fig_water_productivity")

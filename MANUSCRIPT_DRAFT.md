@@ -108,11 +108,33 @@ The agronomic case for LT germplasm is well established at the crop level:
 simulations and field trials consistently show yield advantages under rainfed
 conditions (Sinclair et al., 2010). Yet the implications of the LT trait for
 seasonal water budgeting and irrigation management have not been quantified
-within the FAO-56 framework. If LT genotypes consume materially less water per
-unit atmospheric demand, then the Kc used to schedule irrigation for these
-genotypes should be lower than the FAO-56 standard. The failure to account for
-this could lead to systematic over-irrigation of LT fields, wasting water and
-eroding the conservation value of the trait at the regional scale.
+within the FAO-56 framework.
+
+A parallel challenge to the fixed-Kc paradigm has emerged from empirical studies
+of crop-atmosphere coupling. Marin et al. (2016) showed that for highly
+canopy-atmosphere coupled crops (citrus, coffee, sugarcane), the basal crop
+coefficient (Kcb) decreases as ETo increases — the opposite of the fixed-Kc
+assumption — because high atmospheric demand increases internal plant resistance
+to vapour diffusion and induces stomatal closure. Marin et al. (2019) extended
+this finding to soybean, wheat, and potato under Brazilian cropping conditions,
+reporting a whole-cycle soybean Kc of 0.83 ± 0.39 and demonstrating that when
+ETo exceeded 4 mm d⁻¹, measured crop water use was consistently lower than
+prescribed by the FAO-56 tabulated values. More recently, De Melo et al. (2026)
+argued that the transferability of Kc values is further limited because standard
+empirical Kc derivations overlook soil and plant hydraulic properties that
+regulate actual plant-available water — suggesting that process-based approaches
+more accurately capture water use dynamics under varying conditions. Taken
+together, these findings imply that the inverse ETo–Kc relationship is a general
+physiological consequence of plant resistance to water flow, and that the LT
+trait in soybean — by genetically amplifying this resistance via low leaf
+hydraulic conductance — should produce a predictable and mechanistically
+grounded departure from a fixed-Kc framework.
+
+If LT genotypes consume materially less water per unit atmospheric demand, then
+the Kc used to schedule irrigation for these genotypes should be lower than the
+FAO-56 standard. The failure to account for this could lead to systematic
+over-irrigation of LT fields, wasting water and eroding the conservation value
+of the trait at the regional scale.
 
 The objectives of this study were: (1) to compute planting-date-specific
 seasonal Kc values for LT and non-LT soybean genotypes across six US locations
@@ -140,8 +162,8 @@ demand relevant to current and projected soybean production environments.
 ### 2.2 Crop simulations
 
 Seasonal crop evapotranspiration (SUMETT, mm) and grain yield (kg ha⁻¹) were
-obtained from Sinclair SSM (Decision Support System for Agrotechnology Transfer —
-Simplified Soybean Model; Boote et al., [year]) simulations spanning 1990–2019
+obtained from Sinclair SSM (Sinclair Simplified Soybean Model; Sinclair et al., 2010)
+simulations spanning 1990–2019
 (n = 2 160 simulation-years). Two contrasting genotypic classes were simulated:
 (i) non-limited transpiration (non-LT), represented by standard MG3 and MG4
 soybean cultivars (SOYBEAN-MG3, SOYBEAN-MG4); and (ii) limited transpiration
@@ -174,7 +196,7 @@ ALLSKY_SFC_SW_DWN) and estimated longwave emission (Rnl) using the solar geometr
 approach (declination, hour angle, eccentricity correction). Negative ETo values
 (possible on overcast days) were set to zero.
 
-### 2.4 Planting-date-specific crop coefficient
+### 2.4 Planting-date-specific crop coefficient and Marin-style daily ETc/ETo analysis
 
 To minimise the confounding effects of fixed seasonal ETo windows, the seasonal
 crop coefficient was computed over the actual growing period for each genotype ×
@@ -186,6 +208,15 @@ and daily ETo was summed over each resulting window to yield a planting-date-spe
 seasonal ETo (ETo_pdoy, mm). The seasonal crop coefficient was then:
 
 > Kc = SUMETT / ETo_pdoy
+
+Following Marin et al. (2016, 2019), who plotted daily crop ET (ETc, mm d⁻¹)
+against daily ETo (mm d⁻¹) and derived Kc as the linear regression slope, we
+additionally expressed seasonal totals as mean daily values: ETc_daily = SUMETT / R7.PM
+and ETo_daily = ETo_season_mm / 181 days (the DOY 120–300 growing season). The
+regression slope of ETc_daily on ETo_daily represents a Marin-style Kc that can
+be directly compared across genotypic classes and water management regimes. A
+Kc slope that is both lower in magnitude and less responsive to variation in daily
+ETo is the expected signature of the LT trait operating at the seasonal scale.
 
 Mean Kc values and their standard deviations were computed by genotypic class and
 state. To test whether the slope of the crop ET–ETo relationship differed between
@@ -307,7 +338,7 @@ LT trait does not merely reduce average water use, it reduces the sensitivity of
 seasonal water demand to the atmospheric variability that drives large inter-annual
 swings in irrigation requirement.
 
-### 4.2 Implications for irrigation scheduling
+### 4.2 Implications for irrigation scheduling and the Kc–ETo relationship
 
 Current irrigation scheduling protocols apply species-level Kc tables (Allen et
 al., 1998; Doorenbos and Pruitt, 1977) with no provision for genotypic adjustment.
@@ -318,6 +349,32 @@ substantial unaccounted water saving. Conversely, using a non-LT Kc to schedule
 irrigation for LT fields would not induce crop water stress, but it would fail
 to capture the water conservation value of the LT trait and reduce the economic
 incentive for adopting climate-smart varieties.
+
+The Marin-style daily ETc vs ETo analysis adds a further dimension to this
+recommendation. Marin et al. (2016, 2019) demonstrated empirically that Kc is
+not constant across the ETo range: for coupled crops including soybean, Kc
+decreases as daily ETo increases above ~4 mm d⁻¹, because high atmospheric
+demand induces stomatal closure that limits the transpiration flux below what a
+fixed Kc would predict. The LT trait provides a genetic mechanism for exactly
+this response: by encoding a VPD-threshold hydraulic restriction, LT genotypes
+enforce a structural version of the atmospheric-coupling-driven Kc reduction that
+Marin et al. observed empirically across multiple crops. In this sense, LT soybean
+represents an extreme of the continuum described by Marin — a genotype in which
+the inverse ETo–Kc relationship is not merely a passive consequence of canopy
+physiology but a heritable, selectable trait with direct agronomic implications.
+The Marin-style scatter of our simulated data (Fig. 7b) confirms this: the LT
+regression slope (Kc) is lower than Non-LT across all ETo levels, and the
+insensitivity of LT crop ET to inter-annual ETo variability (flat fitted line)
+mirrors the plateau behaviour documented at the leaf scale.
+
+De Melo et al. (2026) further caution that empirical Kc derivations — whether
+from this study or from Marin's field experiments — neglect the soil and plant
+hydraulic properties that regulate the actual soil water available for
+transpiration. While our approach uses a process-based model (Sinclair SSM) that
+encodes crop hydraulics implicitly through the LT response function, future
+validation with direct ET measurements (lysimeters, eddy covariance) should
+account for soil texture and root architecture variation across the six study
+sites.
 
 We recommend that Kc tables for soybean be extended to include a genotypic
 modifier distinguishing, at minimum, between limited-transpiration and standard
@@ -459,6 +516,21 @@ conductance with rapid stomatal closure. Plant Cell Environ. 31, 796–803.
 
 Sparks, A.H., 2018. nasapower: A NASA POWER global meteorology, surface solar
 energy and climatology data client for R. J. Open Source Softw. 3, 1035.
+
+Marin, F.R., Angelocci, L.R., Nassif, D.S.P., Costa, L.G., Vianna, M.S., Carvalho,
+K.S., 2016. Crop coefficient changes with reference evapotranspiration for highly
+canopy-atmosphere coupled crops. Agric. Water Manage. 163, 139–145.
+https://doi.org/10.1016/j.agwat.2015.09.010
+
+Marin, F.R., Angelocci, L.R., Nassif, D.S.P., Vianna, M.S., Pilau, F.G., da Silva,
+E.H.F.M., Sobenko, L., Gonçalves, A.O., Pereira, R.A.A., Carvalho, K.S., 2019.
+Revisiting the crop coefficient–reference evapotranspiration procedure for improving
+irrigation management. Theor. Appl. Climatol. 138, 1785–1793.
+https://doi.org/10.1007/s00704-019-02940-7
+
+De Melo, M.L.A., de Jong van Lier, Q., Marin, F.R., van Dam, J.C., 2026. FAO crop
+coefficient and plant-available water: Do soil and plant hydraulic properties matter?
+Agron. J. 118, e70277. https://doi.org/10.1002/agj2.70277
 
 ---
 
