@@ -72,8 +72,8 @@ p <- ggplot(sinclair, aes(x = VPD, y = Tr,
   guides(colour   = guide_legend(order = 1, override.aes = list(linewidth = 1.2)),
          linetype = guide_legend(order = 2))
 
-ggsave("figures/Fig_sinclair_lt_trait.png",  plot = p,
+ggsave("modeling_data/figures/Fig_sinclair_lt_trait.png",  plot = p,
        width = 16, height = 13, units = "cm", dpi = 150, bg = "white")
-ggsave("figures/Fig_sinclair_lt_trait.png", plot = p,
+ggsave("modeling_data/figures/Fig_sinclair_lt_trait.png", plot = p,
        width = 16, height = 13, units = "cm", dpi = 300,
 message("Saved: figures/Fig_sinclair_lt_trait.png")

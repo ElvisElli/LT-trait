@@ -10,41 +10,19 @@ Agronomic analysis for **limited-transpiration (LT) soybean** trait evaluation, 
 
 ```
 LT-trait/
-├── CLAUDE.md                   ← this file
-├── MANUSCRIPT_DRAFT.md         ← first draft targeting Agric Water Management
-├── RIG_Final_Report.md         ← RIG 2024-2026 final report
-├── PLAN.md                     ← figure plan and analysis roadmap
-├── scripts/                    ← all R analysis scripts
-│   ├── nasapower_PM_ETo.R      ← main pipeline: download ETo + ETo vs cropET plots
-│   ├── run_eto.R               ← headless ETo download (no RStudio needed)
-│   ├── compute_pdoy_eto.R      ← planting-date-specific ETo windows
-│   ├── Fig_sinclair_lt_trait.R ← Fig 1 — Sinclair leaf VPD response
-│   ├── Fig_kc_scatter.R        ← Fig 3 — Kc scatter (irrigated, pdoy ETo)
-│   ├── Fig_kc_summary.R        ← Fig 6 — Kc by state vs FAO-56 reference
-│   ├── Fig_map_yields.R        ← Fig 5 — map: pie + facet_wrap versions
-│   ├── Fig_water_productivity.R← Fig 4 — water productivity violin+box
-│   ├── build_bridge_fig.R      ← Supplementary — Sinclair + Kc bridge
-│   └── soybean_ssm_analysis.R  ← SSM plots: yield, ET, temperature
-├── figures/                    ← all PNG figures (no TIFF)
-│   ├── Fig_sinclair_lt_trait.png
-│   ├── ETo_climatology_growingseason.png
-│   ├── Fig_kc_scatter.png
-│   ├── Fig_kc_seasonal_scatter.png  ← new (LT/Non-LT rows × State cols)
-│   ├── Fig_marin_daily_etc_eto.png  ← new (Marin-style daily ETc vs ETo)
-│   ├── Fig_water_productivity.png
-│   ├── Fig_map_yields_pie.png       ← pie-chart map
-│   ├── Fig_map_yields_facet.png     ← new: facet_grid(water_mgmt ~ Genotype)
-│   ├── Fig_kc_summary.png
-│   └── Fig_bridge_sinclair_vs_kc.png
-├── data/                       ← input data (tracked in git except large files)
-│   ├── SoybeanSSM_sims2.xlsx   ← Sinclair SSM output (2 160 rows)
-│   ├── merged_ETo_cropET.csv   ← joined ETo + SSM data (primary analysis file)
-│   ├── nasapower_ETo_pdoy.csv  ← planting-date-specific ETo by State×Year×Pdoy
-│   └── nasapower_ETo_seasonal.csv ← annual growing-season ETo (DOY 120-300)
-├── reports/
-│   ├── SSM_analysis_report.Rmd ← RMarkdown source
-│   └── SSM_analysis_report.html← rendered HTML report
-└── experimental_data/          ← growth chamber experiments (see its own CLAUDE.md)
+├── CLAUDE.md                        ← this file
+├── MANUSCRIPT_DRAFT.md              ← first draft targeting Agric Water Management
+├── RIG_Final_Report.md              ← RIG 2024-2026 final report
+├── PLAN.md                          ← figure plan and analysis roadmap
+├── modeling_data/                   ← SSM simulations + NASA POWER analysis
+│   ├── CLAUDE.md
+│   ├── data/                        ← SoybeanSSM_sims2.xlsx, merged_ETo_cropET.csv, etc.
+│   ├── figures/                     ← all PNG figures (no TIFF)
+│   ├── references/                  ← Chamarthi 2022 PDF
+│   ├── reports/                     ← SSM_analysis_report.Rmd + .html
+│   ├── scripts/                     ← all R analysis scripts
+│   └── stats/                       ← model output tables (future use)
+└── experimental_data/               ← growth chamber experiments (see its own CLAUDE.md)
     ├── CLAUDE.md
     ├── GC_analysis_report.html
     ├── AUDIT_REPORT.md
@@ -57,32 +35,32 @@ LT-trait/
 
 ## Running scripts
 
-**Full pipeline (requires `data/SoybeanSSM_sims2.xlsx`):**
+**Full pipeline (requires `modeling_data/data/SoybeanSSM_sims2.xlsx`):**
 ```r
 setwd("/home/user/LT-trait")
-source("scripts/nasapower_PM_ETo.R")   # ETo download + all ETo/Kc plots
-source("scripts/Fig_map_yields.R")     # yield maps (pie + facet)
-source("scripts/Fig_kc_scatter.R")     # Kc scatter
-source("scripts/Fig_water_productivity.R")
-source("scripts/Fig_kc_summary.R")
+source("modeling_data/scripts/nasapower_PM_ETo.R")       # ETo download + all ETo/Kc plots
+source("modeling_data/scripts/Fig_map_yields.R")          # yield maps (pie + facet)
+source("modeling_data/scripts/Fig_kc_scatter.R")          # Kc scatter
+source("modeling_data/scripts/Fig_water_productivity.R")
+source("modeling_data/scripts/Fig_kc_summary.R")
 ```
 
 **HTML report:**
 ```r
 setwd("/home/user/LT-trait")
-rmarkdown::render("reports/SSM_analysis_report.Rmd",
-                  output_file = "reports/SSM_analysis_report.html")
+rmarkdown::render("modeling_data/reports/SSM_analysis_report.Rmd",
+                  output_file = "modeling_data/reports/SSM_analysis_report.html")
 ```
 
 **Headless / cloud (ETo only, no RStudio):**
 ```bash
-Rscript scripts/run_eto.R              # download NASA POWER + compute ETo
-Rscript scripts/compute_pdoy_eto.R    # requires nasapower_ETo_daily.csv
+Rscript modeling_data/scripts/run_eto.R             # download NASA POWER + compute ETo
+Rscript modeling_data/scripts/compute_pdoy_eto.R   # requires nasapower_ETo_daily.csv
 ```
 
 ## Key data file
 
-`data/SoybeanSSM_sims2.xlsx` — Sinclair SSM simulation output (1990–2019, 6 locations, 2 160 rows).
+`modeling_data/data/SoybeanSSM_sims2.xlsx` — Sinclair SSM simulation output (1990–2019, 6 locations, 2 160 rows).
 
 | Column | Description |
 |---|---|
@@ -98,7 +76,7 @@ Rscript scripts/compute_pdoy_eto.R    # requires nasapower_ETo_daily.csv
 | `SUMET2` / `SUMET3` | ET split by growth stage (sowing→R5, R5→harvest) |
 | `Yield_kgha` | Grain yield (kg/ha) |
 
-`data/merged_ETo_cropET.csv` — primary analysis file (SSM joined with NASA POWER ETo):
+`modeling_data/data/merged_ETo_cropET.csv` — primary analysis file (SSM joined with NASA POWER ETo):
 
 Additional columns: `Genotype` ("Non-limited transpiration" / "Limited transpiration"), `State` (AR/MO/NE), `site` (weather station), `ETo_season_mm` (DOY 120-300 seasonal ETo)
 
@@ -141,10 +119,10 @@ De Melo et al. (2026): standard empirical Kc derivations overlook soil/plant hyd
 
 | File | Notes |
 |---|---|
-| `data/merged_ETo_cropET.csv` | Primary analysis file |
-| `data/nasapower_ETo_pdoy.csv` | Planting-date-specific ETo |
-| `data/nasapower_ETo_seasonal.csv` | Annual growing-season ETo |
-| `data/SoybeanSSM_sims2.xlsx` | SSM simulation output |
+| `modeling_data/data/merged_ETo_cropET.csv` | Primary analysis file |
+| `modeling_data/data/nasapower_ETo_pdoy.csv` | Planting-date-specific ETo |
+| `modeling_data/data/nasapower_ETo_seasonal.csv` | Annual growing-season ETo |
+| `modeling_data/data/SoybeanSSM_sims2.xlsx` | SSM simulation output |
 | `figures/*.png` | All figures (PNG only) |
 | `reports/SSM_analysis_report.html` | HTML analysis report |
 | `nasapower_ETo_daily.csv` | **NOT tracked** (~7 MB, regenerate with `scripts/run_eto.R`) |

@@ -7,8 +7,8 @@ if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/L
 ## ─────────────────────────────────────────────────────────────────────────────
 library(dplyr); library(tidyr); library(ggplot2); library(readxl); library(scales)
 
-pdoy_eto <- read.csv("data/nasapower_ETo_pdoy.csv")
-ssm      <- read_excel("data/SoybeanSSM_sims2.xlsx")
+pdoy_eto <- read.csv("modeling_data/data/nasapower_ETo_pdoy.csv")
+ssm      <- read_excel("modeling_data/data/SoybeanSSM_sims2.xlsx")
 
 d <- ssm %>%
   filter(Crop %in% c("SOYBEAN-MG4","SOYBEAN-LT1.5-MG4",
@@ -83,7 +83,7 @@ p <- ggplot(d, aes(x = ETo_season_mm, y = SUMETT,
         plot.title       = element_text(face = "bold", size = 12),
         plot.subtitle    = element_text(colour = "grey40", size = 9))
 
-ggsave("figures/Fig_kc_scatter.png",  plot = p, width = 24, height = 13,
+ggsave("modeling_data/figures/Fig_kc_scatter.png",  plot = p, width = 24, height = 13,
        units = "cm", dpi = 150, bg = "white")
-ggsave("figures/Fig_kc_scatter.png", plot = p, width = 24, height = 13,
+ggsave("modeling_data/figures/Fig_kc_scatter.png", plot = p, width = 24, height = 13,
 message("Saved: Fig_kc_scatter")

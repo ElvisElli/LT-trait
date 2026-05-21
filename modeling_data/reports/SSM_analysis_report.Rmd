@@ -33,7 +33,7 @@ pal_geno  <- c("Non-limited transpiration" = clr_nonLT,
 
 # ── load merged data ─────────────────────────────────────────────────────────
 df <- tryCatch(
-  read.csv("/home/user/LT-trait/data/merged_ETo_cropET.csv",
+  read.csv("/home/user/LT-trait/modeling_data/data/merged_ETo_cropET.csv",
            stringsAsFactors = FALSE),
   error = function(e) {
     message("Data not found: ", conditionMessage(e))

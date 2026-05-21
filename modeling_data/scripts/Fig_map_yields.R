@@ -19,7 +19,7 @@ sites <- tibble(
 )
 
 ## ── Yield data (shared) ───────────────────────────────────────────────────────
-ssm <- read_excel("data/SoybeanSSM_sims2.xlsx")
+ssm <- read_excel("modeling_data/data/SoybeanSSM_sims2.xlsx")
 
 yield_long <- ssm %>%
   filter(Crop %in% c("SOYBEAN-MG4","SOYBEAN-LT1.5-MG4",
@@ -186,7 +186,7 @@ p <- ggplot() +
                                             fill   = NA))
   )
 
-ggsave("figures/Fig_map_yields_pie.png", plot = p,
+ggsave("modeling_data/figures/Fig_map_yields_pie.png", plot = p,
        width = 22, height = 17, units = "cm", dpi = 150, bg = "white")
 message("Saved: figures/Fig_map_yields_pie.png")
 
@@ -332,6 +332,6 @@ p2 <- ggplot() +
                                             colour = "white"))
   )
 
-ggsave("figures/Fig_map_yields_facet.png", plot = p2,
+ggsave("modeling_data/figures/Fig_map_yields_facet.png", plot = p2,
        width = 24, height = 18, units = "cm", dpi = 150, bg = "white")
 message("Saved: figures/Fig_map_yields_facet.png")

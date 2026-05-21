@@ -145,7 +145,7 @@ eto_seasonal <- eto_daily %>%
 
 ## ── 5. Load and process SSM simulation data ───────────────────────────────────
 
-ssm.model <- read_excel("data/SoybeanSSM_sims2.xlsx")
+ssm.model <- read_excel("modeling_data/data/SoybeanSSM_sims2.xlsx")
 
 ssm_proc <- ssm.model %>%
   filter(Crop %in% c("SOYBEAN-MG4", "SOYBEAN-LT1.5-MG4",
@@ -223,7 +223,7 @@ p_main <- merged %>%
 
 p_main
 
-ggsave("figures/Fig_kc_seasonal_scatter.png",
+ggsave("modeling_data/figures/Fig_kc_seasonal_scatter.png",
        plot = p_main,
        width = 26, height = 18, units = "cm",
        dpi = 150, bg = "white")
@@ -284,7 +284,7 @@ p_daily <- daily_etc %>%
     plot.subtitle     = element_text(colour = "grey40", size = 9)
   )
 
-ggsave("figures/Fig_marin_daily_etc_eto.png",
+ggsave("modeling_data/figures/Fig_marin_daily_etc_eto.png",
        plot = p_daily, width = 24, height = 18, units = "cm", dpi = 150, bg = "white")
 
 
@@ -316,13 +316,13 @@ eto_clim %>%
         panel.grid.minor = element_blank(),
         plot.title       = element_text(face = "bold"))
 
-ggsave("figures/ETo_climatology_growingseason.png",
+ggsave("modeling_data/figures/ETo_climatology_growingseason.png",
        width = 20, height = 13, units = "cm",
        dpi = 150, bg = "white")
 
 
 ## ── 9. Export ──────────────────────────────────────────────────────────────────
 
-write_csv(eto_daily,    "data/nasapower_ETo_daily.csv")
-write_csv(eto_seasonal, "data/nasapower_ETo_seasonal.csv")
-write_csv(merged,       "data/merged_ETo_cropET.csv")
+write_csv(eto_daily,    "modeling_data/data/nasapower_ETo_daily.csv")
+write_csv(eto_seasonal, "modeling_data/data/nasapower_ETo_seasonal.csv")
+write_csv(merged,       "modeling_data/data/merged_ETo_cropET.csv")

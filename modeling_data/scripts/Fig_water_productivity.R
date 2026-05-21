@@ -7,7 +7,7 @@ if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/L
 ## ─────────────────────────────────────────────────────────────────────────────
 library(dplyr); library(ggplot2); library(readxl)
 
-ssm <- read_excel("data/SoybeanSSM_sims2.xlsx")
+ssm <- read_excel("modeling_data/data/SoybeanSSM_sims2.xlsx")
 
 d <- ssm %>%
   filter(Crop %in% c("SOYBEAN-MG4","SOYBEAN-LT1.5-MG4",
@@ -64,7 +64,7 @@ p <- ggplot(d, aes(x = Genotype, y = WP, fill = Genotype)) +
         plot.subtitle    = element_text(colour = "grey40", size = 9),
         axis.text.x      = element_text(size = 9))
 
-ggsave("figures/Fig_water_productivity.png",  plot = p, width = 18, height = 14,
+ggsave("modeling_data/figures/Fig_water_productivity.png",  plot = p, width = 18, height = 14,
        units = "cm", dpi = 150, bg = "white")
-ggsave("figures/Fig_water_productivity.png", plot = p, width = 18, height = 14,
+ggsave("modeling_data/figures/Fig_water_productivity.png", plot = p, width = 18, height = 14,
 message("Saved: Fig_water_productivity")
