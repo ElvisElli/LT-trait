@@ -11,7 +11,7 @@ library(dplyr)
 library(rstudioapi)
 library(readxl)
 
-## ── Paths ────────────────────────────────────────────────────────────────────
+## ── Paths ─────────────────────────────────────────────────────────────────────
 apsimx_options(exe.path = "C:\\Users\\efelli\\AppData\\Local\\Programs\\APSIM2025.3.7681.0\\bin\\Models.exe")
 setwd(dirname(getActiveDocumentContext()$path))
 
@@ -21,12 +21,14 @@ DATE_RANGE    <- c("1985-01-01", "2025-12-31")
 sim.grid <- read_excel("locations.updated.xlsx", sheet = "Sheet2")
 print(as.data.frame(sim.grid), digits = 6)
 
-## ── Constants (fixed across all grid cells) ──────────────────────────────────
-KL <- c(0.08, 0.08, 0.08, 0.08, 0.07, 0.07, 0.07, 0.07,
-        0.06, 0.06, 0.06, 0.06, 0.05, 0.05, 0.04, 0.04,
-        0.03, 0.03, 0.02, 0.02)
+## ── KL/XF templates (20 layers max; trimmed to actual layers inside loop) ─────
+KL_template <- c(0.08, 0.08, 0.08, 0.08, 0.07, 0.07, 0.07, 0.07,
+                 0.06, 0.06, 0.06, 0.06, 0.05, 0.05, 0.04, 0.04,
+                 0.03, 0.03, 0.02, 0.02)
+XF_template <- c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0)
 
-XF <- c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0)
+## ── Helper: safe error message from a try-error object ────────────────────────
+try_msg <- function(e) trimws(as.character(e))
 
 ## ── Helper: IEM weather download with correct day-of-month format ─────────────
 get_iem_fixed <- function(lonlat, dates, wrt.dir = ".", filename = "noname.met") {
@@ -71,7 +73,7 @@ get_iem_fixed <- function(lonlat, dates, wrt.dir = ".", filename = "noname.met")
   )
   station.coords <- sf::st_transform(station.coords, crs = 3857)
   near.idx <- sf::st_nearest_feature(pts, station.coords)
-  station  <- ftrs[near.idx, "id"]
+  station  <- ftrs$id[near.idx]   # scalar, not a data-frame slice
 
   url <- paste0(
     "http://mesonet.agron.iastate.edu/cgi-bin/request/coop.py?network=", stt.climate,
@@ -93,58 +95,72 @@ get_iem_fixed <- function(lonlat, dates, wrt.dir = ".", filename = "noname.met")
   }
 }
 
-## ── Main loop ────────────────────────────────────────────────────────────────
+## ── Main loop ─────────────────────────────────────────────────────────────────
 results <- vector("list", nrow(sim.grid))
 
 for (i in seq_len(nrow(sim.grid))) {
 
-  loc     <- sim.grid$location[i]
-  lonlat  <- unlist(sim.grid[i, c("x", "y")])
+  loc    <- sim.grid$location[i]
+  lonlat <- unlist(sim.grid[i, c("x", "y")])
   cat("Processing cell", i, "/", nrow(sim.grid), "—", loc, "\n")
 
-  ## -- Weather ----------------------------------------------------------------
+  ## -- Weather -----------------------------------------------------------------
   met.file <- paste0(loc, ".met")
 
   iem <- try(get_iem_fixed(lonlat = lonlat, dates = DATE_RANGE,
                            wrt.dir = ".", filename = met.file), silent = TRUE)
   if (inherits(iem, "try-error")) {
-    warning("IEM download failed for ", loc, ": ", conditionMessage(attr(iem, "condition")))
-    next
+    warning("IEM download failed for ", loc, ": ", try_msg(iem)); next
   }
 
   pwr <- try(get_power_apsim_met(lonlat = lonlat, dates = DATE_RANGE), silent = TRUE)
   if (inherits(pwr, "try-error")) {
-    warning("NASA POWER download failed for ", loc, ": ", conditionMessage(attr(pwr, "condition")))
-    next
+    warning("NASA POWER download failed for ", loc, ": ", try_msg(pwr)); next
   }
 
-  iem$radn <- pwr$radn
+  ## Replace radn by matching on year + DOY — avoids crash when row counts differ
+  pwr_df  <- data.frame(year = pwr$year, day = pwr$day, radn = pwr$radn)
+  iem_key <- paste(iem$year, iem$day)
+  pwr_key <- paste(pwr_df$year, pwr_df$day)
+  iem$radn <- pwr_df$radn[match(iem_key, pwr_key)]
+
+  if (anyNA(iem$radn)) {
+    warning(sum(is.na(iem$radn)), " days in IEM have no matching POWER radn for ", loc,
+            " — filling with 15 MJ/m2/day")
+    iem$radn[is.na(iem$radn)] <- 15
+  }
+
   apsimx::write_apsim_met(iem, wrt.dir = ".", filename = met.file)
 
-  ## -- Soil -------------------------------------------------------------------
+  ## -- Soil --------------------------------------------------------------------
   spp <- try(get_ssurgo_soil_profile(lonlat = lonlat, nlayers = 20, soil.bottom = 400),
              silent = TRUE)
-
   if (inherits(spp, "try-error")) {
-    warning("SSURGO failed for ", loc, ": ", conditionMessage(attr(spp, "condition")))
-    next
+    warning("SSURGO failed for ", loc, ": ", try_msg(spp)); next
   }
 
-  saveRDS(spp, paste0(loc, ".rds"))   # no extra list() wrapper
+  saveRDS(spp, paste0(loc, ".rds"))
 
   soils <- spp[[1]]
   soils <- apsimx:::fix_apsimx_soil_profile(soils, verbose = FALSE)
   soils$initialwater <- initialwater_parms(
-    Depth        = soils$soil$Depth,
-    Thickness    = soils$soil$Thickness,
+    Depth         = soils$soil$Depth,
+    Thickness     = soils$soil$Thickness,
     InitialValues = soils$soil$DUL
   )
   soils$crops <- "Maize"
 
-  ## -- Build per-cell APSIM file ----------------------------------------------
-  par.sim.file <- paste0("par-sim-", loc, ".apsimx")
+  ## Trim KL/XF to however many layers fix_apsimx_soil_profile left us
+  nlayers <- nrow(soils$soil)
+  if (nlayers > length(KL_template)) {
+    stop("Soil has ", nlayers, " layers but KL template only has ",
+         length(KL_template), " — extend KL_template")
+  }
+  KL <- KL_template[seq_len(nlayers)]
+  XF <- XF_template[seq_len(nlayers)]
 
-  # Copy directly from template — no intermediate file needed
+  ## -- Build per-cell APSIM file -----------------------------------------------
+  par.sim.file <- paste0("par-sim-", loc, ".apsimx")
   file.copy(TEMPLATE_FILE, par.sim.file, overwrite = TRUE)
 
   edit_apsimx_replace_soil_profile(
@@ -171,22 +187,19 @@ for (i in seq_len(nrow(sim.grid))) {
               value   = met.file,
               verbose = FALSE, overwrite = TRUE)
 
-  ## -- Run simulation ---------------------------------------------------------
+  ## -- Run simulation ----------------------------------------------------------
   sim <- try(apsimx(file = par.sim.file, src.dir = ".", cleanup = TRUE), silent = TRUE)
-
-  # Remove per-cell APSIM file after run
-  unlink(par.sim.file)
+  unlink(par.sim.file)   # always clean up, even on failure
 
   if (inherits(sim, "try-error")) {
-    warning("APSIM run failed for ", loc, ": ", conditionMessage(attr(sim, "condition")))
-    next
+    warning("APSIM run failed for ", loc, ": ", try_msg(sim)); next
   }
 
   sim$location <- loc
   results[[i]] <- sim
 }
 
-## ── Combine and save all results ─────────────────────────────────────────────
+## ── Combine and save all results ──────────────────────────────────────────────
 results_all <- dplyr::bind_rows(Filter(Negate(is.null), results))
 saveRDS(results_all, "grid_simulation_results.rds")
 cat("Done. Results saved to grid_simulation_results.rds\n")
