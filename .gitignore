@@ -12,6 +12,10 @@
 # Large intermediate data — keep CSVs and figures, exclude raw downloads
 nasapower_ETo_daily.csv
 
+# TIFF figures — use PNG only
+*.tiff
+*.tif
+
 # OS
 .DS_Store
 Thumbs.db
