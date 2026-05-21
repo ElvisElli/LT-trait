@@ -124,35 +124,15 @@ All correlations are negative and moderate; the relationship is real and not dri
 
 ---
 
-## GC2 (GC_experiment_2.xlsx)
+## GC2 (Data analysis 2.xlsx)
 
-### VPD levels (from Tracking VPD)
+**Note:** The initial audit (2026-05-20) was conducted on `GC_experiment_2.xlsx`, which contained only raw weight tracking sheets and no transpiration analysis. The user subsequently provided `Data analysis 2.xlsx` — a separate file containing the fully processed Final analysis sheet with all transpiration rates, leaf areas, and relative transpiration values. The audit below covers both files; all downstream analyses use `Data analysis 2.xlsx`.
 
-GC2 data span 2 days (Day 1: 30 Oct; only one date tag visible). Unlike GC1/GC3, Tracking VPD is computed from continuous GC logger data rather than single-point summaries.
+### VPD levels
 
-**Day 1 treatment averages (measured):**
+GC2 dates: Day 1 = 30 Oct 2024, Day 2 = 31 Oct 2024. Temperature held at ~31.8–32.6°C throughout.
 
-| Treatment | Mean VPD (kPa) |
-|-----------|----------------|
-| T1        | 0.978          |
-| T2        | 1.592          |
-| T3        | 2.061          |
-| T4        | 2.638          |
-| T5        | 3.150          |
-| T6        | 3.355          |
-
-**Day 2 treatment averages (measured):**
-
-| Treatment | Mean VPD (kPa) |
-|-----------|----------------|
-| T1        | 0.942          |
-| T2        | 1.594          |
-| T3        | 2.083          |
-| T4        | 2.643          |
-| T5        | 3.113          |
-| T6        | 3.613          |
-
-**Target conditions** (from Evaluation targets sheet, at 32°C):
+**Target conditions** (Evaluation targets sheet, at 32°C):
 
 | Treatment | RH range (%) | Target RH (%) | Target VPD (kPa) |
 |-----------|--------------|---------------|------------------|
@@ -163,43 +143,85 @@ GC2 data span 2 days (Day 1: 30 Oct; only one date tag visible). Unlike GC1/GC3,
 | T5        | 29–35        | 32            | 3.233            |
 | T6        | 17–23        | 20            | 3.800            |
 
-T6 actual (~3.36–3.61 kPa) is notably lower than the 3.80 kPa target. All other treatments achieved within ~0.1 kPa of target.
+**Measured VPD from Tracking VPD sheet:**
+
+| Treatment | Day 1 mean (kPa) | Day 2 mean (kPa) |
+|-----------|-----------------|-----------------|
+| T1        | 0.978           | 0.942           |
+| T2        | 1.592           | 1.594           |
+| T3        | 2.061           | 2.083           |
+| T4        | 2.638           | 2.643           |
+| T5        | 3.150           | 3.113           |
+| T6        | 3.355           | 3.613           |
+
+T6 actual (~3.36–3.61 kPa) is notably lower than the 3.80 kPa target. All other treatments achieved within ~0.1 kPa of target. **Always use measured VPD values, not targets, in analyses.**
 
 ### Genotype map
 
-| Code | Genotype  | Quadrant |
-|------|-----------|----------|
-| CV1  | PI398245  | Q1       |
-| CV2  | PI567488B | Q2       |
-| CV3  | PI377574  | Q3       |
-| CV4  | PI424397  | Q4       |
+| Code | Genotype  | Quadrant | Expected WUE           |
+|------|-----------|----------|------------------------|
+| CV1  | PI398245  | Q1       | Plastic, High WUE      |
+| CV2  | PI567488B | Q2       | Plastic, Low WUE       |
+| CV3  | PI377574  | Q3       | Nonplastic, Low WUE    |
+| CV4  | PI424397  | Q4       | Nonplastic, High WUE   |
 
-**Bench arrangement** (genotype code per bench position):
-
-| Position | Bench 1 | Bench 2 | Bench 3 | Bench 4 |
-|----------|---------|---------|---------|---------|
-| Row 1    | CV1     | CV2     | CV4     | CV3     |
-| Row 2    | CV2     | CV3     | CV2     | CV1     |
-| Row 3    | CV3     | CV1     | CV3     | CV4     |
-| Row 4    | CV4     | CV4     | CV1     | CV2     |
-
-4 benches × 4 pots = 16 pots (pots 1–16). The quadrant labels (Q1–Q4) are assigned to genotype codes but the Experiment map does **not** include Expected_WUE (Plastic/Nonplastic) descriptors, unlike GC1 and GC3.
+4 benches × 4 pots = 16 pots (pots 1–16), balanced design. All 4 pots germinated and are present in the Final sheet. **Full 4 replicates per genotype — no missing data.** Plasticity/Nonplastic labels were added during data processing and cross-referenced with GC1/GC3 classifications.
 
 ### Tare weights
 
-Pots 1–16, range: **1487.3 – 1789.0 g**, mean 1616.4 g (pot 1 tare = NA in the R extraction due to merged header cell; actual tare for pot 1 is 1603.6 g from data). All values within the expected 1400–1900 g range.
+Pots 1–16, range: **1487.3 – 1789.0 g**, mean 1616.4 g. All values within the expected 1400–1900 g range.
 
-### Transpiration data availability
+### Transpiration data (Data analysis 2.xlsx — Final sheet)
 
-**No transpiration data exists in GC2.** None of the six sheets (Experiment map, Weights, Irrigation, Evaluation targets, Tracking VPD, Tracking weights) contains a Final-style transpiration table, relative transpiration, or leaf-area-normalized transpiration. The Weights and Tracking weights sheets contain pot weights over time, and the Tracking VPD sheet confirms VPD was achieved. However, there is no evidence that transpiration rates were computed or that a leaf area measurement was performed.
+The Final sheet contains **192 rows** (16 pots × 6 treatments × 2 days): columns Genotype, Quadrant, Expected_WUE, Replication, Pot, Day, Treatment, Temperature, RH, VPD, RelTranspiration, Transpiration_ml, TranspLeafArea, DryMatter_leaf, DryMatter_stem, DryMatter_rep, DryMatter_total, LeafArea_squarecm.
 
-The Irrigation sheet shows pot weights relative to field capacity (100% pot cap values: 1316–1557 g water-holding capacity), confirming the setup was properly executed. But without a Final sheet, GC2 cannot contribute transpiration/relative transpiration data to downstream analysis.
+**TranspLeafArea** (mg m⁻² s⁻¹) is the primary response variable: Transpiration_ml × 1000 / (LeafArea_squarecm / 10000) / 2400.
+
+**One cell correction:** Pot 1, Day 1, T2 had an erroneous Transpiration_ml value (8.553 ml, a copy-paste error). Back-calculated from the TranspLeafArea value already present in the cell: corrected to 13.633 ml. This correction was applied when generating GC2_clean.csv and does not affect TranspLeafArea values (which were already correct).
+
+**Day 2 transpiration summary (TranspLeafArea, mg m⁻² s⁻¹):**
+
+| Genotype  | Quadrant | n  | Mean  | SD    | Min   | Max   |
+|-----------|----------|----|-------|-------|-------|-------|
+| PI398245  | Q1       | 24 | 45.59 | 14.01 | 18.41 | 63.57 |
+| PI567488B | Q2       | 24 | 44.76 | 9.94  | 24.72 | 57.99 |
+| PI377574  | Q3       | 24 | 51.32 | 11.63 | 28.39 | 67.42 |
+| PI424397  | Q4       | 24 | 47.50 | 8.50  | 29.86 | 60.25 |
+
+**Mean TranspLeafArea by VPD treatment (Day 2, all genotypes):**
+
+| Treatment | VPD (kPa) | Mean TLA | SD    |
+|-----------|-----------|----------|-------|
+| T1        | 0.94      | 29.72    | 3.48  |
+| T2        | 1.56      | 46.52    | 5.28  |
+| T3        | 2.10      | 51.10    | 5.20  |
+| T4        | 2.67      | 56.29    | 6.27  |
+| T5        | 3.12      | 54.69    | 8.82  |
+| T6        | 3.60      | 45.43    | 11.55 |
+
+**Notable pattern:** Transpiration peaks at T4 (VPD=2.67 kPa) for PI398245 (Q1) and PI377574 (Q3), and at T5 (VPD=3.12 kPa) for PI424397 (Q4) and PI567488B (Q2). All genotypes show a clear decline at T6 (VPD=3.60 kPa), consistent with stomatal limitation at high VPD. The overall pattern is consistent with a Linear-Plateau response with breakpoints in the 2.67–3.12 kPa range.
+
+### Day effect
+
+GC2 showed a **much smaller day effect** than GC1 or GC3:
+
+| Metric          | Day 1  | Day 2  |
+|-----------------|--------|--------|
+| Mean RT         | 0.810  | 0.805  |
+| CV              | 0.229  | 0.219  |
+
+The Day 1 vs Day 2 difference in GC2 (< 1% in mean RT, < 5% in CV) is negligible compared to GC1 (CV 0.32 vs 0.28) and GC3 (23% lower Day 1 mean RT). This may reflect better plant acclimation or more stable chamber conditions in GC2. Day 2 is still used for all primary analyses to maintain consistency across experiments.
+
+### Outlier detection
+
+No outliers detected using the 2.5 SD criterion (|value − group mean| > 2.5 × group SD, where groups are genotype × treatment). All 96 Day 2 data points retained.
 
 ### Issues found
 
-1. **CRITICAL — No transpiration analysis sheet.** GC2 collected pot weights and VPD data but the analysis (difference in pot weight per treatment → transpiration rate) was never completed. No leaf area data found. GC2 data cannot be directly combined with GC1/GC3 Final sheet data.
-2. **MODERATE — T6 VPD achievement gap:** Target 3.80 kPa; achieved ~3.36–3.61 kPa. If T6 data from GC2 are ever analyzed, the actual measured VPD (not target) must be used.
-3. **MINOR — Quadrant labels lack Plastic/Nonplastic descriptors** in the Experiment map, unlike GC1 and GC3. Cross-referencing requires knowing which genotype each PI number represents in the WUE quadrant framework.
+1. **RESOLVED — Transpiration analysis sheet added.** Initial audit (on GC_experiment_2.xlsx) found no Final analysis sheet. `Data analysis 2.xlsx` subsequently provided by PI contains complete Final sheet. GC2 is now fully incorporated into GC_combined_clean.csv.
+2. **MINOR — One cell correction in Transpiration_ml** (Pot 1, Day 1, T2: 8.553 → 13.633 ml, back-calculated from correct TranspLeafArea). TranspLeafArea and RelTranspiration values in the Final sheet are unaffected.
+3. **MINOR — T6 VPD achievement gap:** Target 3.80 kPa; achieved ~3.36–3.61 kPa. Actual measured VPD values (not targets) are used in all analyses.
+4. **MINOR — Quadrant labels in GC_experiment_2.xlsx lack Plastic/Nonplastic descriptors.** Added during processing using the Chamarthi et al. (2022) classification, consistent with GC1 and GC3.
 
 ---
 
@@ -345,13 +367,13 @@ VPD ranges are comparable and overlapping. GC3 has one fewer treatment level (no
 
 ### Quadrant classification consistency
 
-GC1 and GC3 use identical quadrant labeling:
+All three experiments use the same quadrant labeling:
 - Q1 = Plastic, High WUE
 - Q2 = Plastic, Low WUE
 - Q3 = Nonplastic, Low WUE
 - Q4 = Nonplastic, High WUE
 
-GC2 assigns Q1–Q4 labels to genotype codes in the Experiment map but does **not** include Plastic/Nonplastic descriptors. The label schema is structurally consistent with GC1/GC3, but GC2 uses completely different genotypes (PI398245, PI567488B, PI377574, PI424397) that do not appear in GC1 or GC3. No cross-experiment genotype overlap.
+GC2's original Experiment map did not include Plastic/Nonplastic descriptors, but these were added during processing using the Chamarthi et al. (2022) framework. All three experiments use completely different PI accessions — no cross-experiment genotype overlap. Each run tests one representative accession per quadrant, giving three replications of the quadrant framework across independent genotypes.
 
 ### Pot tare weights
 
@@ -373,8 +395,8 @@ All within the expected 1400–1900 g range. No anomalous tare weights found acr
 **Priority 2 — Design notes for interpretation:**
 4. **GC1 PI471938 has 3 replicates, not 4** (pot 7 / scale W7 absent from Final-ee). Use replicate-balanced models or account for unequal n.
 5. **GC3 PI423802 has 2 replicates** (pots 27 and 29 did not germinate). Note in any statistical reporting.
-6. **GC2 has no transpiration data** — the experiment was executed and VPD was tracked, but no Final analysis sheet exists. GC2 cannot contribute to transpiration/relative transpiration analyses without post-hoc reconstruction from the Tracking weights sheet.
 
 **Priority 3 — Follow-up verification:**
-7. ~~GC3 PI398617 row count~~ — RESOLVED: Pot 30 is correctly PI398617 per the Experiment map; all genotype assignments verified.
-8. **GC3 Day 1 Tracking VPD logger failure** — if continuous VPD records are needed, check the raw GC data files referenced in Methodology ("Data analysis > 2nd time GC > Part 3 > GC data").
+6. ~~GC3 PI398617 row count~~ — RESOLVED: Pot 30 is correctly PI398617 per the Experiment map; all genotype assignments verified.
+7. **GC3 Day 1 Tracking VPD logger failure** — if continuous VPD records are needed, check the raw GC data files referenced in Methodology ("Data analysis > 2nd time GC > Part 3 > GC data").
+8. ~~GC2 has no transpiration data~~ — RESOLVED: `Data analysis 2.xlsx` Final sheet confirmed complete; GC2 incorporated into GC_combined_clean.csv (192 rows added, total 512).

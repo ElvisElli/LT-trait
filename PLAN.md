@@ -45,7 +45,7 @@ of Sinclair SSM simulations at 6 locations and NASA POWER ETo, we show that:
 - [ ] Stats: ANCOVA results table (slope, SE, p-values) for manuscript Table 1
 - [ ] Stats: Compute year-to-year CV of Kc by genotype — does LT show lower variability?
 - [ ] Map: polish Fig 5 — add yield numbers inside pies, improve legend
-- [ ] Update CLAUDE.md with new scripts and outputs
+- [x] Update CLAUDE.md with new scripts and outputs (GC2 added; row count 512; Python pipeline)
 
 ## Code improvements needed
 - [ ] Separate ETo computation by planting date × location for a tighter Kc window

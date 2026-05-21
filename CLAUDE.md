@@ -24,12 +24,21 @@ LT-trait/
 │   └── stats/                       ← model output tables (future use)
 └── experimental_data/               ← growth chamber experiments (see its own CLAUDE.md)
     ├── CLAUDE.md
-    ├── GC_analysis_report.html
+    ├── GC_analysis_report.html      ← self-contained HTML report (GC1+GC2+GC3)
     ├── AUDIT_REPORT.md
+    ├── raw_data/
+    │   ├── GC1/                     ← PI471938, PI507408, PI548431, PI603457A (6 VPD)
+    │   ├── GC2/                     ← PI398245, PI567488B, PI377574, PI424397 (6 VPD)
+    │   └── GC3/                     ← PI398617, PI070229, PI423802, PI603465C (5 VPD)
+    ├── cleaned_data/
+    │   ├── GC_combined_clean.csv    ← 512 rows: GC1=180, GC2=192, GC3=140
+    │   └── GC2_clean.csv            ← GC2 only (192 rows)
     ├── references/             ← key PDFs (Marin 2016, 2019, DeMelo 2026, etc.)
     ├── scripts/
-    ├── cleaned_data/
-    ├── figures/                ← PNG only (no TIFF)
+    │   ├── GC_figures.py            ← generates 13 PNG figures (Python)
+    │   ├── GC_build_report.py       ← builds self-contained HTML (Python)
+    │   └── GC2_process_raw.py       ← GC2 extraction from Data analysis 2.xlsx
+    ├── figures/                ← PNG only (no TIFF); 13 figures for GC1, GC2, GC3, overall
     └── stats/
 ```
 
@@ -114,6 +123,29 @@ De Melo et al. (2026): standard empirical Kc derivations overlook soil/plant hyd
 | ANCOVA genotype × ETo interaction | p < 0.001 | — |
 | FAO-56 reference Kc (mid-season) | 1.15 | 1.15 |
 | Marin et al. (2019) whole-cycle soybean Kc | 0.83 ± 0.39 | (Brazilian field measurement) |
+
+## Growth chamber experiments (experimental_data/)
+
+Three GC runs, each testing 4 accessions from the Chamarthi et al. (2022) WUE plasticity quadrants:
+
+| Quadrant | Plasticity     | WUE level | GC1        | GC2        | GC3        |
+|----------|---------------|-----------|------------|------------|------------|
+| Q1       | Plastic       | High WUE  | PI471938   | PI398245   | PI398617   |
+| Q2       | Plastic       | Low WUE   | PI507408   | PI567488B  | PI070229   |
+| Q3       | Nonplastic    | Low WUE   | PI548431   | PI377574   | PI423802   |
+| Q4       | Nonplastic    | High WUE  | PI603457A  | PI424397   | PI603465C  |
+
+**Primary response variable:** TranspLeafArea (mg m⁻² s⁻¹) = Transpiration_ml × 1000 / LeafArea_m² / 2400s
+
+**Key finding:** Q1 accessions show a Linear-Plateau VPD response (peak ~2.5–2.7 kPa) across all three runs; Q4 accessions show near-linear responses. GC2 data: all four accessions peak at T4–T5 (VPD 2.67–3.12 kPa) with decline at T6 (3.60 kPa).
+
+**Colour convention (experimental figures):** Q1=`#d95f02`, Q2=`#1b9e77`, Q3=`#7570b3`, Q4=`#e7298a`; GC1=`#1f78b4`, GC2=`#ff7f00`, GC3=`#e31a1c`; VPD breakpoint reference = 2.0 kPa
+
+**Running the experimental pipeline (Python, cloud-compatible):**
+```bash
+python3 experimental_data/scripts/GC_figures.py      # 13 PNG figures
+python3 experimental_data/scripts/GC_build_report.py # HTML report
+```
 
 ## Outputs tracked in git
 

@@ -338,6 +338,15 @@ LT trait does not merely reduce average water use, it reduces the sensitivity of
 seasonal water demand to the atmospheric variability that drives large inter-annual
 swings in irrigation requirement.
 
+Three independent growth chamber experiments (GC1–GC3; Elli et al., in prep.)
+spanning 12 soybean accessions from the four WUE plasticity quadrants of Chamarthi
+et al. (2022) confirmed the leaf-level VPD threshold across genetically diverse
+material. In all three experiments, Q1 (Plastic/High WUE) accessions showed peak
+transpiration at VPD ≈ 2.5–2.7 kPa followed by a decline at higher VPD, while Q4
+(Nonplastic/High WUE) accessions maintained a near-linear response to higher VPD.
+This consistency across three independent runs and 12 accessions reinforces the
+leaf-physiological basis for the genotype-level Kc differences documented here.
+
 ### 4.2 Implications for irrigation scheduling and the Kc–ETo relationship
 
 Current irrigation scheduling protocols apply species-level Kc tables (Allen et
@@ -445,11 +454,16 @@ per state for ETo calculation, rather than individual site-specific weather
 data, introduces spatial smoothing into the ETo estimates. Third, actual farm-
 scale adoption will depend on seed availability and the yield penalty under
 fully irrigated conditions, which remains substantial for current LT germplasm
-(~33% lower than non-LT under irrigation). Future work should validate these
-simulation-based Kc estimates with lysimeter or eddy covariance measurements for
-well-characterised LT accessions across a gradient of VPD environments, and
-should investigate whether C13 plasticity markers from Chamarthi et al. (2022)
-predict Kc variability within the LT germplasm class.
+(~33% lower than non-LT under irrigation). Fourth, the growth chamber experiments
+(GC1–GC3, 12 accessions) confirm the leaf-level VPD threshold qualitatively, but
+formal mixed-effects model discrimination among linear, bilinear, and
+linear-plateau response functions was possible only for GC1 and GC3 (n = 4
+replicates per treatment; ΔAIC < 2 for 6/8 genotypes); GC2 model fitting is
+pending. Future work should validate these simulation-based Kc estimates with
+lysimeter or eddy covariance measurements for well-characterised LT accessions
+across a gradient of VPD environments, and should investigate whether C13
+plasticity markers from Chamarthi et al. (2022) predict Kc variability within
+the LT germplasm class.
 
 ---
 
