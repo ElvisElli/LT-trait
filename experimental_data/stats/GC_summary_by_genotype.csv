@@ -1,0 +1,9 @@
+"Experiment","Genotype","Quadrant","Expected_WUE","n","mean_TLA","sd_TLA","mean_Rel","sd_Rel","VPD_range","n_outliers_all"
+"GC1","PI471938","Q1","Plastic, High WUE",18,28.181,8.04,0.805,0.16,"1–3.2",0
+"GC1","PI507408","Q2","Plastic, Low WUE",24,38.088,7.919,0.776,0.158,"1–3.2",0
+"GC1","PI548431","Q3","Nonplastic, Low WUE",24,28.654,13.769,0.676,0.223,"1–3.2",0
+"GC1","PI603457A","Q4","Nonplastic, High WUE",24,41.034,13.929,0.687,0.227,"1–3.2",0
+"GC3","PI070229","Q2","Plastic, Low WUE",20,48.024,8.848,0.823,0.153,"1.1–3.5",0
+"GC3","PI398617","Q1","Plastic, High WUE",20,46.891,11.072,0.795,0.18,"1.1–3.5",0
+"GC3","PI423802","Q3","Nonplastic, Low WUE",10,53.108,8.521,0.841,0.138,"1.1–3.5",0
+"GC3","PI603465C","Q4","Nonplastic, High WUE",20,45.941,10.015,0.77,0.155,"1.1–3.5",0

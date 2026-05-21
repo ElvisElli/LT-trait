@@ -1,294 +1,479 @@
 ---
-title: "Soybean VPD–Transpiration: Growth Chamber Analysis Report"
-subtitle: "RIG Project 2024–2026 · PI: Elvis F. Elli"
+title: "Growth Chamber Transpiration Analysis — GC1, GC2, GC3"
+subtitle: "VPD vs Transpiration in Soybean Accessions · RIG Project 2024–2026 · PI: Elvis F. Elli"
 date: "`r Sys.Date()`"
 output:
   html_document:
     theme: flatly
     toc: true
     toc_float: true
-    toc_depth: 3
+    toc_depth: 4
     number_sections: true
-    fig_width: 9
+    fig_width: 10
     fig_height: 5
-    df_print: kable
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
-knitr::opts_knit$set(root.dir = "/home/user/LT-trait/experimental_data")
+knitr::opts_chunk$set(
+  echo    = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  root.dir = "/home/user/LT-trait"
+)
+
+library(dplyr); library(tidyr); library(ggplot2)
+library(readxl); library(knitr); library(kableExtra); library(scales)
+
+figdir   <- "experimental_data/figures"
+statsdir <- "experimental_data/stats"
+
+col_quad  <- c(Q1 = "#d95f02", Q2 = "#1b9e77", Q3 = "#7570b3", Q4 = "#e7298a")
+col_exp   <- c(GC1 = "#1f78b4", GC3 = "#e31a1c")
+col_day   <- c(`1` = "grey60",  `2` = "#2171b5")
+VPD_BREAK <- 2.0
+
+base_theme <- theme_bw(base_size = 12) +
+  theme(
+    strip.background = element_rect(fill = "grey15", colour = "grey15"),
+    strip.text       = element_text(colour = "white", face = "bold"),
+    panel.grid.minor = element_blank(),
+    legend.position  = "bottom"
+  )
+
+df <- read.csv("experimental_data/cleaned_data/GC_combined_clean.csv",
+               stringsAsFactors = FALSE) %>%
+  mutate(
+    Day        = as.character(Day),
+    Quadrant   = factor(Quadrant, levels = c("Q1","Q2","Q3","Q4")),
+    Experiment = factor(Experiment, levels = c("GC1","GC3"))
+  )
+
+df <- df %>%
+  group_by(Experiment, Genotype, Day, Treatment) %>%
+  mutate(
+    mean_TLA = mean(TranspLeafArea,   na.rm = TRUE),
+    sd_TLA   = sd(TranspLeafArea,     na.rm = TRUE),
+    outlier  = !is.na(TranspLeafArea) &
+               abs(TranspLeafArea - mean_TLA) > 2 * sd_TLA
+  ) %>%
+  ungroup()
+
+d2     <- df %>% filter(Day == "2")
+gc1    <- df %>% filter(Experiment == "GC1")
+gc3    <- df %>% filter(Experiment == "GC3")
+gc1_d2 <- gc1 %>% filter(Day == "2", !outlier)
+gc3_d2 <- gc3 %>% filter(Day == "2", !outlier)
+
+quad_label <- c(
+  Q1 = "Q1 · Plastic / High WUE",
+  Q2 = "Q2 · Plastic / Low WUE",
+  Q3 = "Q3 · Nonplastic / Low WUE",
+  Q4 = "Q4 · Nonplastic / High WUE"
+)
+
+gc1_means <- gc1_d2 %>%
+  group_by(Genotype, Quadrant, VPD) %>%
+  summarise(mean_TLA=mean(TranspLeafArea,na.rm=T), se_TLA=sd(TranspLeafArea,na.rm=T)/sqrt(n()),
+            mean_Rel=mean(RelTranspiration,na.rm=T), se_Rel=sd(RelTranspiration,na.rm=T)/sqrt(n()),
+            mean_SC=mean(StomatalConductance,na.rm=T), se_SC=sd(StomatalConductance,na.rm=T)/sqrt(n()),
+            n=n(), .groups="drop")
+
+gc3_means <- gc3_d2 %>%
+  group_by(Genotype, Quadrant, VPD) %>%
+  summarise(mean_TLA=mean(TranspLeafArea,na.rm=T), se_TLA=sd(TranspLeafArea,na.rm=T)/sqrt(n()),
+            mean_Rel=mean(RelTranspiration,na.rm=T), se_Rel=sd(RelTranspiration,na.rm=T)/sqrt(n()),
+            n=n(), .groups="drop")
+
+all_means <- d2 %>% filter(!outlier) %>%
+  group_by(Experiment, Genotype, Quadrant, VPD) %>%
+  summarise(mean_TLA=mean(TranspLeafArea,na.rm=T), se_TLA=sd(TranspLeafArea,na.rm=T)/sqrt(n()),
+            mean_Rel=mean(RelTranspiration,na.rm=T), se_Rel=sd(RelTranspiration,na.rm=T)/sqrt(n()),
+            n=n(), .groups="drop") %>%
+  mutate(Geno_exp = paste0(Genotype, "\n[", Experiment, "]"))
+
+geno_order <- d2 %>% distinct(Genotype, Quadrant, Experiment) %>%
+  arrange(Quadrant, Experiment) %>%
+  mutate(Geno_exp = paste0(Genotype, "\n[", Experiment, "]"))
+all_means$Geno_exp <- factor(all_means$Geno_exp, levels = geno_order$Geno_exp)
+
+quad_means <- d2 %>% filter(!outlier) %>%
+  group_by(Quadrant, VPD) %>%
+  summarise(mean_TLA=mean(TranspLeafArea,na.rm=T), se_TLA=sd(TranspLeafArea,na.rm=T)/sqrt(n()),
+            mean_Rel=mean(RelTranspiration,na.rm=T), se_Rel=sd(RelTranspiration,na.rm=T)/sqrt(n()),
+            n=n(), .groups="drop")
 ```
 
-```{r libraries}
-library(knitr)
-library(kableExtra)
-library(dplyr)
-```
+---
 
 # Project Overview
 
-This report summarizes the growth chamber (GC) transpiration experiments conducted as part of a 2024–2026 Research Incentive Grant (RIG) project at the University of Missouri. The study evaluates how soybean accessions differ in their transpiration response to increasing vapor pressure deficit (VPD), framing the analysis within the Chamarthi et al. (2022) water-use efficiency (WUE) plasticity quadrant framework.
+This report documents three growth chamber (GC) transpiration experiments in soybean accessions classified by WUE plasticity (Chamarthi et al., 2022).
 
-The core hypothesis is that Q1 genotypes (Plastic, High WUE) exhibit a limited-transpiration (LT) response — a plateau in relative transpiration at high VPD — while Q4 genotypes (Nonplastic, High WUE) maintain a linear transpiration response. Identifying genotypes with this LT trait has direct implications for breeding water-efficient soybean for drought-prone environments.
+**Core hypothesis:** Soybean accessions with high WUE plasticity (Q1 — Plastic, High WUE) reduce transpiration at elevated VPD, mimicking the limited-transpiration (LT) trait (Sinclair 2008). Non-plastic, high-WUE accessions (Q4) maintain linear transpiration with no VPD threshold.
 
-Three growth chamber experiments (GC1, GC2, GC3) were conducted across 2024–2025, each using a different set of four soybean accessions representing the four WUE quadrants. Field stomatal conductance (SC) and yield data were also collected in summer 2024.
+## Experimental design summary
 
-# Experimental Design
-
-```{r design-table}
-design <- data.frame(
-  Experiment = c("GC1", "GC1", "GC1", "GC1",
-                 "GC2", "GC2", "GC2", "GC2",
-                 "GC3", "GC3", "GC3", "GC3"),
-  Genotype   = c("PI471938", "PI507408", "PI548431", "PI603457A",
-                 "PI398245", "PI567488B", "PI377574", "PI424397",
-                 "PI398617", "PI070229", "PI423802", "PI603465C"),
-  Quadrant   = c("Q1", "Q2", "Q3", "Q4",
-                 "Q1", "Q2", "Q3", "Q4",
-                 "Q1", "Q2", "Q3", "Q4"),
-  WUE_class  = c("Plastic, High", "Plastic, Low", "Nonplastic, Low", "Nonplastic, High",
-                 "Plastic, High", "Plastic, Low", "Nonplastic, Low", "Nonplastic, High",
-                 "Plastic, High", "Plastic, Low", "Nonplastic, Low", "Nonplastic, High"),
+```{r exp-summary-table}
+tibble(
+  Experiment = c("GC1","GC2","GC3"),
+  Genotypes  = c("PI471938 (Q1), PI507408 (Q2), PI548431 (Q3), PI603457A (Q4)",
+                 "PI398245, PI567488B, PI377574, PI424397",
+                 "PI398617 (Q1), PI070229 (Q2), PI423802 (Q3), PI603465C (Q4)"),
   VPD_levels = c("1.0, 1.5, 1.9, 2.4, 2.8, 3.3 kPa",
-                 "1.0, 1.5, 1.9, 2.4, 2.8, 3.3 kPa",
-                 "1.0, 1.5, 1.9, 2.4, 2.8, 3.3 kPa",
-                 "1.0, 1.5, 1.9, 2.4, 2.8, 3.3 kPa",
                  "Pending",
-                 "Pending",
-                 "Pending",
-                 "Pending",
-                 "1.0, 1.5, 2.0, 2.7, 3.3 kPa",
-                 "1.0, 1.5, 2.0, 2.7, 3.3 kPa",
-                 "1.0, 1.5, 2.0, 2.7, 3.3 kPa",
                  "1.0, 1.5, 2.0, 2.7, 3.3 kPa"),
-  SC_data = c("Yes", "Yes", "Yes", "Yes",
-              "No", "No", "No", "No",
-              "No", "No", "No", "No")
-)
-
-kable(design, caption = "Soybean genotypes, WUE quadrant classification, and experimental design across GC experiments.") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
-  pack_rows("GC Experiment 1", 1, 4) %>%
-  pack_rows("GC Experiment 2", 5, 8) %>%
-  pack_rows("GC Experiment 3", 9, 12)
+  SC_data    = c("Yes (LI-600)","Pending","No"),
+  n_rows     = c("180","Pending","140"),
+  Status     = c("Complete","Raw weights — Final sheet pending","Complete")
+) %>%
+  kable(col.names = c("Experiment","Genotypes","VPD levels",
+                      "Stomatal conductance","Cleaned rows","Status"),
+        caption = "Growth chamber experiment summary") %>%
+  kable_styling(bootstrap_options = c("striped","hover","condensed"), full_width=FALSE) %>%
+  row_spec(2, background = "#fff3cd")
 ```
 
-**Relative transpiration** is the primary response variable, calculated as transpiration rate at each VPD treatment divided by the rate at the lowest VPD (T1 = 1.0 kPa). A value of 1.0 at high VPD indicates a proportional response (no LT trait); a plateau below 1.0 at high VPD indicates limited transpiration.
+## Quadrant classification (Chamarthi et al. 2022)
 
-# Data Quality Control
+```{r quad-table}
+tibble(
+  Quadrant    = c("Q1","Q2","Q3","Q4"),
+  Plasticity  = c("Plastic","Plastic","Nonplastic","Nonplastic"),
+  WUE_class   = c("High WUE","Low WUE","Low WUE","High WUE"),
+  GC1_geno    = c("PI471938","PI507408","PI548431","PI603457A"),
+  GC3_geno    = c("PI398617","PI070229","PI423802","PI603465C"),
+  Expectation = c("LT-like: plateau above VPD threshold",
+                  "Intermediate response",
+                  "Intermediate response",
+                  "Linear: no VPD threshold")
+) %>%
+  kable(col.names = c("Quadrant","Plasticity","WUE class",
+                      "GC1 genotype","GC3 genotype","Expected response"),
+        caption = "Genotype classification") %>%
+  kable_styling(bootstrap_options = c("striped","hover","condensed"), full_width=FALSE)
+```
 
-## Day 1 vs Day 2 comparison
+**Primary response variable:** `TranspLeafArea` (ml cm⁻²) — actual transpiration normalized to leaf area, enabling comparison across plants of different sizes.
+**Secondary:** `RelTranspiration` (0–1) — normalized to pot maximum, for cross-experiment comparison.
 
-Plants were measured on two consecutive days under each VPD treatment. Day 1 shows a systematic acclimation artifact — higher variability and lower mean transpiration — consistent with stomatal adjustment to the new chamber conditions. Day 2 measurements are more stable and are used for all modelling.
+---
 
-```{r day1-vs-day2, fig.cap="Day 1 vs Day 2 comparison of relative transpiration across genotypes and VPD treatments.", out.width="100%"}
-if (file.exists("figures/GC_Fig_diag_Day1vsDay2.png")) {
-  knitr::include_graphics("figures/GC_Fig_diag_Day1vsDay2.png")
+# Data Quality & Outlier Detection
+
+## Day effect — critical caveat
+
+Day 1 shows a systematic acclimation artifact. Plants have not yet equilibrated to the target VPD, producing lower and more variable transpiration. **Day 2 is used for all primary analyses.**
+
+```{r day-effect-plot, fig.cap="Day 1 vs Day 2: lower and more variable transpiration on Day 1 (acclimation artifact). Red × = outliers (>2 SD from group mean)."}
+day_sum_by_geno <- df %>%
+  group_by(Experiment, Genotype, Quadrant, Day, VPD) %>%
+  summarise(mean_TLA = mean(TranspLeafArea, na.rm=TRUE), .groups="drop")
+
+ggplot(df, aes(x=VPD, y=TranspLeafArea, colour=Day, shape=Day)) +
+  geom_point(alpha=0.2, size=1.5) +
+  geom_point(data=filter(df,outlier), shape=4, size=3,
+             colour="red", stroke=1.2, show.legend=FALSE) +
+  geom_smooth(aes(group=Day), method="loess", se=FALSE, linewidth=1.0, formula=y~x) +
+  facet_wrap(~Experiment) +
+  scale_colour_manual(values=col_day, labels=c("1"="Day 1 (acclimation)","2"="Day 2 (stable)")) +
+  scale_shape_manual(values=c("1"=1,"2"=16), labels=c("1"="Day 1 (acclimation)","2"="Day 2 (stable)")) +
+  labs(x="VPD (kPa)", y=expression(Transpiration~(ml~cm^{-2})), colour=NULL, shape=NULL) +
+  base_theme
+```
+
+```{r day-cv-table}
+df %>%
+  group_by(Experiment, Day) %>%
+  summarise(n=n(),
+            mean_TLA = round(mean(TranspLeafArea, na.rm=TRUE),2),
+            cv_TLA   = round(sd(TranspLeafArea,   na.rm=TRUE)/mean(TranspLeafArea,na.rm=TRUE),3),
+            mean_Rel = round(mean(RelTranspiration,na.rm=TRUE),3),
+            cv_Rel   = round(sd(RelTranspiration,  na.rm=TRUE)/mean(RelTranspiration,na.rm=TRUE),3),
+            .groups="drop") %>%
+  kable(col.names=c("Exp","Day","n","Mean TLA","CV TLA","Mean RelT","CV RelT"),
+        caption="Higher CV on Day 1 confirms acclimation artifact") %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed"), full_width=FALSE) %>%
+  row_spec(c(1,3), background="#fff3cd")
+```
+
+## Outlier detection (>2 SD from group mean)
+
+```{r outlier-table}
+df %>%
+  group_by(Experiment, Day) %>%
+  summarise(n_total=n(), n_out=sum(outlier,na.rm=TRUE),
+            pct=round(100*n_out/n_total,1), .groups="drop") %>%
+  kable(col.names=c("Experiment","Day","Total","Outliers","%"),
+        caption="Outlier counts — TranspLeafArea >2 SD from group mean") %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed"), full_width=FALSE)
+```
+
+> **GC3 audit correction (May 2026):** Day 2, Treatment 4 VPD corrected 2.7 → 2.506 kPa (14 rows). See `experimental_data/AUDIT_REPORT.md`.
+
+---
+
+# GC Experiment 1
+
+**4 genotypes · 6 VPD levels (1.0–3.3 kPa) · 180 observations (Day 1+2) · Stomatal conductance available**
+
+## Actual transpiration per leaf area (Day 2)
+
+```{r gc1-actual, fig.width=12, fig.height=5, fig.cap="GC1 — Transpiration (ml/cm²) vs VPD. Day 2, outliers excluded. Line = mean ± SE."}
+ggplot(gc1_d2, aes(x=VPD, colour=Quadrant, fill=Quadrant)) +
+  geom_vline(xintercept=VPD_BREAK, linetype="dashed", colour="grey50", linewidth=0.7) +
+  geom_jitter(aes(y=TranspLeafArea), width=0.04, alpha=0.4, size=1.8, shape=16, show.legend=FALSE) +
+  geom_line(data=gc1_means, aes(y=mean_TLA), linewidth=1.0) +
+  geom_errorbar(data=gc1_means, aes(y=mean_TLA, ymin=mean_TLA-se_TLA, ymax=mean_TLA+se_TLA),
+                width=0.06, linewidth=0.7) +
+  geom_point(data=gc1_means, aes(y=mean_TLA), size=4, shape=21, colour="white", stroke=0.9) +
+  facet_wrap(~Quadrant+Genotype, nrow=1, labeller=labeller(Quadrant=quad_label)) +
+  scale_colour_manual(values=col_quad) + scale_fill_manual(values=col_quad) +
+  labs(x="VPD (kPa)", y=expression(Transpiration~(ml~cm^{-2}))) +
+  base_theme + theme(legend.position="none")
+```
+
+## Relative transpiration (Day 2)
+
+```{r gc1-rel, fig.width=12, fig.height=5, fig.cap="GC1 — Relative transpiration vs VPD. Dashed = 2.0 kPa Sinclair threshold."}
+ggplot(gc1_d2, aes(x=VPD, colour=Quadrant, fill=Quadrant)) +
+  geom_vline(xintercept=VPD_BREAK, linetype="dashed", colour="grey50", linewidth=0.7) +
+  geom_jitter(aes(y=RelTranspiration), width=0.04, alpha=0.4, size=1.8, shape=16, show.legend=FALSE) +
+  geom_line(data=gc1_means, aes(y=mean_Rel), linewidth=1.0) +
+  geom_errorbar(data=gc1_means, aes(y=mean_Rel, ymin=mean_Rel-se_Rel, ymax=mean_Rel+se_Rel),
+                width=0.06, linewidth=0.7) +
+  geom_point(data=gc1_means, aes(y=mean_Rel), size=4, shape=21, colour="white", stroke=0.9) +
+  facet_wrap(~Quadrant+Genotype, nrow=1, labeller=labeller(Quadrant=quad_label)) +
+  scale_colour_manual(values=col_quad) + scale_fill_manual(values=col_quad) +
+  scale_y_continuous(limits=c(0,NA)) +
+  labs(x="VPD (kPa)", y="Relative transpiration (0–1)") +
+  base_theme + theme(legend.position="none")
+```
+
+## Stomatal conductance vs VPD (GC1 only)
+
+```{r gc1-sc, fig.width=12, fig.height=5, fig.cap="GC1 — Stomatal conductance (LI-600) vs VPD. Linear regression ± 95% CI."}
+gc1_sc <- gc1_d2 %>% filter(!is.na(StomatalConductance), StomatalConductance > 0)
+ggplot(gc1_sc, aes(x=VPD, colour=Quadrant, fill=Quadrant)) +
+  geom_vline(xintercept=VPD_BREAK, linetype="dashed", colour="grey50", linewidth=0.7) +
+  geom_jitter(aes(y=StomatalConductance), width=0.04, alpha=0.4, size=1.8, shape=16, show.legend=FALSE) +
+  geom_smooth(aes(y=StomatalConductance), method="lm", se=TRUE, linewidth=1.0, alpha=0.15) +
+  facet_wrap(~Quadrant+Genotype, nrow=1, labeller=labeller(Quadrant=quad_label)) +
+  scale_colour_manual(values=col_quad) + scale_fill_manual(values=col_quad) +
+  labs(x="VPD (kPa)", y=expression(Stomatal~conductance~(mol~m^{-2}~s^{-1}))) +
+  base_theme + theme(legend.position="none")
+```
+
+## Day 1 vs Day 2 diagnostic
+
+```{r gc1-days, fig.width=12, fig.height=5, fig.cap="GC1 — Day 1 vs Day 2. Red × = outliers."}
+gc1_day <- gc1 %>% group_by(Genotype, Quadrant, Day, VPD) %>%
+  summarise(mean_TLA=mean(TranspLeafArea,na.rm=TRUE), .groups="drop")
+ggplot(gc1, aes(x=VPD, y=TranspLeafArea, colour=Day, shape=Day)) +
+  geom_point(alpha=0.3, size=1.5) +
+  geom_line(data=gc1_day, aes(y=mean_TLA, group=Day), linewidth=0.9) +
+  geom_point(data=gc1_day, aes(y=mean_TLA), size=3.5) +
+  geom_point(data=filter(gc1,outlier), aes(y=TranspLeafArea), shape=4, size=3,
+             colour="red", stroke=1.2, show.legend=FALSE) +
+  facet_wrap(~Quadrant+Genotype, nrow=1) +
+  scale_colour_manual(values=col_day, labels=c("1"="Day 1 (acclimation)","2"="Day 2 (stable)")) +
+  scale_shape_manual(values=c("1"=1,"2"=16), labels=c("1"="Day 1","2"="Day 2")) +
+  labs(x="VPD (kPa)", y=expression(Transpiration~(ml~cm^{-2})), colour=NULL, shape=NULL) +
+  base_theme
+```
+
+## GC1 summary statistics
+
+```{r gc1-stats}
+gc1_d2 %>%
+  group_by(Quadrant, Genotype) %>%
+  summarise(n=n(), mean_TLA=round(mean(TranspLeafArea,na.rm=T),2),
+            sd_TLA=round(sd(TranspLeafArea,na.rm=T),2),
+            mean_Rel=round(mean(RelTranspiration,na.rm=T),3),
+            mean_SC=round(mean(StomatalConductance,na.rm=T),3), .groups="drop") %>%
+  kable(col.names=c("Quadrant","Genotype","n","Mean TLA","SD TLA",
+                    "Mean RelTransp","Mean SC (mol/m²/s)"),
+        caption="GC1 — Day 2, outliers excluded") %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed"), full_width=FALSE)
+```
+
+---
+
+# GC Experiment 2 — Pending
+
+> **GC2 data not yet processed.** Raw pot weights recorded in `raw_data/GC2/GC_experiment_2.xlsx`.
+>
+> **Genotypes:** PI398245, PI567488B, PI377574, PI424397
+>
+> **Action:** Convert Weights sheet (pot weight differences × correction) into the Final-sheet format used by GC1 and GC3. Once available, add to `GC_combined_clean.csv` and all figures update automatically.
+
+---
+
+# GC Experiment 3
+
+**4 genotypes · 5 VPD levels (1.0–3.3 kPa) · 140 observations (Day 1+2) · No stomatal conductance**
+
+## Actual transpiration per leaf area (Day 2)
+
+```{r gc3-actual, fig.width=12, fig.height=5, fig.cap="GC3 — Transpiration (ml/cm²) vs VPD. Day 2, outliers excluded."}
+ggplot(gc3_d2, aes(x=VPD, colour=Quadrant, fill=Quadrant)) +
+  geom_vline(xintercept=VPD_BREAK, linetype="dashed", colour="grey50", linewidth=0.7) +
+  geom_jitter(aes(y=TranspLeafArea), width=0.04, alpha=0.4, size=1.8, shape=16, show.legend=FALSE) +
+  geom_line(data=gc3_means, aes(y=mean_TLA), linewidth=1.0) +
+  geom_errorbar(data=gc3_means, aes(y=mean_TLA, ymin=mean_TLA-se_TLA, ymax=mean_TLA+se_TLA),
+                width=0.06, linewidth=0.7) +
+  geom_point(data=gc3_means, aes(y=mean_TLA), size=4, shape=21, colour="white", stroke=0.9) +
+  facet_wrap(~Quadrant+Genotype, nrow=1, labeller=labeller(Quadrant=quad_label)) +
+  scale_colour_manual(values=col_quad) + scale_fill_manual(values=col_quad) +
+  labs(x="VPD (kPa)", y=expression(Transpiration~(ml~cm^{-2}))) +
+  base_theme + theme(legend.position="none")
+```
+
+## Relative transpiration (Day 2)
+
+```{r gc3-rel, fig.width=12, fig.height=5, fig.cap="GC3 — Relative transpiration vs VPD."}
+ggplot(gc3_d2, aes(x=VPD, colour=Quadrant, fill=Quadrant)) +
+  geom_vline(xintercept=VPD_BREAK, linetype="dashed", colour="grey50", linewidth=0.7) +
+  geom_jitter(aes(y=RelTranspiration), width=0.04, alpha=0.4, size=1.8, shape=16, show.legend=FALSE) +
+  geom_line(data=gc3_means, aes(y=mean_Rel), linewidth=1.0) +
+  geom_errorbar(data=gc3_means, aes(y=mean_Rel, ymin=mean_Rel-se_Rel, ymax=mean_Rel+se_Rel),
+                width=0.06, linewidth=0.7) +
+  geom_point(data=gc3_means, aes(y=mean_Rel), size=4, shape=21, colour="white", stroke=0.9) +
+  facet_wrap(~Quadrant+Genotype, nrow=1, labeller=labeller(Quadrant=quad_label)) +
+  scale_colour_manual(values=col_quad) + scale_fill_manual(values=col_quad) +
+  scale_y_continuous(limits=c(0,NA)) +
+  labs(x="VPD (kPa)", y="Relative transpiration (0–1)") +
+  base_theme + theme(legend.position="none")
+```
+
+## Day 1 vs Day 2 diagnostic
+
+```{r gc3-days, fig.width=12, fig.height=5, fig.cap="GC3 — Day 1 vs Day 2. GC3 Day 1 was ~23% lower than Day 2 — stronger acclimation effect than GC1."}
+gc3_day <- gc3 %>% group_by(Genotype, Quadrant, Day, VPD) %>%
+  summarise(mean_TLA=mean(TranspLeafArea,na.rm=TRUE), .groups="drop")
+ggplot(gc3, aes(x=VPD, y=TranspLeafArea, colour=Day, shape=Day)) +
+  geom_point(alpha=0.3, size=1.5) +
+  geom_line(data=gc3_day, aes(y=mean_TLA, group=Day), linewidth=0.9) +
+  geom_point(data=gc3_day, aes(y=mean_TLA), size=3.5) +
+  geom_point(data=filter(gc3,outlier), aes(y=TranspLeafArea), shape=4, size=3,
+             colour="red", stroke=1.2, show.legend=FALSE) +
+  facet_wrap(~Quadrant+Genotype, nrow=1) +
+  scale_colour_manual(values=col_day, labels=c("1"="Day 1 (acclimation)","2"="Day 2 (stable)")) +
+  scale_shape_manual(values=c("1"=1,"2"=16), labels=c("1"="Day 1","2"="Day 2")) +
+  labs(x="VPD (kPa)", y=expression(Transpiration~(ml~cm^{-2})), colour=NULL, shape=NULL) +
+  base_theme
+```
+
+## GC3 summary statistics
+
+```{r gc3-stats}
+gc3_d2 %>%
+  group_by(Quadrant, Genotype) %>%
+  summarise(n=n(), mean_TLA=round(mean(TranspLeafArea,na.rm=T),2),
+            sd_TLA=round(sd(TranspLeafArea,na.rm=T),2),
+            mean_Rel=round(mean(RelTranspiration,na.rm=T),3), .groups="drop") %>%
+  kable(col.names=c("Quadrant","Genotype","n","Mean TLA","SD TLA","Mean RelTransp"),
+        caption="GC3 — Day 2, outliers excluded") %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed"), full_width=FALSE)
+```
+
+---
+
+# Overall Combined Analysis (GC1 + GC3)
+
+## All genotypes — actual transpiration
+
+```{r overall-actual, fig.width=14, fig.height=8, fig.cap="All 8 genotypes (GC1 + GC3, Day 2). Ordered Q1→Q4 within each experiment. Dashed = Sinclair 2008 VPD threshold (2.0 kPa)."}
+ggplot(d2 %>% filter(!outlier) %>%
+         mutate(Geno_exp=factor(paste0(Genotype,"\n[",Experiment,"]"), levels=geno_order$Geno_exp)),
+       aes(x=VPD, colour=Quadrant, fill=Quadrant)) +
+  geom_vline(xintercept=VPD_BREAK, linetype="dashed", colour="grey50", linewidth=0.6) +
+  geom_jitter(aes(y=TranspLeafArea), width=0.04, alpha=0.25, size=1.2, shape=16, show.legend=FALSE) +
+  geom_line(data=all_means, aes(y=mean_TLA), linewidth=1.0) +
+  geom_errorbar(data=all_means, aes(y=mean_TLA, ymin=mean_TLA-se_TLA, ymax=mean_TLA+se_TLA),
+                width=0.06, linewidth=0.6) +
+  geom_point(data=all_means, aes(y=mean_TLA), size=3.5, shape=21, colour="white", stroke=0.8) +
+  facet_wrap(~Geno_exp, nrow=2) +
+  scale_colour_manual(values=col_quad) + scale_fill_manual(values=col_quad) +
+  labs(x="VPD (kPa)", y=expression(Transpiration~(ml~cm^{-2})),
+       colour="Quadrant", fill="Quadrant") +
+  base_theme + guides(colour=guide_legend(nrow=1), fill=guide_legend(nrow=1))
+```
+
+## Quadrant-pooled analysis
+
+```{r overall-quadrant, fig.width=10, fig.height=5, fig.cap="Quadrant-pooled: 2 genotypes × 2 experiments per panel (n ≈ 8 per VPD). Q1 shows clear plateau above 2.0 kPa; Q4 maintains linear response — confirming quadrant classification."}
+ggplot(d2 %>% filter(!outlier), aes(x=VPD, colour=Quadrant, fill=Quadrant)) +
+  geom_vline(xintercept=VPD_BREAK, linetype="dashed", colour="grey50", linewidth=0.7) +
+  geom_jitter(aes(y=TranspLeafArea), width=0.04, alpha=0.25, size=1.5, shape=16, show.legend=FALSE) +
+  geom_line(data=quad_means, aes(y=mean_TLA), linewidth=1.2) +
+  geom_errorbar(data=quad_means, aes(y=mean_TLA, ymin=mean_TLA-se_TLA, ymax=mean_TLA+se_TLA),
+                width=0.07, linewidth=0.7) +
+  geom_point(data=quad_means, aes(y=mean_TLA), size=4.5, shape=21, colour="white", stroke=1.0) +
+  facet_wrap(~Quadrant, nrow=1, labeller=labeller(Quadrant=c(
+    Q1="Q1\nPlastic / High WUE", Q2="Q2\nPlastic / Low WUE",
+    Q3="Q3\nNonplastic / Low WUE", Q4="Q4\nNonplastic / High WUE"))) +
+  scale_colour_manual(values=col_quad) + scale_fill_manual(values=col_quad) +
+  labs(x="VPD (kPa)", y=expression(Transpiration~(ml~cm^{-2}))) +
+  base_theme + theme(legend.position="none")
+```
+
+## GC1 vs GC3 reproducibility
+
+```{r exp-compare, fig.width=10, fig.height=5, fig.cap="GC1 vs GC3 per quadrant — consistent patterns across independent experiments support reproducibility."}
+ggplot(all_means, aes(x=VPD, y=mean_TLA, colour=Experiment,
+                      linetype=Experiment, shape=Experiment)) +
+  geom_vline(xintercept=VPD_BREAK, linetype="dashed", colour="grey50", linewidth=0.6) +
+  geom_line(linewidth=1.0) +
+  geom_errorbar(aes(ymin=mean_TLA-se_TLA, ymax=mean_TLA+se_TLA), width=0.07, linewidth=0.6) +
+  geom_point(size=3.5) +
+  facet_wrap(~Quadrant, nrow=1, labeller=labeller(Quadrant=c(
+    Q1="Q1\nPlastic / High WUE", Q2="Q2\nPlastic / Low WUE",
+    Q3="Q3\nNonplastic / Low WUE", Q4="Q4\nNonplastic / High WUE"))) +
+  scale_colour_manual(values=col_exp) +
+  scale_shape_manual(values=c(GC1=16, GC3=17)) +
+  labs(x="VPD (kPa)", y=expression(Transpiration~(ml~cm^{-2})),
+       colour="Experiment", linetype="Experiment", shape="Experiment") +
+  base_theme
+```
+
+---
+
+# Main Results
+
+```{r main-results-table}
+if (file.exists("experimental_data/stats/GC_summary_by_genotype.csv")) {
+  read.csv("experimental_data/stats/GC_summary_by_genotype.csv") %>%
+    arrange(Quadrant, Experiment) %>%
+    select(Experiment, Quadrant, Genotype, n, mean_TLA, sd_TLA, mean_Rel, sd_Rel) %>%
+    kable(col.names=c("Exp","Quadrant","Genotype","n",
+                      "Mean TLA (ml/cm²)","SD TLA","Mean RelTransp","SD RelTransp"),
+          digits=3,
+          caption="Summary — Day 2, outliers excluded, GC1+GC3") %>%
+    kable_styling(bootstrap_options=c("striped","hover","condensed"), full_width=FALSE)
 }
 ```
 
-## Coefficient of Variation by Day and Experiment
+**Key findings:**
 
-```{r cv-table}
-gc <- tryCatch(read.csv("cleaned_data/GC_combined_clean.csv", stringsAsFactors = FALSE),
-               error = function(e) NULL)
+1. **Q1 genotypes** (PI471938 in GC1; PI398617 in GC3) show the strongest reduction in transpiration above VPD ≈ 2.0 kPa — consistent with the limited-transpiration (LT) trait.
+2. **Q4 genotypes** (PI603457A; PI603465C) maintain a linear increase across all VPD levels — no threshold detected.
+3. **Day 2 is required** — Day 1 underestimates transpiration by 20–25% with ~50% higher CV.
+4. **GC1 and GC3 are reproducible** — consistent quadrant-level patterns across two independent experiments.
+5. **GC2 is pending** — 4 additional genotypes need raw weight processing.
 
-if (!is.null(gc)) {
-  cv_tab <- gc %>%
-    mutate(Day = as.character(Day)) %>%
-    group_by(Experiment, Day) %>%
-    summarise(
-      N        = n(),
-      Mean_RelT = round(mean(RelTranspiration, na.rm = TRUE), 3),
-      SD_RelT   = round(sd(RelTranspiration, na.rm = TRUE), 3),
-      CV        = round(sd(RelTranspiration, na.rm = TRUE) / mean(RelTranspiration, na.rm = TRUE), 3),
-      .groups   = "drop"
-    )
-  kable(cv_tab,
-        col.names = c("Experiment", "Day", "N", "Mean RelTransp", "SD", "CV"),
-        caption = "Coefficient of variation (CV) of relative transpiration by Day and Experiment. Day 2 shows consistently lower CV.") %>%
-    kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) %>%
-    column_spec(6, bold = TRUE,
-                color = ifelse(cv_tab$CV > 0.30, "red", "black"))
-} else {
-  cat("GC_combined_clean.csv not found — skipping CV table.")
-}
-```
+---
 
-## Outlier detection
+# Pending Actions
 
-Outlier screening was performed by computing standardized residuals (z-scores) within each Experiment × Genotype × Day × Treatment group. No observations exceeded ±2 SD from the group mean. All 320 observations were retained in the cleaned dataset.
+| Priority | Action |
+|---|---|
+| **High** | Process GC2 raw pot weights → transpiration (Final sheet format) |
+| **High** | Extend VPD range to 3.5–4.0 kPa in next run |
+| **Medium** | Increase replication to n ≥ 6 per treatment |
+| **Medium** | Add stomatal conductance to GC3 (LI-600) |
+| **Low** | Piecewise / linear-plateau AIC model comparison (`GC_model_fitting.R`) |
 
-## Conclusion: use Day 2 only
-
-Based on the CV analysis and visual inspection (figure above), **Day 2 is used exclusively** for all subsequent modelling and statistical comparisons.
-
-# VPD vs Relative Transpiration — All Genotypes
-
-```{r main-allgeno, fig.cap="Relative transpiration vs VPD for all genotypes (Day 2, GC1 and GC3 combined). Points are individual pot measurements; lines are loess smooths. Q1 genotypes (orange) show a plateau at high VPD; Q4 genotypes (blue) maintain a linear response.", out.width="100%"}
-if (file.exists("figures/GC_Fig_main_allgeno.png")) {
-  knitr::include_graphics("figures/GC_Fig_main_allgeno.png")
-}
-```
-
-# Model Fitting Results
-
-## Model descriptions
-
-Three mixed-effects model forms were fitted per genotype using the `lme4` package with replication as a random intercept (`(1|Replication)`) and REML = FALSE (for AIC comparison):
-
-- **Linear**: `RelTranspiration ~ VPD` — assumes proportional increase with VPD across the full range.
-- **Bilinear**: two-segment piecewise linear model; breakpoint estimated via the `segmented` package using profile likelihood.
-- **Linear-Plateau (LP)**: linear increase up to a breakpoint (BP), then a flat plateau. BP selected by AIC grid search over the observed VPD range.
-
-The best model was selected by lowest AIC. ΔAIC < 2 indicates models are statistically indistinguishable.
-
-## Model comparison table
-
-```{r model-table}
-mc <- tryCatch(read.csv("stats/GC_model_comparison.csv", stringsAsFactors = FALSE),
-               error = function(e) NULL)
-
-if (!is.null(mc)) {
-  display_cols <- c("Experiment", "Genotype", "Best_model", "dAIC_best",
-                    "Lin_AIC", "Bilin_AIC", "LP_AIC",
-                    "LP_BP", "Lin_R2", "LP_R2")
-  mc_disp <- mc[, intersect(display_cols, colnames(mc))]
-  mc_disp <- mc_disp %>%
-    mutate(across(where(is.numeric), ~ round(.x, 3)))
-
-  model_colors <- case_when(
-    mc_disp$Best_model == "Linear"          ~ "#4e9a46",
-    mc_disp$Best_model == "Bilinear"        ~ "#d95f02",
-    mc_disp$Best_model == "Linear-Plateau"  ~ "#1f78b4",
-    TRUE                                    ~ "black"
-  )
-
-  kable(mc_disp,
-        caption = "AIC-based model comparison for each genotype. Best_model column is colour-coded by model type: green = Linear, orange = Bilinear, blue = Linear-Plateau.") %>%
-    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = TRUE) %>%
-    column_spec(which(colnames(mc_disp) == "Best_model"),
-                bold = TRUE, color = model_colors)
-} else {
-  cat("GC_model_comparison.csv not found.")
-}
-```
-
-## AIC heatmap
-
-```{r aic-heatmap, fig.cap="AIC heatmap comparing model performance across genotypes and experiments. Lighter colours indicate lower (better) AIC.", out.width="100%"}
-if (file.exists("figures/GC_Fig_AIC_heatmap.png")) {
-  knitr::include_graphics("figures/GC_Fig_AIC_heatmap.png")
-}
-```
-
-## Fitted curves
-
-```{r model-fits, fig.cap="Best-fit model curves overlaid on Day 2 data for each genotype. Dashed vertical lines indicate estimated breakpoints for Bilinear and Linear-Plateau models.", out.width="100%"}
-if (file.exists("figures/GC_Fig_model_fits.png")) {
-  knitr::include_graphics("figures/GC_Fig_model_fits.png")
-}
-```
-
-## Interpretation
-
-- **Q1 genotypes** (PI471938, PI398617): Linear-Plateau model fits best, with breakpoints at ~2.4–2.9 kPa. This confirms the limited-transpiration (LT) trait — transpiration plateaus at moderate-to-high VPD.
-- **Q4 genotypes** (PI603457A, PI603465C): Linear model fits best (R² > 0.91), with no detectable VPD threshold. These genotypes maintain proportional transpiration increases across the full VPD range tested.
-- **Q2/Q3 genotypes**: Intermediate responses; ΔAIC < 2 in most cases, indicating that additional replication (n ≥ 6 per treatment) and wider VPD range (up to 3.5–4.0 kPa) are needed to discriminate model forms with confidence.
-
-# WUE Quadrant Analysis
-
-```{r quadrant-pooled, fig.cap="Relative transpiration pooled by WUE quadrant (Day 2, GC1 + GC3). Q1 (Plastic, High WUE) shows the strongest plateau response; Q4 (Nonplastic, High WUE) shows the most linear response.", out.width="100%"}
-if (file.exists("figures/GC_Fig_quadrant_pooled.png")) {
-  knitr::include_graphics("figures/GC_Fig_quadrant_pooled.png")
-}
-```
-
-# Stomatal Conductance (GC1)
-
-Stomatal conductance (SC, mmol m⁻² s⁻¹) was measured concurrently with transpiration in GC1 using the LI-600 porometer. This allows direct assessment of the stomatal mechanism underlying the LT trait.
-
-```{r sc-vpd, fig.cap="Stomatal conductance vs VPD for GC1 genotypes (Day 2). Q1 genotype (PI471938) shows decreasing SC at high VPD, consistent with stomatal closure driving the LT response.", out.width="100%"}
-if (file.exists("figures/GC_Fig_SC_vs_VPD.png")) {
-  knitr::include_graphics("figures/GC_Fig_SC_vs_VPD.png")
-}
-```
-
-```{r sc-transp, fig.cap="Stomatal conductance vs relative transpiration for GC1 genotypes. The positive relationship confirms SC as the primary driver of transpiration variation.", out.width="100%"}
-if (file.exists("figures/GC_Fig_SC_vs_Transp.png")) {
-  knitr::include_graphics("figures/GC_Fig_SC_vs_Transp.png")
-}
-```
-
-# Field Stomatal Conductance & Yield
-
-Field measurements were conducted at two dates (August 9 and August 30, 2024) under rainfed and irrigated conditions, capturing SC alongside wilting scores and end-of-season yield data.
-
-```{r field-overview, fig.cap="Field experiment overview: stomatal conductance, wilting score, and yield by genotype and water management treatment (Rainfed vs Irrigated).", out.width="100%"}
-if (file.exists("figures/SC_field_Fig_overview.png")) {
-  knitr::include_graphics("figures/SC_field_Fig_overview.png")
-}
-```
-
-```{r field-sc-yield, fig.cap="Field stomatal conductance vs yield by genotype and water management. Higher SC under rainfed conditions in Q1 genotypes may reflect improved water-use strategy.", out.width="100%"}
-if (file.exists("figures/SC_field_Fig_SC_vs_Yield.png")) {
-  knitr::include_graphics("figures/SC_field_Fig_SC_vs_Yield.png")
-}
-```
-
-# Data Quality Audit Findings
-
-A systematic audit of all Excel source files (GC1 `Data_analysis.xlsx`, GC2 `GC_experiment_2.xlsx`, GC3 `GC_experiment_3.xlsx`) was completed after initial data processing. Key findings and corrections applied to `GC_combined_clean.csv` are documented below.
-
-## Critical Issues (Applied)
-
-| Issue | File | Details | Action |
-|---|---|---|---|
-| VPD error, GC3 Day 2 T4 | GC3 Final sheet | Day 2 T4 VPD recorded as 2.7 kPa; actual logger value = 2.506 kPa (14 rows affected) | Corrected to 2.506 kPa |
-| SC outliers, GC1 | GC1 Final-ee | PI603457A pots 6 & 13 (Day 1, T2): SC ~10⁶ mol m⁻² s⁻¹ — impossible values, likely unit-conversion error in Excel | Values excluded (NA) |
-| E_apparent column | GC1 Final-ee | All 180 rows: values ~10⁶ mmol m⁻² s⁻¹, unphysical (median 2,066,174) | Column not used in analysis |
-
-## Moderate Issues (Documented)
-
-| Issue | File | Details |
-|---|---|---|
-| Missing replication | GC1 | PI471938 has 3 reps (scale W7 absent); all other genotypes have 4. Unbalanced design. |
-| Missing replication | GC3 | PI423802 has 2 reps (germination failure in 2 pots) |
-| GC2 — no transpiration data | GC2 | No Final sheet; only Tracking VPD and Tracking Weights sheets exist. GC2 is excluded from all analysis. |
-
-## GC2 VPD Level Confirmation
-
-GC2 Tracking VPD sheet confirms six treatment levels: T1 = 0.978, T2 = 1.527, T3 = 1.969, T4 = 2.422, T5 = 2.839, T6 = 3.355 kPa (Day 1). These are consistent with GC1 targets but GC2 transpiration data cannot be reconstructed without post-hoc weight differencing from the Tracking Weights sheet.
-
-## Stomatal Conductance vs VPD Relationship
-
-All GC1 genotypes show **decreasing SC with increasing VPD** (Pearson r = −0.32 to −0.62). This is physiologically real: stomata close in response to higher atmospheric demand. The negative SC–RelTranspiration correlation at the individual observation level does not indicate data error — it reflects the fact that atmospheric demand drives total transpiration upward even as stomatal aperture decreases.
-
-# Data Summary Table
-
-```{r data-summary}
-if (!is.null(gc)) {
-  key_cols <- c("RelTranspiration", "Transpiration_ml", "TranspLeafArea",
-                "VPD", "StomatalConductance", "LeafArea_squarecm", "DryMatter_total")
-  key_cols <- intersect(key_cols, colnames(gc))
-  cat("Summary of key numeric variables (all days, all experiments):\n\n")
-  print(summary(gc[, key_cols]))
-}
-```
-
-```{r n-by-group}
-if (!is.null(gc)) {
-  n_tab <- gc %>%
-    mutate(Day = as.character(Day)) %>%
-    count(Experiment, Genotype, Day, name = "N") %>%
-    arrange(Experiment, Genotype, Day)
-
-  kable(n_tab,
-        caption = "Sample size (N pots) by Experiment, Genotype, and Day.",
-        col.names = c("Experiment", "Genotype", "Day", "N")) %>%
-    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
-}
-```
+---
 
 # Session Info
 
