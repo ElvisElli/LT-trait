@@ -16,6 +16,11 @@ nasapower_ETo_daily.csv
 *.tiff
 *.tif
 
+# APSIM SQLite outputs (regenerable from sim-*.apsimx)
+*.db
+*.db-shm
+*.db-wal
+
 # OS
 .DS_Store
 Thumbs.db
