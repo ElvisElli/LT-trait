@@ -13,6 +13,15 @@ suppressPackageStartupMessages({
 })
 
 ## ── Working directory: always the folder that contains this script ─────────────
+## Output folder is one level up from scripts/
+OUT_DIR <- file.path(normalizePath(
+  if (nzchar(Sys.getenv("RSCRIPT_DIR"))) Sys.getenv("RSCRIPT_DIR")
+  else dirname(normalizePath(commandArgs(trailingOnly = FALSE)[
+    grep("--file=", commandArgs(trailingOnly = FALSE))
+  ], mustWork = FALSE))
+), "../outputs")
+dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
+
 script_dir <- normalizePath(
   if (nzchar(Sys.getenv("RSCRIPT_DIR"))) Sys.getenv("RSCRIPT_DIR")
   else dirname(normalizePath(commandArgs(trailingOnly = FALSE)[

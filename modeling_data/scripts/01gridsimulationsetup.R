@@ -15,7 +15,7 @@ library(readxl)
 apsimx_options(exe.path = "C:\\Users\\efelli\\AppData\\Local\\Programs\\APSIM2025.3.7681.0\\bin\\Models.exe")
 setwd(dirname(getActiveDocumentContext()$path))
 
-TEMPLATE_FILE <- "_corn-5-15-2026.apsimx"
+TEMPLATE_FILE <- "../apsim_templates/_corn-5-15-2026.apsimx"
 DATE_RANGE    <- c("1985-01-01", "2025-12-31")
 
 sim.grid <- read_excel("locations.updated.xlsx", sheet = "Sheet2")
