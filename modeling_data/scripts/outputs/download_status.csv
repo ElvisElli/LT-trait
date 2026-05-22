@@ -1,0 +1,12 @@
+"location","met","rds"
+"NorthPlatte_NE","OK","OK"
+"Eustis_NE","OK","ERROR: Error in fix.by(by.y, y) : 'by' must specify a uniquely valid column"
+"Lincoln_NE","OK","ERROR: Error in ssurgo2sp(mapunit = mapunit, component = cmpnt, chorizon = chrzns,  : 
+  interpolation did not work. Possibly due to missing values."
+"Albany_MO","OK","OK"
+"MountVernon_MO","OK","OK"
+"Novelty_MO","OK","OK"
+"Rowher_AR","OK","OK"
+"Marianna_AR","OK","OK"
+"Jonesboro_AR","OK","OK"
+"Keiser_AR","OK","OK"
