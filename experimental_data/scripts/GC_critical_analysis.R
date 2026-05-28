@@ -5,7 +5,7 @@
 
 ## ── Path configuration ────────────────────────────────────────────────────────
 ## Windows (local): edit and uncomment the line below
-# project_root <- "C:/Users/YourName/Projects/LT-trait"
+ project_root <- "C:/Users/efelli/Documents/GitHub/LT-trait/"
 if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
 ## ─────────────────────────────────────────────────────────────────────────────
 
@@ -325,8 +325,9 @@ p_sc_vpd <- ggplot(gc1_sc,
   labs(title = NULL,
        x = "VPD (kPa)",
        y = "Stomatal conductance\n(mol m⁻² s⁻¹)") +
-  base_theme
-save_fig(p_sc_vpd, "GC_Fig_SC_vs_VPD", w_cm = 26, h_cm = 10)
+  base_theme+
+  scale_y_continuous(limits = c(0,1))
+save_fig(p_sc_vpd, "GC_Fig_SC_vs_VPD", w_cm = 20, h_cm = 10)
 cat("Saved: GC_Fig_SC_vs_VPD.png/.tiff\n")
 
 # Plot 2: SC vs RelTranspiration, colour by VPD treatment
