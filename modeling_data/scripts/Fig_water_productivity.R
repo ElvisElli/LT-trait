@@ -20,8 +20,8 @@ d <- ssm %>%
     WP      = Yield_kgha / SUMETT,
     water_mgmt = factor(water_mgmt,
                         levels = c("Rainfed","Irrigated"),
-                        labels = c("Rainfed\n(water-limited)",
-                                   "Irrigated\n(potential)"))
+                        labels = c("Water-Limited Conditions",
+                                   "Potential Conditions"))
   )
 
 ## summary for significance brackets (t-test LT vs Non-LT per panel)
@@ -49,22 +49,17 @@ p <- ggplot(d, aes(x = Genotype, y = WP, fill = Genotype)) +
                                 "Limited transpiration"     = "#d95f02")) +
   scale_x_discrete(labels = c("Non-limited\ntranspiration",
                                "Limited\ntranspiration")) +
-  labs(x        = NULL,
-       y        = expression(Water~productivity~(kg~mm^{-1})),
-       fill     = NULL,
-       title    = "Water productivity: yield per unit seasonal crop ET",
-       subtitle = "Violin + boxplot across 6 locations × 30 years  ·  *** p < 0.001") +
+  labs(x    = NULL,
+       y    = expression(Water~productivity~(kg~mm^{-1})),
+       fill = NULL) +
   theme_bw(base_size = 12) +
-  theme(legend.position  = "none",
-        strip.background = element_rect(fill = "grey92", colour = NA),
-        strip.text       = element_text(face = "bold", size = 11),
-        panel.grid.minor = element_blank(),
+  theme(legend.position    = "none",
+        strip.background   = element_rect(fill = "grey92", colour = NA),
+        strip.text         = element_text(face = "bold", size = 11),
+        panel.grid.minor   = element_blank(),
         panel.grid.major.x = element_blank(),
-        plot.title       = element_text(face = "bold", size = 12),
-        plot.subtitle    = element_text(colour = "grey40", size = 9),
-        axis.text.x      = element_text(size = 9))
+        axis.text.x        = element_text(size = 9))
 
-ggsave("modeling_data/figures/Fig_water_productivity.png",  plot = p, width = 18, height = 14,
-       units = "cm", dpi = 150, bg = "white")
 ggsave("modeling_data/figures/Fig_water_productivity.png", plot = p, width = 18, height = 14,
+       units = "cm", dpi = 150, bg = "white")
 message("Saved: Fig_water_productivity")
