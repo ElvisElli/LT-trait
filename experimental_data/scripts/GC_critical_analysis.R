@@ -317,13 +317,14 @@ p_sc_vpd <- ggplot(gc1_sc,
   geom_point(alpha = 0.6, size = 1.8) +
   geom_smooth(method = "lm", se = TRUE, linewidth = 0.8, alpha = 0.2,
               aes(group = Day)) +
-  scale_colour_manual(values = col_day, name = "Day",
+  scale_colour_manual(values = col_day, name = NULL,
                       labels = c(`1` = "Day 1", `2` = "Day 2")) +
   geom_vline(xintercept = 2.0, linetype = "dashed",
              colour = "grey30", linewidth = 0.5) +
   facet_wrap(~ Genotype, nrow = 1) +
-  labs(title = "VPD vs Stomatal Conductance — GC1",
-       x = "VPD (kPa)", y = "Stomatal conductance (mol m⁻² s⁻¹)") +
+  labs(title = NULL,
+       x = "VPD (kPa)",
+       y = "Stomatal conductance\n(mol m⁻² s⁻¹)") +
   base_theme
 save_fig(p_sc_vpd, "GC_Fig_SC_vs_VPD", w_cm = 26, h_cm = 10)
 cat("Saved: GC_Fig_SC_vs_VPD.png/.tiff\n")
