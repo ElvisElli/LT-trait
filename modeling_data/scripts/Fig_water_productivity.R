@@ -2,7 +2,7 @@
 
 ## ── Path configuration ────────────────────────────────────────────────────────
 ## Windows (local): edit and uncomment the line below
-# project_root <- "C:/Users/YourName/Projects/LT-trait"
+ project_root <- "C:/Users/efelli/Documents/GitHub/LT-trait/"
 if (.Platform$OS.type == "windows") setwd(project_root) else setwd("/home/user/LT-trait")
 ## ─────────────────────────────────────────────────────────────────────────────
 library(dplyr); library(ggplot2); library(readxl)
@@ -39,11 +39,11 @@ sig <- d %>%
 p <- ggplot(d, aes(x = Genotype, y = WP, fill = Genotype)) +
   geom_violin(trim = TRUE, alpha = 0.35, colour = NA) +
   geom_boxplot(width = 0.25, outlier.shape = 21, outlier.size = 1.2,
-               outlier.alpha = 0.4, colour = "grey25", linewidth = 0.5) +
+               outlier.alpha = 0.4, colour = "black", linewidth = 0.5) +
   geom_text(data = sig, aes(x = 1.5, y = y_max, label = label),
             inherit.aes = FALSE, size = 5, fontface = "bold") +
   geom_segment(data = sig, aes(x = 1, xend = 2, y = y_max * 0.985, yend = y_max * 0.985),
-               inherit.aes = FALSE, linewidth = 0.4, colour = "grey30") +
+               inherit.aes = FALSE, linewidth = 0.4, colour = "black") +
   facet_wrap(~ water_mgmt, nrow = 1) +
   scale_fill_manual(values = c("Non-limited transpiration" = "#31a354",
                                 "Limited transpiration"     = "#d95f02")) +
