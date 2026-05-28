@@ -62,11 +62,11 @@ clean_wue <- function(x) {
 cat("\n── Step 1: Loading data ──────────────────────────────────────────────────\n")
 
 gc1_raw <- read_excel(
-  "experimental_data/data-analysis/data-analysis/transpiration/Data analysis.xlsx",
+  "experimental_data/raw_data/GC1/Data_analysis.xlsx",
   sheet = "Final-ee"
 )
 gc3_raw <- read_excel(
-  "experimental_data/data-analysis/data-analysis/Second time GC/Part 3/GC experiment 3.xlsx",
+  "experimental_data/raw_data/GC3/GC_experiment_3.xlsx",
   sheet = "Final"
 )
 
@@ -427,7 +427,7 @@ cat("Saved: GC_stats_piecewise_day2.csv\n")
 cat("\n── Step 7: Field stomatal conductance analysis ───────────────────────────\n")
 
 sc_field <- read_excel(
-  "experimental_data/SC_vs_T/SC_vs_T/soybean_dataset_SC.xlsx",
+  "experimental_data/raw_data/field_SC/soybean_dataset_SC.xlsx",
   sheet = "dates_ee"
 ) %>%
   mutate(
