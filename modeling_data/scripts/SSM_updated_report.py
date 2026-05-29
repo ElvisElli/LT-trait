@@ -278,47 +278,56 @@ for loc in locs:
 adv_df = pd.DataFrame(adv_rows)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# DAILY ETc ANALYSIS
+# DAILY ETc / GLAI / DDMP ANALYSIS
+# Reference ET: NASA POWER Penman-Monteith (nasapower_ETo_pdoy.csv / seasonal)
+# SSM internal PET column is NOT used for reference ET here.
 # ══════════════════════════════════════════════════════════════════════════════
-print("Loading daily data for ETc analysis (large file, may take ~30 s) …")
-DAILY_COLS = ["Location","Genotype_class","water_mgmt","DAP","PET","TR","SEVP","ETc"]
+print("Loading daily data for ETc / GLAI / DDMP analysis (large file, ~30 s) …")
+DAILY_COLS = ["Location","Genotype_class","water_mgmt","DAP","TR","SEVP","ETc","GLAI","DDMP"]
 chunks = []
 for chunk in pd.read_csv(DAILY, usecols=DAILY_COLS, chunksize=200_000):
-    chunk = chunk[(chunk["DAP"] > 0)]
-    chunk["ETc"] = pd.to_numeric(chunk["ETc"], errors="coerce")
-    chunk["PET"] = pd.to_numeric(chunk["PET"], errors="coerce")
+    chunk = chunk[chunk["DAP"] > 0]
+    for c in ["ETc","GLAI","DDMP"]:
+        chunk[c] = pd.to_numeric(chunk[c], errors="coerce")
     chunk["Location"] = chunk["Location"].str.strip().str.replace("­", "", regex=False)
-    chunk = chunk[chunk["ETc"].notna() & chunk["PET"].notna()]
-    chunk = chunk[(chunk["ETc"] >= 0) & (chunk["PET"] >= 0)]
+    chunk = chunk[chunk["ETc"].notna()]
+    chunk = chunk[chunk["ETc"] >= 0]
     chunks.append(chunk)
 dy = pd.concat(chunks, ignore_index=True)
 dy["Genotype_class"] = pd.Categorical(dy["Genotype_class"], categories=GENO_ORDER, ordered=True)
+state_map = {l: "Arkansas" for l in ["Jonesboro","Keiser","Marianna","Rohwer"]}
+state_map.update({l: "Missouri"  for l in ["Albany","Mount Vernon","Novelty"]})
+state_map.update({l: "Nebraska"  for l in ["Eustis","Lincoln","North Platte"]})
+dy["State"] = dy["Location"].map(state_map)
 print(f"  {len(dy):,} valid growing-season daily rows loaded")
+
+# 5-day DAP bins covering full cycle (up to 245 DAP)
+MAX_DAP = int(dy["DAP"].max()) + 6
+BIN_EDGES  = list(range(0, MAX_DAP, 5))
+BIN_LABELS = [f"{i+1}–{i+5}" for i in range(0, MAX_DAP - 5, 5)]
+dy["DAP_bin"] = pd.cut(dy["DAP"], bins=BIN_EDGES, labels=BIN_LABELS)
+dy["DAP_mid"] = dy["DAP_bin"].astype(str).str.split("–").str[0].astype(float) + 2.5
+
+locs_d = [l for l in LOC_ORDER if l in dy["Location"].values]
 
 # ── Fig D1: Mean daily ETc — bar chart by location × genotype × management ───
 print("Fig D1: Mean daily ETc by location, management, genotype …")
-# Mean daily ETc per season-simulation, then average across years
 daily_mean = (dy.groupby(["Location","Genotype_class","water_mgmt"])["ETc"]
                 .mean().reset_index(name="mean_daily_ETc"))
-# SE across locations × years is implicit in the mean
-daily_se = (dy.groupby(["Location","Genotype_class","water_mgmt"])["ETc"]
-              .sem().reset_index(name="se_daily_ETc"))
-daily_agg = daily_mean.merge(daily_se, on=["Location","Genotype_class","water_mgmt"])
+daily_se   = (dy.groupby(["Location","Genotype_class","water_mgmt"])["ETc"]
+                .sem().reset_index(name="se_daily_ETc"))
+daily_agg  = daily_mean.merge(daily_se, on=["Location","Genotype_class","water_mgmt"])
 daily_agg["Location"] = pd.Categorical(daily_agg["Location"], categories=LOC_ORDER, ordered=True)
 daily_agg = daily_agg.sort_values(["Location","Genotype_class"])
 
 fig, axes = plt.subplots(2, 1, figsize=(14, 9), sharey=False)
-for ax, mgmt in zip(axes, ["Irrigated", "Rainfed"]):
+for ax, mgmt in zip(axes, ["Irrigated","Rainfed"]):
     sub = daily_agg[daily_agg["water_mgmt"] == mgmt]
-    locs_d = [l for l in LOC_ORDER if l in sub["Location"].values]
-    x = np.arange(len(locs_d))
-    w = 0.18
+    x = np.arange(len(locs_d)); w = 0.18
     for i, g in enumerate(GENO_ORDER):
         sg = sub[sub["Genotype_class"] == g].set_index("Location").reindex(locs_d)
-        ax.bar(x + (i-1.5)*w, sg["mean_daily_ETc"], w,
-               yerr=sg["se_daily_ETc"],
-               color=COL_GENO[g], label=g, alpha=0.85, capsize=3,
-               error_kw={"linewidth": 0.7})
+        ax.bar(x + (i-1.5)*w, sg["mean_daily_ETc"], w, yerr=sg["se_daily_ETc"],
+               color=COL_GENO[g], label=g, alpha=0.85, capsize=3, error_kw={"linewidth":0.7})
     ax.set_xticks(x); ax.set_xticklabels(locs_d, rotation=35, ha="right")
     ax.set_ylabel("Mean daily ETc (mm day⁻¹)")
     ax.set_title(mgmt)
@@ -329,101 +338,77 @@ for ax, mgmt in zip(axes, ["Irrigated", "Rainfed"]):
     ax.text(5.0,  ax.get_ylim()[1]*0.97, "Missouri",  ha="center", fontsize=9, color="grey")
     ax.text(8.5,  ax.get_ylim()[1]*0.97, "Nebraska",  ha="center", fontsize=9, color="grey")
     ax.grid(axis="y", alpha=0.3); ax.set_axisbelow(True)
-plt.suptitle("Mean daily crop ET (ETc) by location, management, and genotype",
+plt.suptitle("Mean daily crop ET (ETc = TR + Soil evaporation) by location, management, and genotype",
              fontsize=12, y=1.01)
 plt.tight_layout()
 fig_d1 = fig_to_b64()
 
-# ── Fig D2: Seasonal ETc progression (DAP bins) by genotype — per state ───────
-print("Fig D2: Seasonal ETc progression by DAP …")
-dy["DAP_bin"] = pd.cut(dy["DAP"], bins=range(0, 145, 10),
-                        labels=[f"{i}–{i+9}" for i in range(0, 140, 10)])
-state_map = {l: "Arkansas" for l in ["Jonesboro","Keiser","Marianna","Rohwer"]}
-state_map.update({l: "Missouri" for l in ["Albany","Mount Vernon","Novelty"]})
-state_map.update({l: "Nebraska" for l in ["Eustis","Lincoln","North Platte"]})
-dy["State"] = dy["Location"].map(state_map)
+# ── Generic progression plotter (shared for ETc, GLAI, DDMP) ─────────────────
+def make_progression_fig(var, ylabel, title_suffix):
+    dap_state = (dy.groupby(["State","Genotype_class","water_mgmt","DAP_bin","DAP_mid"])[var]
+                   .mean().reset_index(name=f"mean_{var}"))
+    fig, axes = plt.subplots(2, 3, figsize=(18, 9), sharey=False, sharex=False)
+    for col, state in enumerate(STATE_ORDER):
+        for row, mgmt in enumerate(["Irrigated","Rainfed"]):
+            ax = axes[row][col]
+            sub = dap_state[(dap_state["State"] == state) & (dap_state["water_mgmt"] == mgmt)]
+            for g in GENO_ORDER:
+                sg = sub[sub["Genotype_class"] == g].sort_values("DAP_mid")
+                sg = sg[sg[f"mean_{var}"].notna()]
+                if len(sg) == 0: continue
+                ax.plot(sg["DAP_mid"], sg[f"mean_{var}"],
+                        color=COL_GENO[g], linewidth=1.8, label=g, marker="o", markersize=2.5)
+            ax.set_title(f"{state} — {mgmt}", fontsize=10)
+            ax.set_ylim(bottom=0)
+            ax.grid(alpha=0.25); ax.set_axisbelow(True)
+            # reference lines at R1~50, R5~90, PM~end
+            for xv, lbl in [(50,"V→R1"),(90,"R1→R5")]:
+                ax.axvline(xv, color="grey", linestyle=":", linewidth=0.8, alpha=0.5)
+                ax.text(xv+1, ax.get_ylim()[1]*0.95, lbl, fontsize=7, color="grey")
+            if col == 0: ax.set_ylabel(ylabel)
+            if row == 1: ax.set_xlabel("Days after planting (DAP)")
+    axes[0][0].legend(fontsize=8, frameon=True, loc="upper left")
+    plt.suptitle(f"{title_suffix}\n(5-day DAP bins, averaged across 30 years and planting dates)",
+                 y=1.01, fontsize=12)
+    plt.tight_layout()
+    return fig_to_b64()
 
-dap_state = (dy.groupby(["State","Genotype_class","water_mgmt","DAP_bin"])["ETc"]
-               .mean().reset_index(name="mean_ETc"))
-dap_state["DAP_mid"] = dap_state["DAP_bin"].astype(str).str.split("–").str[0].astype(float) + 5
+# ── Fig D2: ETc progression ───────────────────────────────────────────────────
+print("Fig D2: Seasonal ETc progression (5-day bins, full cycle) …")
+fig_d2 = make_progression_fig("ETc", "Mean daily ETc (mm day⁻¹)",
+                               "Seasonal progression of daily ETc by state and management")
 
-fig, axes = plt.subplots(2, 3, figsize=(16, 9), sharey=False, sharex=True)
-for col, state in enumerate(STATE_ORDER):
-    for row, mgmt in enumerate(["Irrigated", "Rainfed"]):
-        ax = axes[row][col]
-        sub = dap_state[(dap_state["State"] == state) & (dap_state["water_mgmt"] == mgmt)]
-        for g in GENO_ORDER:
-            sg = sub[sub["Genotype_class"] == g].sort_values("DAP_mid")
-            if len(sg) == 0: continue
-            ax.plot(sg["DAP_mid"], sg["mean_ETc"],
-                    color=COL_GENO[g], linewidth=1.8, label=g, marker="o", markersize=3)
-        ax.set_title(f"{state} — {mgmt}", fontsize=10)
-        ax.axvline(80, color="grey", linestyle=":", linewidth=0.7, alpha=0.6)
-        ax.set_ylim(bottom=0)
-        ax.grid(alpha=0.25); ax.set_axisbelow(True)
-        if col == 0: ax.set_ylabel("Mean daily ETc (mm day⁻¹)")
-        if row == 1: ax.set_xlabel("Days after planting (DAP)")
-axes[0][0].legend(fontsize=8, frameon=True, loc="upper left")
-plt.suptitle("Seasonal ETc progression by growing stage (10-day DAP bins)\n"
-             "averaged across 30 years and planting dates", y=1.01, fontsize=12)
-plt.tight_layout()
-fig_d2 = fig_to_b64()
+# ── Fig D3: GLAI progression ──────────────────────────────────────────────────
+print("Fig D3: GLAI seasonal progression …")
+fig_d3 = make_progression_fig("GLAI", "Mean green LAI (m² m⁻²)",
+                               "Seasonal progression of green leaf area index (GLAI) by state and management")
 
-# ── Fig D3: ETc/PET daily ratio (Kc) heatmap — location × genotype ────────────
-print("Fig D3: Daily Kc heatmap …")
-dy["daily_Kc"] = np.where(dy["PET"] > 0.1, dy["ETc"] / dy["PET"], np.nan)
-kc_heat = (dy.groupby(["Location","Genotype_class","water_mgmt"])["daily_Kc"]
-             .median().reset_index(name="median_Kc"))
-kc_heat["Location"] = pd.Categorical(kc_heat["Location"],
-                                      categories=LOC_ORDER, ordered=True)
+# ── Fig D4: DDMP progression ──────────────────────────────────────────────────
+print("Fig D4: DDMP seasonal progression …")
+fig_d4 = make_progression_fig("DDMP", "Mean daily dry matter production (g m⁻²)",
+                               "Seasonal progression of daily dry matter production (DDMP) by state and management")
 
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-for ax, mgmt in zip(axes, ["Irrigated","Rainfed"]):
-    sub = (kc_heat[kc_heat["water_mgmt"] == mgmt]
-           .pivot(index="Location", columns="Genotype_class", values="median_Kc")
-           .reindex(index=locs_d, columns=GENO_ORDER))
-    im = ax.imshow(sub.values, cmap="YlOrRd", aspect="auto", vmin=0.3, vmax=1.2)
-    ax.set_xticks(range(len(GENO_ORDER))); ax.set_xticklabels(GENO_ORDER, rotation=20, fontsize=9)
-    ax.set_yticks(range(len(sub))); ax.set_yticklabels(sub.index, fontsize=9)
-    ax.set_title(mgmt)
-    for i in range(len(sub)):
-        for j in range(len(GENO_ORDER)):
-            v = sub.values[i, j]
-            if not np.isnan(v):
-                ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=8,
-                        color="white" if v > 0.85 else "black")
-    plt.colorbar(im, ax=ax, label="Median daily Kc (ETc/PET)")
-ax.add_patch(plt.Rectangle((-0.5, 3.5), 4, 3, fill=False,
-             edgecolor="black", linewidth=2, linestyle="--", zorder=10))
-plt.suptitle("Median daily crop coefficient (Kc = ETc/PET) by location and genotype",
-             fontsize=12)
-plt.tight_layout()
-fig_d3 = fig_to_b64()
-
-# ── Fig D4: ETc reduction LT vs Non-LT — daily mm saved per location ──────────
-print("Fig D4: Daily ETc reduction LT vs Non-LT …")
+# ── Fig D5: Daily ETc reduction vs Non-LT ────────────────────────────────────
+print("Fig D5: Daily ETc reduction LT vs Non-LT …")
 daily_pivot = (daily_agg.pivot_table(index=["Location","water_mgmt"],
                                       columns="Genotype_class",
                                       values="mean_daily_ETc").reset_index())
 for g in ["LT1.5","LT2","LT2.5"]:
     daily_pivot[f"red_{g}"] = daily_pivot["Non-LT"] - daily_pivot[g]
-
 daily_pivot["Location"] = pd.Categorical(daily_pivot["Location"],
                                           categories=LOC_ORDER, ordered=True)
-red_irri = daily_pivot[daily_pivot["water_mgmt"]=="Irrigated"].sort_values("Location")
-red_rfed = daily_pivot[daily_pivot["water_mgmt"]=="Rainfed"].sort_values("Location")
 
 fig, axes = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
-for ax, (label, sub) in zip(axes, [("Irrigated", red_irri), ("Rainfed", red_rfed)]):
-    locs_sub = [l for l in LOC_ORDER if l in sub["Location"].values]
-    x2 = np.arange(len(locs_sub))
-    w3 = 0.22
+for ax, mgmt in zip(axes, ["Irrigated","Rainfed"]):
+    sub = daily_pivot[daily_pivot["water_mgmt"] == mgmt].sort_values("Location")
+    locs_s = [l for l in LOC_ORDER if l in sub["Location"].values]
+    x2 = np.arange(len(locs_s)); w3 = 0.22
     for i, g in enumerate(["LT1.5","LT2","LT2.5"]):
-        vals = sub.set_index("Location").reindex(locs_sub)[f"red_{g}"]
+        vals = sub.set_index("Location").reindex(locs_s)[f"red_{g}"]
         ax.bar(x2 + (i-1)*w3, vals, w3, color=COL_GENO[g], label=g, alpha=0.85)
     ax.axhline(0, color="black", linewidth=0.8)
-    ax.set_xticks(x2); ax.set_xticklabels(locs_sub, rotation=35, ha="right")
-    ax.set_title(label)
+    ax.set_xticks(x2); ax.set_xticklabels(locs_s, rotation=35, ha="right")
+    ax.set_title(mgmt)
     ax.legend(title="LT intensity", fontsize=8, frameon=True)
     ax.axvline(3.5, color="grey", linewidth=0.7, linestyle="--")
     ax.axvline(6.5, color="grey", linewidth=0.7, linestyle="--")
@@ -432,17 +417,17 @@ axes[0].set_ylabel("Daily ETc reduction vs Non-LT (mm day⁻¹)")
 plt.suptitle("Daily ETc reduction of LT genotypes relative to Non-LT\n"
              "(positive = water saved per day)", fontsize=12, y=1.01)
 plt.tight_layout()
-fig_d4 = fig_to_b64()
+fig_d5 = fig_to_b64()
 
 # ── Daily ETc summary table ───────────────────────────────────────────────────
 print("Computing daily ETc summary table …")
 daily_table_rows = []
-for loc in locs:
+for loc in locs_d:
     for mgmt in ["Irrigated","Rainfed"]:
-        sub = dy[(dy["Location"]==loc) & (dy["water_mgmt"]==mgmt)]
-        nlt = sub[sub["Genotype_class"]=="Non-LT"]["ETc"].mean()
+        sub = dy[(dy["Location"] == loc) & (dy["water_mgmt"] == mgmt)]
+        nlt  = sub[sub["Genotype_class"] == "Non-LT"]["ETc"].mean()
         for g in GENO_ORDER:
-            sg = sub[sub["Genotype_class"]==g]["ETc"]
+            sg = sub[sub["Genotype_class"] == g]["ETc"]
             if len(sg) == 0: continue
             m = sg.mean(); sd = sg.std()
             red = nlt - m if g != "Non-LT" else 0.0
@@ -454,6 +439,7 @@ for loc in locs:
                 "Reduction vs Non-LT (mm day⁻¹)": f"{red:+.3f}" if g != "Non-LT" else "—",
             })
 daily_table_df = pd.DataFrame(daily_table_rows)
+
 
 # ── Build HTML ────────────────────────────────────────────────────────────────
 print("Building HTML report …")
@@ -541,15 +527,16 @@ the semi-arid Great Plains:</p>
 
 <h3>Genotypes and the LT Trait</h3>
 <p>
-Four genotype classes were simulated, all at <b>maturity group (MG) 3 or MG 4</b> (adapted to
-Missouri and Nebraska) to keep phenology comparable across locations:
+Four genotype classes were simulated using maturity groups matched to each region:
+<b>MG 4</b> for Arkansas and Missouri, and <b>MG 3</b> for Nebraska — chosen to approximate
+locally adapted commercial varieties and keep phenology comparable within each region:
 </p>
 <table class="tbl" style="width:auto">
-<tr><th>Genotype class</th><th>SSM crop name</th><th>LT trait description</th><th>VPD threshold</th></tr>
-<tr><td><b>Non-LT</b></td><td>SOYBEAN-MG3 / SOYBEAN-MG4</td><td>Standard cultivar — transpiration increases linearly with VPD; no stomatal limit</td><td>None</td></tr>
-<tr><td><b>LT1.5</b></td><td>SOYBEAN-LT1.5-MG3/4</td><td>Mild limited transpiration — stomata restrict TR above ~1.5 kPa VPD</td><td>~1.5 kPa</td></tr>
-<tr><td><b>LT2</b></td><td>SOYBEAN-LT2-MG3/4</td><td>Moderate LT — TR limited above ~2.0 kPa (canonical PI 416937 threshold)</td><td>~2.0 kPa</td></tr>
-<tr><td><b>LT2.5</b></td><td>SOYBEAN-LT2.5-MG3/4</td><td>Strong LT — TR limited above ~2.5 kPa; most conservative water use</td><td>~2.5 kPa</td></tr>
+<tr><th>Genotype class</th><th>SSM crop name</th><th>MG (AR &amp; MO / NE)</th><th>LT trait description</th><th>VPD threshold</th></tr>
+<tr><td><b>Non-LT</b></td><td>SOYBEAN-MG4 / SOYBEAN-MG3</td><td>MG4 (AR, MO) / MG3 (NE)</td><td>Standard cultivar — transpiration increases linearly with VPD; no stomatal limit</td><td>None</td></tr>
+<tr><td><b>LT1.5</b></td><td>SOYBEAN-LT1.5-MG4/3</td><td>MG4 (AR, MO) / MG3 (NE)</td><td>Mild limited transpiration — stomata restrict TR above ~1.5 kPa VPD</td><td>~1.5 kPa</td></tr>
+<tr><td><b>LT2</b></td><td>SOYBEAN-LT2-MG4/3</td><td>MG4 (AR, MO) / MG3 (NE)</td><td>Moderate LT — TR limited above ~2.0 kPa (canonical PI 416937 threshold)</td><td>~2.0 kPa</td></tr>
+<tr><td><b>LT2.5</b></td><td>SOYBEAN-LT2.5-MG4/3</td><td>MG4 (AR, MO) / MG3 (NE)</td><td>Strong LT — TR limited above ~2.5 kPa; most conservative water use</td><td>~2.5 kPa</td></tr>
 </table>
 <p>
 The LT trait is encoded in the SSM by a VPD-threshold response: when daily VPD exceeds the
@@ -585,17 +572,11 @@ across planting dates unless stated otherwise.
 <tr><td>WP</td><td>Water productivity (Yield / SUMETT)</td><td>kg mm⁻¹</td></tr>
 <tr><td>R7.PM</td><td>Days from planting to physiological maturity</td><td>days</td></tr>
 <tr><td>ETc (daily)</td><td>Daily crop ET = TR (transpiration) + SEVP (soil evaporation)</td><td>mm day⁻¹</td></tr>
-<tr><td>PET (daily)</td><td>Reference ET (potential evapotranspiration)</td><td>mm day⁻¹</td></tr>
-<tr><td>Kc (daily)</td><td>Daily crop coefficient = ETc / PET</td><td>dimensionless</td></tr>
+<tr><td>GLAI</td><td>Green leaf area index</td><td>m² m⁻²</td></tr>
+<tr><td>DDMP</td><td>Daily dry matter production</td><td>g m⁻² day⁻¹</td></tr>
 </table>
-
-<div class="note">
-<b>Key hypothesis:</b> The LT trait produces a <em>genotype-specific</em> crop coefficient (Kc)
-that decreases as ETo (reference ET) increases — the mechanism underlying the Marin et al. (2016, 2019)
-empirical finding for soybean. LT genotypes should show systematically lower daily Kc values under
-high VPD conditions, translating to water savings (irrigated) and yield maintenance (rainfed) relative
-to Non-LT soybean.
-</div>
+<p>Note: reference ET (ETo) used for Kc calculations is the Penman-Monteith ETo from NASA POWER,
+not the SSM internal PET output. Seasonal Kc results are reported in the yearly analysis section.</p>
 
 <h2>Overview: all locations</h2>
 
@@ -631,24 +612,32 @@ All values are based on {len(dy):,} valid daily rows from the 10-location SSM si
 for each location × genotype × management combination.</p>
 <img src="data:image/png;base64,{fig_d1}" alt="Mean daily ETc by location">
 
-<h3>D2 — Seasonal progression of daily ETc (10-day DAP bins)</h3>
-<p>ETc averaged within consecutive 10-day bins from planting to maturity, split by state and management.
-The vertical dotted line at DAP 80 marks the approximate onset of reproductive stages (R1–R3).
-LT genotypes diverge from Non-LT most strongly during mid-season when VPD peaks.</p>
+<h3>D2 — Seasonal progression of daily ETc (5-day DAP bins)</h3>
+<p>ETc averaged within consecutive 5-day bins from planting to physiological maturity (full cycle),
+split by state and management. Dotted reference lines mark approximate vegetative→reproductive
+transition (~DAP 50) and early reproductive→grain fill transition (~DAP 90).
+LT genotypes diverge from Non-LT most strongly during mid-season when VPD peaks.
+Season length varies by region: up to ~200 DAP in Arkansas, ~240 DAP in Missouri and Nebraska.</p>
 <img src="data:image/png;base64,{fig_d2}" alt="Seasonal ETc progression">
 
-<h3>D3 — Daily crop coefficient (Kc = ETc / PET) — heatmap</h3>
-<p>Median daily Kc (ETc/reference ET) across all growing-season days, by location and genotype.
-LT genotypes show systematically lower Kc values, especially under irrigation where atmospheric
-demand is not limited by soil water, confirming the genotype-specific Kc central to the Marin analysis.</p>
-<img src="data:image/png;base64,{fig_d3}" alt="Daily Kc heatmap">
+<h3>D3 — Seasonal progression of Green Leaf Area Index (GLAI)</h3>
+<p>Mean GLAI (m² m⁻²) within 5-day DAP bins by state, management, and genotype.
+GLAI trajectories reflect canopy development and senescence; differences among LT classes indicate
+the indirect effect of water conservation on leaf area maintenance during reproductive stages.</p>
+<img src="data:image/png;base64,{fig_d3}" alt="Seasonal GLAI progression">
 
-<h3>D4 — Daily ETc reduction of LT genotypes relative to Non-LT</h3>
+<h3>D4 — Seasonal progression of daily dry matter production (DDMP)</h3>
+<p>Mean daily dry matter production (g m⁻² day⁻¹) within 5-day DAP bins by state, management, and genotype.
+DDMP integrates radiation interception and radiation use efficiency; comparing LT and Non-LT reveals
+whether water conservation translates into maintained or improved carbon assimilation.</p>
+<img src="data:image/png;base64,{fig_d4}" alt="Seasonal DDMP progression">
+
+<h3>D5 — Daily ETc reduction of LT genotypes relative to Non-LT</h3>
 <p>Positive values indicate water saved per day relative to Non-LT.
 LT2 and LT2.5 show the largest daily savings under irrigation in all three states.</p>
-<img src="data:image/png;base64,{fig_d4}" alt="Daily ETc reduction">
+<img src="data:image/png;base64,{fig_d5}" alt="Daily ETc reduction">
 
-<h3>D5 — Mean daily ETc summary table</h3>
+<h3>D6 — Mean daily ETc summary table</h3>
 <p>Complete numerical summary by location, management, and genotype.
 Reduction column reports the absolute daily water saving relative to Non-LT (mm day⁻¹).</p>
 {daily_table_html}
