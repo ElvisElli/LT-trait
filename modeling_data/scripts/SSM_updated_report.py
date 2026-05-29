@@ -278,17 +278,17 @@ for loc in locs:
 adv_df = pd.DataFrame(adv_rows)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# DAILY ETc / GLAI / DDMP ANALYSIS
+# DAILY ETc / LAI / DDMP ANALYSIS
 # Reference ET: NASA POWER Penman-Monteith daily values (nasapower_ETo_daily_py.csv)
 # SSM internal PET column is NOT used for reference ET.
 # ══════════════════════════════════════════════════════════════════════════════
-print("Loading daily data for ETc / GLAI / DDMP analysis (large file, ~30 s) …")
+print("Loading daily data for ETc / LAI / DDMP analysis (large file, ~30 s) …")
 DAILY_COLS = ["Location","State","Pyear","DOY","Genotype_class","water_mgmt",
-              "DAP","TR","SEVP","ETc","GLAI","DDMP"]
+              "DAP","TR","SEVP","ETc","LAI","DDMP"]
 chunks = []
 for chunk in pd.read_csv(DAILY, usecols=DAILY_COLS, chunksize=200_000):
     chunk = chunk[chunk["DAP"] > 0]
-    for c in ["ETc","GLAI","DDMP"]:
+    for c in ["ETc","LAI","DDMP"]:
         chunk[c] = pd.to_numeric(chunk[c], errors="coerce")
     chunk["Location"] = chunk["Location"].str.strip().str.replace("­", "", regex=False)
     chunk = chunk[chunk["ETc"].notna()]
@@ -359,7 +359,7 @@ dap_eto_ref = (dy[dy["ETo_pm"].notna()]
                .groupby(["State","DAP_bin","DAP_mid"])["ETo_pm"]
                .mean().reset_index(name="mean_ETo_pm"))
 
-# ── Generic progression plotter (shared for ETc, GLAI, DDMP) ─────────────────
+# ── Generic progression plotter (shared for ETc, LAI, DDMP) ──────────────────
 def make_progression_fig(var, ylabel, title_suffix, add_eto_ref=False):
     dap_state = (dy.groupby(["State","Genotype_class","water_mgmt","DAP_bin","DAP_mid"])[var]
                    .mean().reset_index(name=f"mean_{var}"))
@@ -403,10 +403,10 @@ fig_d2 = make_progression_fig("ETc", "Mean daily ETc (mm day⁻¹)",
                                "Seasonal progression of daily ETc by state and management",
                                add_eto_ref=True)
 
-# ── Fig D3: GLAI progression ──────────────────────────────────────────────────
-print("Fig D3: GLAI seasonal progression …")
-fig_d3 = make_progression_fig("GLAI", "Mean green LAI (m² m⁻²)",
-                               "Seasonal progression of green leaf area index (GLAI) by state and management")
+# ── Fig D3: LAI progression ───────────────────────────────────────────────────
+print("Fig D3: LAI seasonal progression …")
+fig_d3 = make_progression_fig("LAI", "Mean LAI (m² m⁻²)",
+                               "Seasonal progression of leaf area index (LAI) by state and management")
 
 # ── Fig D4: DDMP progression ──────────────────────────────────────────────────
 print("Fig D4: DDMP seasonal progression …")
@@ -597,7 +597,7 @@ across planting dates unless stated otherwise.
 <tr><td>WP</td><td>Water productivity (Yield / SUMETT)</td><td>kg mm⁻¹</td></tr>
 <tr><td>R7.PM</td><td>Days from planting to physiological maturity</td><td>days</td></tr>
 <tr><td>ETc (daily)</td><td>Daily crop ET = TR (transpiration) + SEVP (soil evaporation)</td><td>mm day⁻¹</td></tr>
-<tr><td>GLAI</td><td>Green leaf area index</td><td>m² m⁻²</td></tr>
+<tr><td>LAI</td><td>Leaf area index</td><td>m² m⁻²</td></tr>
 <tr><td>DDMP</td><td>Daily dry matter production</td><td>g m⁻² day⁻¹</td></tr>
 </table>
 <p>Note: reference ET (ETo) used for Kc calculations is the Penman-Monteith ETo from NASA POWER,
@@ -646,11 +646,11 @@ early reproductive→grain fill (~DAP 90). Irrigated and rainfed panels share th
 Season length varies by region: up to ~200 DAP in Arkansas, ~240 DAP in Missouri and Nebraska.</p>
 <img src="data:image/png;base64,{fig_d2}" alt="Seasonal ETc progression">
 
-<h3>D3 — Seasonal progression of Green Leaf Area Index (GLAI)</h3>
-<p>Mean GLAI (m² m⁻²) within 5-day DAP bins by state, management, and genotype.
-GLAI trajectories reflect canopy development and senescence; differences among LT classes indicate
+<h3>D3 — Seasonal progression of Leaf Area Index (LAI)</h3>
+<p>Mean LAI (m² m⁻²) within 5-day DAP bins by state, management, and genotype.
+LAI trajectories reflect canopy development and senescence; differences among LT classes indicate
 the indirect effect of water conservation on leaf area maintenance during reproductive stages.</p>
-<img src="data:image/png;base64,{fig_d3}" alt="Seasonal GLAI progression">
+<img src="data:image/png;base64,{fig_d3}" alt="Seasonal LAI progression">
 
 <h3>D4 — Seasonal progression of daily dry matter production (DDMP)</h3>
 <p>Mean daily dry matter production (g m⁻² day⁻¹) within 5-day DAP bins by state, management, and genotype.
