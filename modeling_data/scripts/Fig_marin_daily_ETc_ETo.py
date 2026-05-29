@@ -1,6 +1,7 @@
 """
 Fig_marin_daily_ETc_ETo.py — Marin-style daily ETc vs ETo scatter plots.
-Uses daily SSM outputs (PET = reference ET; ETc = TR + SEVP).
+Uses daily SSM ETc (TR + SEVP) on y-axis and NASA POWER PM ETo on x-axis.
+PM ETo computed by compute_pm_eto_daily.py (FAO-56 Penman-Monteith, state-level sites).
 Produces plots per location, per water management, and overall.
 Run from /home/user/LT-trait:
     python3 modeling_data/scripts/Fig_marin_daily_ETc_ETo.py
@@ -50,7 +51,7 @@ def save(name):
 print("Loading daily data (this may take a moment) …")
 dy = pd.read_csv(DAILY, usecols=[
     "Location","Manag","Crop","Pyear","DOY","DAP",
-    "PET","TR","SEVP","Genotype_class","water_mgmt","State","Planting"
+    "TR","SEVP","Genotype_class","water_mgmt","State","Planting"
 ])
 
 dy["Location"] = dy["Location"].str.strip().str.replace("­","",regex=False)
@@ -58,13 +59,20 @@ dy["Location"] = dy["Location"].str.strip().str.replace("­","",regex=False)
 # ETc = transpiration + soil evaporation
 dy["ETc"] = pd.to_numeric(dy["TR"],   errors="coerce") + \
             pd.to_numeric(dy["SEVP"], errors="coerce")
-dy["PET"] = pd.to_numeric(dy["PET"], errors="coerce")
 
-# Keep only growing-season days (DAP > 0, valid values, non-negative)
-dy = dy[(dy["DAP"] > 0) & dy["PET"].notna() & dy["ETc"].notna()]
-dy = dy[(dy["PET"] >= 0) & (dy["ETc"] >= 0)]
+# Keep only growing-season days with valid ETc
+dy = dy[(dy["DAP"] > 0) & dy["ETc"].notna() & (dy["ETc"] >= 0)]
 
-print(f"  {len(dy):,} valid daily rows")
+# ── Join NASA POWER PM ETo (replaces SSM internal PET as reference ET) ────
+ETO_DAILY = "modeling_data/data/nasapower_ETo_daily_py.csv"
+eto = pd.read_csv(ETO_DAILY)
+state_abbr = {"AR": "Arkansas", "MO": "Missouri", "NE": "Nebraska"}
+eto["State"] = eto["State"].map(state_abbr)
+eto = eto.rename(columns={"Year": "Pyear"})
+dy = dy.merge(eto[["State","Pyear","DOY","ETo_mm"]], on=["State","Pyear","DOY"], how="left")
+dy = dy[dy["ETo_mm"].notna() & (dy["ETo_mm"] >= 0)]
+
+print(f"  {len(dy):,} valid daily rows (PM ETo joined)")
 
 def kc_slope(x, y):
     """OLS slope forced through origin."""
@@ -74,15 +82,15 @@ def kc_slope(x, y):
     return slope, r**2, len(x)
 
 def scatter_panel(ax, sub, color, label, alpha=0.03, s=1):
-    ax.scatter(sub["PET"], sub["ETc"], c=color, alpha=alpha, s=s, rasterized=True)
+    ax.scatter(sub["ETo_mm"], sub["ETc"], c=color, alpha=alpha, s=s, rasterized=True)
     if len(sub) > 10:
-        sl, r2, n = kc_slope(sub["PET"].values, sub["ETc"].values)
-        xr = np.linspace(0, sub["PET"].quantile(0.99), 100)
-        slope, intercept, *_ = scipy_stats.linregress(sub["PET"].values, sub["ETc"].values)
+        sl, r2, n = kc_slope(sub["ETo_mm"].values, sub["ETc"].values)
+        xr = np.linspace(0, sub["ETo_mm"].quantile(0.99), 100)
+        slope, intercept, *_ = scipy_stats.linregress(sub["ETo_mm"].values, sub["ETc"].values)
         yr = slope * xr + intercept
         ax.plot(xr, yr, color=color, linewidth=1.5,
                 label=f"{label}  Kc={slope:.2f}  R²={r2:.2f}")
-    ax.set_xlabel("Reference ET (ETo, mm day⁻¹)")
+    ax.set_xlabel("PM ETo — NASA POWER (mm day⁻¹)")
     ax.set_ylabel("Crop ET (ETc, mm day⁻¹)")
     ax.set_xlim(left=0); ax.set_ylim(bottom=0)
 
@@ -130,12 +138,12 @@ for ax, (mgmt, sub_m) in zip(axes, [("Irrigated", irri), ("Rainfed", rfed)]):
     for g in GENO_ORDER:
         sub = sub_m[sub_m["Genotype_class"] == g]
         if len(sub) < 10: continue
-        slope, intercept, r, p, se = scipy_stats.linregress(sub["PET"].values, sub["ETc"].values)
-        xr = np.linspace(0, sub["PET"].quantile(0.99), 200)
-        ax.scatter(sub["PET"], sub["ETc"], c=COL_GENO[g], alpha=0.015, s=1, rasterized=True)
+        slope, intercept, r, p, se = scipy_stats.linregress(sub["ETo_mm"].values, sub["ETc"].values)
+        xr = np.linspace(0, sub["ETo_mm"].quantile(0.99), 200)
+        ax.scatter(sub["ETo_mm"], sub["ETc"], c=COL_GENO[g], alpha=0.015, s=1, rasterized=True)
         ax.plot(xr, slope*xr + intercept, color=COL_GENO[g], linewidth=2,
                 label=f"{g}  Kc={slope:.2f} (R²={r**2:.2f})")
-    ax.set_xlabel("Reference ET (ETo, mm day⁻¹)")
+    ax.set_xlabel("PM ETo — NASA POWER (mm day⁻¹)")
     ax.set_ylabel("Crop ET (ETc, mm day⁻¹)")
     ax.set_title(mgmt)
     ax.set_xlim(left=0); ax.set_ylim(bottom=0)
@@ -156,9 +164,9 @@ for ax, loc in zip(axes, locs):
     for g in GENO_ORDER:
         sub = sub_loc[sub_loc["Genotype_class"] == g]
         if len(sub) < 10: continue
-        slope, intercept, r, *_ = scipy_stats.linregress(sub["PET"].values, sub["ETc"].values)
-        xr = np.linspace(0, sub["PET"].quantile(0.99), 100)
-        ax.scatter(sub["PET"], sub["ETc"], c=COL_GENO[g], alpha=0.02, s=0.8, rasterized=True)
+        slope, intercept, r, *_ = scipy_stats.linregress(sub["ETo_mm"].values, sub["ETc"].values)
+        xr = np.linspace(0, sub["ETo_mm"].quantile(0.99), 100)
+        ax.scatter(sub["ETo_mm"], sub["ETc"], c=COL_GENO[g], alpha=0.02, s=0.8, rasterized=True)
         ax.plot(xr, slope*xr + intercept, color=COL_GENO[g], linewidth=1.5,
                 label=f"{g}: Kc={slope:.2f}")
     ax.set_title(loc, fontsize=9)
@@ -183,9 +191,9 @@ for ax, loc in zip(axes, locs):
     for g in GENO_ORDER:
         sub = sub_loc[sub_loc["Genotype_class"] == g]
         if len(sub) < 10: continue
-        slope, intercept, r, *_ = scipy_stats.linregress(sub["PET"].values, sub["ETc"].values)
-        xr = np.linspace(0, sub["PET"].quantile(0.99), 100)
-        ax.scatter(sub["PET"], sub["ETc"], c=COL_GENO[g], alpha=0.02, s=0.8, rasterized=True)
+        slope, intercept, r, *_ = scipy_stats.linregress(sub["ETo_mm"].values, sub["ETc"].values)
+        xr = np.linspace(0, sub["ETo_mm"].quantile(0.99), 100)
+        ax.scatter(sub["ETo_mm"], sub["ETc"], c=COL_GENO[g], alpha=0.02, s=0.8, rasterized=True)
         ax.plot(xr, slope*xr + intercept, color=COL_GENO[g], linewidth=1.5,
                 label=f"{g}: Kc={slope:.2f}")
     ax.set_title(loc, fontsize=9)
@@ -210,7 +218,7 @@ for loc in locs:
         for g in GENO_ORDER:
             sub = sub_m[sub_m["Genotype_class"]==g]
             if len(sub) < 10: continue
-            sl, intercept, r, p, se = scipy_stats.linregress(sub["PET"].values, sub["ETc"].values)
+            sl, intercept, r, p, se = scipy_stats.linregress(sub["ETo_mm"].values, sub["ETc"].values)
             kc_rows.append({"Location":loc,"Genotype":g,"Management":mgmt,
                             "Kc":sl,"R2":r**2,"n":len(sub)})
 kc_df = pd.DataFrame(kc_rows)
@@ -245,9 +253,9 @@ for ax, state in zip(axes, states):
     for g in GENO_ORDER:
         sub = sub_s[sub_s["Genotype_class"]==g]
         if len(sub) < 10: continue
-        slope, intercept, r, *_ = scipy_stats.linregress(sub["PET"].values, sub["ETc"].values)
-        xr = np.linspace(0, sub["PET"].quantile(0.99), 200)
-        ax.scatter(sub["PET"], sub["ETc"], c=COL_GENO[g], alpha=0.015, s=1, rasterized=True)
+        slope, intercept, r, *_ = scipy_stats.linregress(sub["ETo_mm"].values, sub["ETc"].values)
+        xr = np.linspace(0, sub["ETo_mm"].quantile(0.99), 200)
+        ax.scatter(sub["ETo_mm"], sub["ETc"], c=COL_GENO[g], alpha=0.015, s=1, rasterized=True)
         ax.plot(xr, slope*xr+intercept, color=COL_GENO[g], linewidth=2,
                 label=f"{g}: Kc={slope:.2f}")
     ax.set_title(state); ax.set_xlabel("ETo (mm day⁻¹)")

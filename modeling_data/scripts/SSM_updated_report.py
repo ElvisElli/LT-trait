@@ -279,11 +279,12 @@ adv_df = pd.DataFrame(adv_rows)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # DAILY ETc / GLAI / DDMP ANALYSIS
-# Reference ET: NASA POWER Penman-Monteith (nasapower_ETo_pdoy.csv / seasonal)
-# SSM internal PET column is NOT used for reference ET here.
+# Reference ET: NASA POWER Penman-Monteith daily values (nasapower_ETo_daily_py.csv)
+# SSM internal PET column is NOT used for reference ET.
 # ══════════════════════════════════════════════════════════════════════════════
 print("Loading daily data for ETc / GLAI / DDMP analysis (large file, ~30 s) …")
-DAILY_COLS = ["Location","Genotype_class","water_mgmt","DAP","TR","SEVP","ETc","GLAI","DDMP"]
+DAILY_COLS = ["Location","State","Pyear","DOY","Genotype_class","water_mgmt",
+              "DAP","TR","SEVP","ETc","GLAI","DDMP"]
 chunks = []
 for chunk in pd.read_csv(DAILY, usecols=DAILY_COLS, chunksize=200_000):
     chunk = chunk[chunk["DAP"] > 0]
@@ -295,11 +296,18 @@ for chunk in pd.read_csv(DAILY, usecols=DAILY_COLS, chunksize=200_000):
     chunks.append(chunk)
 dy = pd.concat(chunks, ignore_index=True)
 dy["Genotype_class"] = pd.Categorical(dy["Genotype_class"], categories=GENO_ORDER, ordered=True)
-state_map = {l: "Arkansas" for l in ["Jonesboro","Keiser","Marianna","Rohwer"]}
-state_map.update({l: "Missouri"  for l in ["Albany","Mount Vernon","Novelty"]})
-state_map.update({l: "Nebraska"  for l in ["Eustis","Lincoln","North Platte"]})
-dy["State"] = dy["Location"].map(state_map)
 print(f"  {len(dy):,} valid growing-season daily rows loaded")
+
+# Join NASA POWER PM ETo (State abbreviation → full name, then merge by State/Year/DOY)
+ETO_DAILY = "modeling_data/data/nasapower_ETo_daily_py.csv"
+eto_daily = pd.read_csv(ETO_DAILY)
+state_abbr_map = {"AR": "Arkansas", "MO": "Missouri", "NE": "Nebraska"}
+eto_daily["State"] = eto_daily["State"].map(state_abbr_map)
+eto_daily = eto_daily.rename(columns={"Year": "Pyear", "ETo_mm": "ETo_pm"})
+dy = dy.merge(eto_daily[["State","Pyear","DOY","ETo_pm"]],
+              on=["State","Pyear","DOY"], how="left")
+n_matched = dy["ETo_pm"].notna().sum()
+print(f"  PM ETo joined: {n_matched:,} rows matched ({n_matched/len(dy)*100:.1f}%)")
 
 # 5-day DAP bins covering full cycle (up to 245 DAP)
 MAX_DAP = int(dy["DAP"].max()) + 6
@@ -320,7 +328,7 @@ daily_agg  = daily_mean.merge(daily_se, on=["Location","Genotype_class","water_m
 daily_agg["Location"] = pd.Categorical(daily_agg["Location"], categories=LOC_ORDER, ordered=True)
 daily_agg = daily_agg.sort_values(["Location","Genotype_class"])
 
-fig, axes = plt.subplots(2, 1, figsize=(14, 9), sharey=False)
+fig, axes = plt.subplots(2, 1, figsize=(14, 9), sharey=True)
 for ax, mgmt in zip(axes, ["Irrigated","Rainfed"]):
     sub = daily_agg[daily_agg["water_mgmt"] == mgmt]
     x = np.arange(len(locs_d)); w = 0.18
@@ -334,20 +342,28 @@ for ax, mgmt in zip(axes, ["Irrigated","Rainfed"]):
     ax.legend(title=None, frameon=True)
     ax.axvline(3.5, color="grey", linewidth=0.7, linestyle="--")
     ax.axvline(6.5, color="grey", linewidth=0.7, linestyle="--")
-    ax.text(1.75, ax.get_ylim()[1]*0.97, "Arkansas", ha="center", fontsize=9, color="grey")
-    ax.text(5.0,  ax.get_ylim()[1]*0.97, "Missouri",  ha="center", fontsize=9, color="grey")
-    ax.text(8.5,  ax.get_ylim()[1]*0.97, "Nebraska",  ha="center", fontsize=9, color="grey")
+    ax.text(1.75, 0.95, "Arkansas", ha="center", fontsize=9, color="grey",
+            transform=ax.get_xaxis_transform(), va="top")
+    ax.text(5.0,  0.95, "Missouri",  ha="center", fontsize=9, color="grey",
+            transform=ax.get_xaxis_transform(), va="top")
+    ax.text(8.5,  0.95, "Nebraska",  ha="center", fontsize=9, color="grey",
+            transform=ax.get_xaxis_transform(), va="top")
     ax.grid(axis="y", alpha=0.3); ax.set_axisbelow(True)
 plt.suptitle("Mean daily crop ET (ETc = TR + Soil evaporation) by location, management, and genotype",
              fontsize=12, y=1.01)
 plt.tight_layout()
 fig_d1 = fig_to_b64()
 
+# ── PM ETo reference by State × DAP_bin (for D2 reference line) ──────────────
+dap_eto_ref = (dy[dy["ETo_pm"].notna()]
+               .groupby(["State","DAP_bin","DAP_mid"])["ETo_pm"]
+               .mean().reset_index(name="mean_ETo_pm"))
+
 # ── Generic progression plotter (shared for ETc, GLAI, DDMP) ─────────────────
-def make_progression_fig(var, ylabel, title_suffix):
+def make_progression_fig(var, ylabel, title_suffix, add_eto_ref=False):
     dap_state = (dy.groupby(["State","Genotype_class","water_mgmt","DAP_bin","DAP_mid"])[var]
                    .mean().reset_index(name=f"mean_{var}"))
-    fig, axes = plt.subplots(2, 3, figsize=(18, 9), sharey=False, sharex=False)
+    fig, axes = plt.subplots(2, 3, figsize=(18, 9), sharey=True, sharex=False)
     for col, state in enumerate(STATE_ORDER):
         for row, mgmt in enumerate(["Irrigated","Rainfed"]):
             ax = axes[row][col]
@@ -358,13 +374,21 @@ def make_progression_fig(var, ylabel, title_suffix):
                 if len(sg) == 0: continue
                 ax.plot(sg["DAP_mid"], sg[f"mean_{var}"],
                         color=COL_GENO[g], linewidth=1.8, label=g, marker="o", markersize=2.5)
+            # PM ETo reference line (D2 ETc only)
+            if add_eto_ref:
+                eto_s = dap_eto_ref[dap_eto_ref["State"] == state].sort_values("DAP_mid")
+                if len(eto_s) > 0:
+                    ax.plot(eto_s["DAP_mid"], eto_s["mean_ETo_pm"],
+                            color="steelblue", linewidth=2.8, linestyle="--",
+                            label="PM ETo (NASA POWER)", zorder=2)
             ax.set_title(f"{state} — {mgmt}", fontsize=10)
             ax.set_ylim(bottom=0)
             ax.grid(alpha=0.25); ax.set_axisbelow(True)
-            # reference lines at R1~50, R5~90, PM~end
+            # growth-stage reference lines using axes-fraction y so sharey doesn't misplace them
             for xv, lbl in [(50,"V→R1"),(90,"R1→R5")]:
                 ax.axvline(xv, color="grey", linestyle=":", linewidth=0.8, alpha=0.5)
-                ax.text(xv+1, ax.get_ylim()[1]*0.95, lbl, fontsize=7, color="grey")
+                ax.text(xv+1, 0.94, lbl, fontsize=7, color="grey",
+                        transform=ax.get_xaxis_transform(), va="top")
             if col == 0: ax.set_ylabel(ylabel)
             if row == 1: ax.set_xlabel("Days after planting (DAP)")
     axes[0][0].legend(fontsize=8, frameon=True, loc="upper left")
@@ -373,10 +397,11 @@ def make_progression_fig(var, ylabel, title_suffix):
     plt.tight_layout()
     return fig_to_b64()
 
-# ── Fig D2: ETc progression ───────────────────────────────────────────────────
+# ── Fig D2: ETc progression + PM ETo reference line ──────────────────────────
 print("Fig D2: Seasonal ETc progression (5-day bins, full cycle) …")
 fig_d2 = make_progression_fig("ETc", "Mean daily ETc (mm day⁻¹)",
-                               "Seasonal progression of daily ETc by state and management")
+                               "Seasonal progression of daily ETc by state and management",
+                               add_eto_ref=True)
 
 # ── Fig D3: GLAI progression ──────────────────────────────────────────────────
 print("Fig D3: GLAI seasonal progression …")
@@ -614,9 +639,10 @@ for each location × genotype × management combination.</p>
 
 <h3>D2 — Seasonal progression of daily ETc (5-day DAP bins)</h3>
 <p>ETc averaged within consecutive 5-day bins from planting to physiological maturity (full cycle),
-split by state and management. Dotted reference lines mark approximate vegetative→reproductive
-transition (~DAP 50) and early reproductive→grain fill transition (~DAP 90).
-LT genotypes diverge from Non-LT most strongly during mid-season when VPD peaks.
+split by state and management. The thick dashed blue line is the mean daily PM ETo from NASA POWER
+(FAO-56 Penman-Monteith, state-level representative sites; averaged across 1990–2019 by DAP bin).
+Dotted grey lines mark approximate vegetative→reproductive transition (~DAP 50) and
+early reproductive→grain fill (~DAP 90). Irrigated and rainfed panels share the same y-axis.
 Season length varies by region: up to ~200 DAP in Arkansas, ~240 DAP in Missouri and Nebraska.</p>
 <img src="data:image/png;base64,{fig_d2}" alt="Seasonal ETc progression">
 
