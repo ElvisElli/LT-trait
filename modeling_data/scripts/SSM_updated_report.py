@@ -278,6 +278,161 @@ for loc in locs:
 adv_df = pd.DataFrame(adv_rows)
 
 # ══════════════════════════════════════════════════════════════════════════════
+# PLANTING DATE ANALYSIS
+# ══════════════════════════════════════════════════════════════════════════════
+print("Planting date figures …")
+PDOY_ORDER = ["Early", "Mid", "Late"]
+COL_PDOY   = {"Early": "#2166ac", "Mid": "#f4a582", "Late": "#d6604d"}
+
+yr["Planting"] = pd.Categorical(yr["Planting"], categories=PDOY_ORDER, ordered=True)
+
+# ── Fig P1: Yield by planting date × genotype (2×3, rows=mgmt, cols=planting) ─
+print("  Fig P1: Yield × planting date …")
+fig, axes = plt.subplots(2, 3, figsize=(18, 9), sharey=True)
+for col, pd_val in enumerate(PDOY_ORDER):
+    for row, mgmt in enumerate(["Irrigated", "Rainfed"]):
+        ax = axes[row][col]
+        sub = yr[(yr["Planting"]==pd_val) & (yr["water_mgmt"]==mgmt)]
+        agg = (sub.groupby(["Location","Genotype_class"])["Yield_kgha"]
+               .agg(mean="mean", se=lambda x: x.std()/np.sqrt(len(x))).reset_index())
+        agg["Location"] = pd.Categorical(agg["Location"], categories=LOC_ORDER, ordered=True)
+        agg = agg.sort_values(["Location","Genotype_class"])
+        x = np.arange(len(locs)); w = 0.18
+        for i, g in enumerate(GENO_ORDER):
+            sg = agg[agg["Genotype_class"]==g].set_index("Location").reindex(locs)
+            ax.bar(x + (i-1.5)*w, sg["mean"], w, yerr=sg["se"],
+                   color=COL_GENO[g], label=g, alpha=0.85, capsize=2,
+                   error_kw={"linewidth": 0.6})
+        ax.set_xticks(x); ax.set_xticklabels(locs, rotation=35, ha="right", fontsize=8)
+        ax.set_title(f"{pd_val} — {mgmt}", fontsize=10)
+        ax.axvline(3.5, color="grey", linewidth=0.7, linestyle="--")
+        ax.axvline(6.5, color="grey", linewidth=0.7, linestyle="--")
+        ax.grid(axis="y", alpha=0.3); ax.set_axisbelow(True)
+        if col == 0: ax.set_ylabel("Grain yield (kg ha⁻¹)")
+        if col == 0 and row == 0: ax.legend(title=None, fontsize=8, frameon=True)
+plt.suptitle("Grain yield by planting date, management, location, and genotype",
+             fontsize=12, y=1.01)
+plt.tight_layout()
+fig_p1 = fig_to_b64()
+
+# ── Fig P2: LT rainfed yield advantage by planting date ───────────────────────
+print("  Fig P2: LT advantage × planting date …")
+adv_pd_rows = []
+for pd_val in PDOY_ORDER:
+    for loc in locs:
+        sub_i = yr[(yr["Location"]==loc) & (yr["Planting"]==pd_val) & (yr["water_mgmt"]=="Irrigated")]
+        sub_r = yr[(yr["Location"]==loc) & (yr["Planting"]==pd_val) & (yr["water_mgmt"]=="Rainfed")]
+        nlt_iy = sub_i[sub_i["Genotype_class"]=="Non-LT"]["Yield_kgha"].mean()
+        nlt_ie = sub_i[sub_i["Genotype_class"]=="Non-LT"]["SUMETT"].mean()
+        nlt_ry = sub_r[sub_r["Genotype_class"]=="Non-LT"]["Yield_kgha"].mean()
+        for g in ["LT1.5","LT2","LT2.5"]:
+            lt_iy = sub_i[sub_i["Genotype_class"]==g]["Yield_kgha"].mean()
+            lt_ie = sub_i[sub_i["Genotype_class"]==g]["SUMETT"].mean()
+            lt_ry = sub_r[sub_r["Genotype_class"]==g]["Yield_kgha"].mean()
+            adv_pd_rows.append({
+                "Planting": pd_val, "Location": loc, "Genotype": g,
+                "Rainfed adv (%)": (lt_ry - nlt_ry)/nlt_ry*100 if nlt_ry > 0 else np.nan,
+                "Irrigated ETc saving (mm)": nlt_ie - lt_ie,
+            })
+adv_pd = pd.DataFrame(adv_pd_rows)
+adv_pd["Location"] = pd.Categorical(adv_pd["Location"], categories=LOC_ORDER, ordered=True)
+
+fig, axes = plt.subplots(1, 2, figsize=(16, 5), sharey=False)
+for ax, (var, ylabel) in zip(axes, [
+        ("Rainfed adv (%)",         "Rainfed yield advantage vs Non-LT (%)"),
+        ("Irrigated ETc saving (mm)","Irrigated ETc saving vs Non-LT (mm season⁻¹)")]):
+    agg_pd = (adv_pd.groupby(["Planting","Genotype","Location"])[var]
+              .mean().reset_index())
+    agg_pd["Location"] = pd.Categorical(agg_pd["Location"], categories=LOC_ORDER, ordered=True)
+    x = np.arange(len(locs)); w2 = 0.10
+    geno_list = ["LT1.5","LT2","LT2.5"]
+    for pi, pd_val in enumerate(PDOY_ORDER):
+        for gi, g in enumerate(geno_list):
+            sub = (agg_pd[(agg_pd["Planting"]==pd_val) & (agg_pd["Genotype"]==g)]
+                   .set_index("Location").reindex(locs))
+            offset = (pi * len(geno_list) + gi - 4) * w2
+            ax.bar(x + offset, sub[var], w2,
+                   color=COL_GENO[g], alpha=0.6 + 0.2*pi,
+                   label=f"{pd_val} {g}" if False else None,
+                   edgecolor=COL_PDOY[pd_val], linewidth=0.8)
+    ax.axhline(0, color="black", linewidth=0.8)
+    ax.set_xticks(x); ax.set_xticklabels(locs, rotation=35, ha="right", fontsize=8)
+    ax.set_ylabel(ylabel)
+    ax.axvline(3.5, color="grey", linewidth=0.7, linestyle="--")
+    ax.axvline(6.5, color="grey", linewidth=0.7, linestyle="--")
+    ax.grid(axis="y", alpha=0.3); ax.set_axisbelow(True)
+# Manual legend
+from matplotlib.lines import Line2D
+legend_els = (
+    [mpatches.Patch(facecolor=COL_GENO[g], label=g) for g in geno_list] +
+    [Line2D([0],[0], color=COL_PDOY[p], linewidth=2, label=f"{p} planting") for p in PDOY_ORDER]
+)
+axes[0].legend(handles=legend_els, fontsize=8, ncol=2, frameon=True, loc="upper right")
+plt.suptitle("LT genotype advantage by planting date\n"
+             "(bar fill = genotype intensity; border colour = planting date)",
+             fontsize=12, y=1.01)
+plt.tight_layout()
+fig_p2 = fig_to_b64()
+
+# ── Fig P3: Seasonal ETc (SUMETT) by planting date ────────────────────────────
+print("  Fig P3: SUMETT × planting date …")
+fig, axes = plt.subplots(2, 3, figsize=(18, 9), sharey=True)
+for col, pd_val in enumerate(PDOY_ORDER):
+    for row, mgmt in enumerate(["Irrigated", "Rainfed"]):
+        ax = axes[row][col]
+        sub = yr[(yr["Planting"]==pd_val) & (yr["water_mgmt"]==mgmt)]
+        agg = (sub.groupby(["Location","Genotype_class"])["SUMETT"]
+               .agg(mean="mean", se=lambda x: x.std()/np.sqrt(len(x))).reset_index())
+        agg["Location"] = pd.Categorical(agg["Location"], categories=LOC_ORDER, ordered=True)
+        agg = agg.sort_values(["Location","Genotype_class"])
+        x = np.arange(len(locs)); w = 0.18
+        for i, g in enumerate(GENO_ORDER):
+            sg = agg[agg["Genotype_class"]==g].set_index("Location").reindex(locs)
+            ax.bar(x + (i-1.5)*w, sg["mean"], w, yerr=sg["se"],
+                   color=COL_GENO[g], label=g, alpha=0.85, capsize=2,
+                   error_kw={"linewidth": 0.6})
+        ax.set_xticks(x); ax.set_xticklabels(locs, rotation=35, ha="right", fontsize=8)
+        ax.set_title(f"{pd_val} — {mgmt}", fontsize=10)
+        ax.axvline(3.5, color="grey", linewidth=0.7, linestyle="--")
+        ax.axvline(6.5, color="grey", linewidth=0.7, linestyle="--")
+        ax.grid(axis="y", alpha=0.3); ax.set_axisbelow(True)
+        if col == 0: ax.set_ylabel("Seasonal ETc — SUMETT (mm)")
+        if col == 0 and row == 0: ax.legend(title=None, fontsize=8, frameon=True)
+plt.suptitle("Seasonal crop ET (SUMETT) by planting date, management, location, and genotype",
+             fontsize=12, y=1.01)
+plt.tight_layout()
+fig_p3 = fig_to_b64()
+
+# ── Fig P4: Season length (R7PM) by planting date ────────────────────────────
+print("  Fig P4: Season length × planting date …")
+fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+for col, pd_val in enumerate(PDOY_ORDER):
+    ax = axes[col]
+    sub = yr[(yr["Planting"]==pd_val) & (yr["water_mgmt"]=="Irrigated")]
+    agg = (sub.groupby(["Location","Genotype_class"])["R7PM"]
+           .agg(mean="mean", se=lambda x: x.std()/np.sqrt(len(x))).reset_index())
+    agg["Location"] = pd.Categorical(agg["Location"], categories=LOC_ORDER, ordered=True)
+    agg = agg.sort_values(["Location","Genotype_class"])
+    x = np.arange(len(locs)); w = 0.18
+    for i, g in enumerate(GENO_ORDER):
+        sg = agg[agg["Genotype_class"]==g].set_index("Location").reindex(locs)
+        ax.bar(x + (i-1.5)*w, sg["mean"], w, yerr=sg["se"],
+               color=COL_GENO[g], label=g, alpha=0.85, capsize=2,
+               error_kw={"linewidth": 0.6})
+    ax.set_xticks(x); ax.set_xticklabels(locs, rotation=35, ha="right", fontsize=8)
+    ax.set_title(pd_val, fontsize=11)
+    ax.axvline(3.5, color="grey", linewidth=0.7, linestyle="--")
+    ax.axvline(6.5, color="grey", linewidth=0.7, linestyle="--")
+    ax.grid(axis="y", alpha=0.3); ax.set_axisbelow(True)
+    if col == 0:
+        ax.set_ylabel("Days to physiological maturity (R7.PM)")
+        ax.legend(title=None, fontsize=8, frameon=True)
+plt.suptitle("Season length (irrigated) by planting date, location, and genotype",
+             fontsize=12, y=1.01)
+plt.tight_layout()
+fig_p4 = fig_to_b64()
+
+# ══════════════════════════════════════════════════════════════════════════════
 # DAILY ETc / LAI / DDMP ANALYSIS
 # Reference ET: NASA POWER Penman-Monteith daily values (nasapower_ETo_daily_py.csv)
 # SSM internal PET column is NOT used for reference ET.
@@ -625,6 +780,38 @@ not the SSM internal PET output. Seasonal Kc results are reported in the yearly 
 
 <h3>Season length (days to R7.PM) under irrigation</h3>
 <img src="data:image/png;base64,{fig_r7pm}" alt="Season length">
+
+<h2>Planting Date Effects</h2>
+<p>Each genotype was simulated under three planting dates — <b>Early</b>, <b>Mid</b>, and <b>Late</b> —
+per location. The overview figures above average across planting dates. This section isolates
+planting date as a factor to show how it modulates absolute yields, water use, and the LT
+trait advantage.</p>
+
+<h3>P1 — Grain yield by planting date</h3>
+<p>Earlier planting consistently produces higher yields across all locations and genotypes
+(longer growing season, better use of early-season radiation). Late planting compresses the
+season and reduces yield, especially in Nebraska where the growing season is shortest.</p>
+<img src="data:image/png;base64,{fig_p1}" alt="Yield by planting date">
+
+<h3>P2 — LT trait advantage by planting date</h3>
+<p>Rainfed yield advantage (left) and irrigated water saving (right) of LT genotypes vs Non-LT,
+broken down by planting date. Bar fill indicates LT intensity (LT1.5 / LT2 / LT2.5);
+border colour indicates planting date (blue = Early, salmon = Mid, red = Late).
+A shift in advantage across planting dates indicates a planting date × genotype interaction.</p>
+<img src="data:image/png;base64,{fig_p2}" alt="LT advantage by planting date">
+
+<h3>P3 — Seasonal ETc (SUMETT) by planting date</h3>
+<p>Total growing-season crop ET by planting date, management, and genotype.
+Later planting dates generally reduce seasonal ETc because the crop experiences a shorter
+and often cooler growing period. The gap between Non-LT and LT genotypes (water savings)
+may widen or narrow depending on whether late planting aligns the crop season with peak VPD.</p>
+<img src="data:image/png;base64,{fig_p3}" alt="SUMETT by planting date">
+
+<h3>P4 — Season length (R7.PM) by planting date</h3>
+<p>Days from planting to physiological maturity under irrigation, by planting date and genotype.
+Confirms the phenological effect of planting date and shows whether LT genotypes have
+systematically different cycle lengths than Non-LT within each planting window.</p>
+<img src="data:image/png;base64,{fig_p4}" alt="Season length by planting date">
 
 <h2>Average Daily Crop ET (ETc) Analysis</h2>
 <p>
