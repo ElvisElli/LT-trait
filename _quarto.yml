@@ -1,0 +1,21 @@
+project:
+  type: website
+  output-dir: _site
+  resources:
+    - modeling_data/reports/SSM_updated_report.html
+    - experimental_data/GC_analysis_report.html
+    - meta_analysis/meta_analysis_report.html
+
+website:
+  title: "LT Soybean Trait — Elli Lab"
+  page-navigation: false
+  navbar:
+    background: primary
+    left:
+      - text: "Reports"
+        href: index.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: false

@@ -22,6 +22,10 @@ modeling_data/data/updated-outputs/all_daily.csv
 *.db-shm
 *.db-wal
 
+# Quarto build output
+_site/
+/.quarto/
+
 # OS
 .DS_Store
 Thumbs.db

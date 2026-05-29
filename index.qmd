@@ -1,0 +1,23 @@
+---
+title: "LT Soybean Trait Analysis"
+subtitle: "RIG Project 04/2024–02/2026 · PI: Elvis F. Elli · University of Arkansas"
+---
+
+Analysis reports for the limited-transpiration (LT) soybean trait project targeting
+*Agricultural Water Management*. The LT trait produces a genotype-dependent crop
+coefficient (Kc) that challenges the FAO-56 assumption of a fixed species-level Kc.
+
+## Reports
+
+| Report | Description |
+|---|---|
+| [SSM Simulations](modeling_data/reports/SSM_updated_report.html) | Sinclair SSM — 10 locations, 4 genotypes, 1990–2019. Daily ETc, LAI, DDMP progression; Kc analysis vs NASA POWER PM ETo. |
+| [Growth Chamber Experiments](experimental_data/GC_analysis_report.html) | GC1 + GC2 + GC3 transpiration vs VPD for 12 accessions across WUE plasticity quadrants. |
+| [Meta-Analysis](meta_analysis/meta_analysis_report.html) | Published TR/VPD breakpoint data (Fletcher 2007 → Devi 2014) benchmarked against GC1–GC3. |
+
+## Key findings
+
+- LT genotypes show lower daily Kc under high VPD — confirming the Marin et al. (2016, 2019) mechanism
+- Irrigated water savings: 246–344 mm season⁻¹ vs Non-LT
+- Rainfed yield advantage: +3.6 to +14.7% across locations
+- VPD breakpoint (meta-analysis): 1.73 ± 0.30 kPa (n = 20 observations)
