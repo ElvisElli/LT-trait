@@ -2,337 +2,315 @@
 # 01_data_inspection_QC.R
 # Growth Chamber 2026 — Soybean Limited-Transpiration Experiment
 #
-# Purpose: Load, inspect, and quality-check data_all.xlsx
-# Output:  figures/QC_*.png  (8 diagnostic plots)
-#          data/data_clean.csv  (cleaned dataset ready for modelling)
+# Purpose : Load data_all.xlsx, inspect structure, flag QC issues,
+#           produce 7 diagnostic PNG figures, save data_clean.csv.
 #
-# Run from project root (experimental_data_soy_2026/):
+# Run from project root  (experimental_data_soy_2026/):
 #   source("script/01_data_inspection_QC.R")
 # =============================================================================
 
-library(readxl)
-library(tidyverse)   # dplyr + ggplot2 + tidyr
-library(ggbeeswarm)  # jitter-free dot plots
-library(patchwork)   # multi-panel layout
+suppressPackageStartupMessages({
+  library(readxl)
+  library(ggplot2)
+  library(dplyr)
+  library(tidyr)
+  library(readr)
+  library(purrr)
+  library(forcats)
+  library(stringr)
+  library(tibble)
+  library(ggbeeswarm)
+  library(patchwork)
+})
+
+dir.create("figures", showWarnings = FALSE)
+
+# --------------------------------------------------------------------------- #
+# COLOUR SYSTEM — University of Arkansas
+# --------------------------------------------------------------------------- #
+UA_RED   <- "#9D2235"
+UA_WINE  <- "#6E1424"
+UA_BLUE  <- "#4393c3"
+UA_GRAY  <- "#7A7A7A"
+
+WUE_COLS <- c(
+  "slow_wilting"        = UA_WINE,
+  "high_wilting"        = "#C8102E",
+  "Plastic, High WUE"   = UA_BLUE,
+  "Nonplastic, Low WUE" = "#d4824a",
+  "MAGIC parent"        = "#333333"
+)
+DAY_COLS <- c("Day 1" = UA_RED, "Day 2" = UA_BLUE)
+
+UA_THEME <- theme_bw(base_size = 10) +
+  theme(
+    panel.grid.minor  = element_blank(),
+    panel.grid.major  = element_line(linewidth = 0.3, colour = "grey90"),
+    strip.background  = element_rect(fill = UA_RED, colour = NA),
+    strip.text        = element_text(colour = "white", face = "bold", size = 7),
+    axis.title        = element_text(size = 9),
+    plot.title        = element_text(face = "bold", size = 10, colour = UA_DARK <- "#1A1A1A"),
+    legend.key.size   = unit(0.45, "cm"),
+    legend.text       = element_text(size = 8)
+  )
 
 
 # --------------------------------------------------------------------------- #
 # 1. LOAD DATA
 # --------------------------------------------------------------------------- #
-
+cat("Loading data ...\n")
 raw <- read_excel("data/data_all.xlsx", sheet = "dataAll")
-cat("Raw data: ", nrow(raw), "rows x", ncol(raw), "cols\n\n")
+cat("  Raw dimensions:", nrow(raw), "rows x", ncol(raw), "cols\n\n")
 
 
 # --------------------------------------------------------------------------- #
-# 2. STRUCTURE CHECK
+# 2. RENAME / RECODE
 # --------------------------------------------------------------------------- #
+WUE_ORDER <- c("slow_wilting", "high_wilting",
+                "Plastic, High WUE", "Nonplastic, Low WUE", "MAGIC parent")
 
-# Variable types
-str(raw)
-
-# Basic summary
-summary(raw)
-
-
-# --------------------------------------------------------------------------- #
-# 3. RENAME / RECODE FOR CLARITY
-# --------------------------------------------------------------------------- #
-
-# Treatment → numeric VPD level (1–6, low-to-high)
-# avg_vpd is the measured chamber VPD for each observation row
-
-df <- raw %>%
+df <- raw |>
+  # Drop empty trailing column
+  select(where(~ !all(is.na(.)))) |>
   rename(
     Rep        = RepNo,
     Day        = day,
-    TR         = TR_mg_sqm_seg,   # transpiration rate (mg m-2 s-1)
-    RelTR      = RelativeTransp,  # transpiration normalized to lowest VPD
-    VPD        = avg_vpd,         # measured VPD (kPa)
+    TR         = TR_mg_sqm_seg,
+    RelTR      = RelativeTransp,
+    VPD        = avg_vpd,
     Temp_C     = avg_temperature,
     RH_pct     = avg_rh,
-    LeafArea   = LeafArea_squarecm
-  ) %>%
+    LeafArea   = LeafArea_squarecm,
+    duration_min = treatment_time_mins
+  ) |>
   mutate(
-    # Factor levels
-    Rep      = factor(Rep),
-    Day      = factor(Day, levels = c(1, 2), labels = c("Day 1", "Day 2")),
-    Genotype = factor(Genotype),
-    WUE_class = factor(WUE_class, levels = c(
-      "slow_wilting", "high_wilting",
-      "Plastic, High WUE", "Nonplastic, Low WUE", "MAGIC parent"
-    )),
+    Rep       = factor(Rep),
+    Day_label = factor(ifelse(Day == 1, "Day 1", "Day 2"),
+                       levels = c("Day 1", "Day 2")),
+    Genotype  = factor(Genotype),
+    WUE_class = factor(WUE_class, levels = WUE_ORDER),
     Treatment = factor(Treatment),
-    # Average stomatal conductance across the 3 LICOR readings
+    # Average the three LICOR stomatal conductance readings
     gsw = rowMeans(cbind(gsw1, gsw2, gsw3), na.rm = FALSE)
-  ) %>%
-  # Remove the trailing NULL column (col 31 from Excel)
-  select(Rep, Day, Module, Scale, Genotype, WUE_class, Treatment,
-         VPD, TR, RelTR, gsw, gsw1, gsw2, gsw3,
-         Tleaf1, Tleaf2, Tleaf3, LeafArea,
-         Temp_C, RH_pct, Initial_w, Final_w,
-         Transpiration_g, Transpiration_mg, treatment_time_mins)
+  )
 
-cat("Cleaned columns:\n")
+# Where ALL three gsw readings are NA, set gsw to NA explicitly
+all_gsw_na <- is.na(df$gsw1) & is.na(df$gsw2) & is.na(df$gsw3)
+df$gsw[all_gsw_na] <- NA
+
+cat("Columns after renaming:\n")
 print(names(df))
 
 
 # --------------------------------------------------------------------------- #
-# 4. MISSING VALUES
+# 3. MISSING VALUE REPORT
 # --------------------------------------------------------------------------- #
+cat("\n--- Missing values per column ---\n")
+miss <- colSums(is.na(df))
+print(miss[miss > 0])
 
-cat("\n--- Missing value count per column ---\n")
-miss <- df %>%
-  summarise(across(everything(), ~ sum(is.na(.)))) %>%
-  pivot_longer(everything(), names_to = "variable", values_to = "n_missing") %>%
-  filter(n_missing > 0) %>%
-  arrange(desc(n_missing))
-print(miss)
-
-# gsw is only available for a subset of plant × measurement combinations
-cat("\ngsw data availability by Day:\n")
-df %>%
-  group_by(Day) %>%
+cat("\n--- gsw availability by Day ---\n")
+df |>
+  group_by(Day_label) |>
   summarise(
-    n_total   = n(),
-    n_gsw     = sum(!is.na(gsw)),
-    pct_gsw   = round(100 * n_gsw / n_total, 1)
-  ) %>%
+    n_total = n(),
+    n_gsw   = sum(!is.na(gsw)),
+    pct_gsw = sprintf("%.1f%%", 100 * n_gsw / n_total),
+    .groups = "drop"
+  ) |>
   print()
 
 
 # --------------------------------------------------------------------------- #
-# 5. SAMPLE DESIGN SUMMARY
+# 4. SAMPLE DESIGN SUMMARY
 # --------------------------------------------------------------------------- #
-
-cat("\n--- Observations per Genotype × Day ---\n")
-df %>%
-  count(Genotype, Day) %>%
-  pivot_wider(names_from = Day, values_from = n, values_fill = 0) %>%
+cat("\n--- Observations per Genotype x Day ---\n")
+df |>
+  count(Genotype, Day_label) |>
+  pivot_wider(names_from = Day_label, values_from = n, values_fill = 0L) |>
   print(n = 20)
 
 cat("\n--- Genotype WUE class ---\n")
-df %>%
-  distinct(Genotype, WUE_class) %>%
-  arrange(WUE_class, Genotype) %>%
+df |>
+  distinct(Genotype, WUE_class) |>
+  arrange(WUE_class, Genotype) |>
   print(n = 20)
 
-cat("\n--- VPD levels achieved per Treatment ---\n")
-df %>%
-  group_by(Treatment) %>%
+cat("\n--- VPD achieved per Treatment ---\n")
+df |>
+  group_by(Treatment) |>
   summarise(
-    n      = n(),
+    n        = n(),
     VPD_mean = round(mean(VPD, na.rm = TRUE), 3),
     VPD_min  = round(min(VPD,  na.rm = TRUE), 3),
-    VPD_max  = round(max(VPD,  na.rm = TRUE), 3)
-  ) %>%
+    VPD_max  = round(max(VPD,  na.rm = TRUE), 3),
+    .groups = "drop"
+  ) |>
   print()
 
 
 # --------------------------------------------------------------------------- #
-# 6. OUTLIER DETECTION
+# 5. OUTLIER FLAGS
 # --------------------------------------------------------------------------- #
-
-# Flag observations where RelTR > 1 (transpiration exceeds Day 1 T1 baseline)
-cat("\n--- RelTR > 1 (possible calibration issue) ---\n")
-df %>%
-  filter(RelTR > 1) %>%
-  select(Rep, Day, Genotype, Treatment, VPD, TR, RelTR) %>%
-  print()
-
-# IQR-based outlier flag for TR within each Genotype × Day × Treatment cell
-df <- df %>%
-  group_by(Genotype, Day, Treatment) %>%
+# IQR outlier flag (3× rule within Genotype x Day x Treatment)
+df <- df |>
+  group_by(Genotype, Day_label, Treatment) |>
   mutate(
-    TR_Q1    = quantile(TR, 0.25, na.rm = TRUE),
-    TR_Q3    = quantile(TR, 0.75, na.rm = TRUE),
-    TR_IQR   = TR_Q3 - TR_Q1,
+    TR_Q1      = quantile(TR, 0.25, na.rm = TRUE),
+    TR_Q3      = quantile(TR, 0.75, na.rm = TRUE),
+    TR_IQR     = TR_Q3 - TR_Q1,
     TR_outlier = TR < (TR_Q1 - 3 * TR_IQR) | TR > (TR_Q3 + 3 * TR_IQR)
-  ) %>%
+  ) |>
   ungroup()
 
-cat("\n--- Potential outliers (TR, 3×IQR rule) ---\n")
-df %>%
-  filter(TR_outlier) %>%
-  select(Rep, Day, Genotype, Treatment, VPD, TR, RelTR) %>%
-  print()
+cat("\n--- TR outliers (3×IQR rule) ---\n")
+out <- filter(df, TR_outlier)
+if (nrow(out) == 0) {
+  cat("  None detected\n")
+} else {
+  out |> select(Rep, Day_label, Genotype, Treatment, VPD, TR) |> print()
+}
 
-# Leaf area sanity check (should be > 0 and < ~2000 cm2 for soybean seedlings)
 cat("\n--- Leaf area summary ---\n")
 summary(df$LeafArea)
 cat("Rows with LeafArea <= 0:", sum(df$LeafArea <= 0, na.rm = TRUE), "\n")
 
 
 # --------------------------------------------------------------------------- #
-# 7. PLOTS
+# 6. SAVE CLEAN DATA
 # --------------------------------------------------------------------------- #
-
-dir.create("figures", showWarnings = FALSE)
-FIG <- "figures"
-
-
-# --- QC 1: TR distribution by Genotype × Day ---------------------------------
-p_tr_dist <- ggplot(df, aes(x = Genotype, y = TR, fill = Day)) +
-  geom_boxplot(outlier.size = 0.8, position = position_dodge(0.8)) +
-  scale_fill_manual(values = c("Day 1" = "#2166ac", "Day 2" = "#d6604d")) +
-  labs(
-    title = "QC1: Transpiration rate distribution by genotype and day",
-    x     = NULL,
-    y     = expression(TR~(mg~m^{-2}~s^{-1}))
-  ) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggsave(file.path(FIG, "QC1_TR_distribution.png"),
-       p_tr_dist, width = 12, height = 5, dpi = 300)
+data_clean <- df |> select(-TR_Q1, -TR_Q3, -TR_IQR)
+write_csv(data_clean, "data/data_clean.csv")
+cat("\nSaved data/data_clean.csv (", nrow(data_clean), "rows)\n")
 
 
-# --- QC 2: TR vs measured VPD, coloured by Day --------------------------------
-p_tr_vpd <- ggplot(df, aes(x = VPD, y = TR, colour = Day)) +
-  geom_point(alpha = 0.6, size = 1.2) +
-  geom_smooth(method = "loess", se = FALSE, linewidth = 0.8) +
-  scale_colour_manual(values = c("Day 1" = "#2166ac", "Day 2" = "#d6604d")) +
-  facet_wrap(~Genotype, ncol = 5) +
-  labs(
-    title = "QC2: TR vs VPD by genotype (raw, both days)",
-    x     = "VPD (kPa)",
-    y     = expression(TR~(mg~m^{-2}~s^{-1}))
-  ) +
-  theme_bw(base_size = 9) +
-  theme(strip.text = element_text(size = 7))
-
-ggsave(file.path(FIG, "QC2_TR_vs_VPD_by_genotype.png"),
-       p_tr_vpd, width = 14, height = 8, dpi = 300)
-
-
-# --- QC 3: RelTR vs VPD, Day 1 only -----------------------------------------
-day1 <- filter(df, Day == "Day 1")
-
-p_reltr <- ggplot(day1, aes(x = VPD, y = RelTR, colour = WUE_class)) +
-  geom_hline(yintercept = 1, linetype = "dashed", colour = "grey40") +
-  geom_point(alpha = 0.7, size = 1.5) +
-  facet_wrap(~Genotype, ncol = 5) +
-  scale_colour_brewer(palette = "Dark2") +
-  labs(
-    title = "QC3: Relative transpiration vs VPD — Day 1",
-    x     = "VPD (kPa)",
-    y     = "Relative transpiration",
-    colour = "WUE class"
-  ) +
-  theme_bw(base_size = 9) +
-  theme(strip.text = element_text(size = 7),
-        legend.position = "bottom")
-
-ggsave(file.path(FIG, "QC3_RelTR_vs_VPD_Day1.png"),
-       p_reltr, width = 14, height = 8, dpi = 300)
-
-
-# --- QC 4: Stomatal conductance distribution ---------------------------------
-gsw_data <- df %>% filter(!is.na(gsw))
-
-p_gsw <- ggplot(gsw_data, aes(x = Genotype, y = gsw, fill = Day)) +
-  geom_boxplot(outlier.size = 0.8, position = position_dodge(0.8)) +
-  scale_fill_manual(values = c("Day 1" = "#2166ac", "Day 2" = "#d6604d")) +
-  labs(
-    title = "QC4: Stomatal conductance distribution (gsw, mol m-2 s-1)",
-    x     = NULL,
-    y     = expression(g[sw]~(mol~m^{-2}~s^{-1}))
-  ) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggsave(file.path(FIG, "QC4_gsw_distribution.png"),
-       p_gsw, width = 12, height = 5, dpi = 300)
-
-
-# --- QC 5: gsw vs VPD, Day 1 -------------------------------------------------
+# --------------------------------------------------------------------------- #
+# 7. FIGURES
+# --------------------------------------------------------------------------- #
+day1     <- filter(df, Day_label == "Day 1")
 day1_gsw <- filter(day1, !is.na(gsw))
 
-p_gsw_vpd <- ggplot(day1_gsw, aes(x = VPD, y = gsw, colour = WUE_class)) +
-  geom_point(size = 2, alpha = 0.8) +
-  geom_smooth(method = "lm", se = FALSE, linewidth = 0.7) +
-  scale_colour_brewer(palette = "Dark2") +
+
+# --- QC1: TR distribution by Genotype x Day ----------------------------------
+p_qc1 <- ggplot(df, aes(x = Genotype, y = TR, fill = Day_label)) +
+  geom_boxplot(outlier.size = 0.7, position = position_dodge(0.8),
+               linewidth = 0.5) +
+  scale_fill_manual(values = DAY_COLS, name = NULL) +
+  labs(title = "QC1  Transpiration rate distribution by genotype and day",
+       x = NULL, y = expression(TR~(mg~m^{-2}~s^{-1}))) +
+  UA_THEME +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+
+ggsave("figures/QC1_TR_distribution.png", p_qc1,
+       width = 13, height = 4.5, dpi = 300)
+cat("Saved QC1\n")
+
+
+# --- QC2: TR vs VPD, both days, per genotype ---------------------------------
+p_qc2 <- ggplot(df, aes(x = VPD, y = TR, colour = Day_label)) +
+  geom_point(size = 1.2, alpha = 0.65) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 0.8, formula = y ~ x) +
+  scale_colour_manual(values = DAY_COLS, name = NULL) +
   facet_wrap(~Genotype, ncol = 5) +
-  labs(
-    title = "QC5: Stomatal conductance vs VPD — Day 1 (LICOR data)",
-    x     = "VPD (kPa)",
-    y     = expression(g[sw]~(mol~m^{-2}~s^{-1})),
-    colour = "WUE class"
-  ) +
-  theme_bw(base_size = 9) +
-  theme(strip.text = element_text(size = 7), legend.position = "bottom")
+  labs(title = "QC2  TR vs VPD by genotype (both days)",
+       x = "VPD (kPa)", y = expression(TR~(mg~m^{-2}~s^{-1}))) +
+  UA_THEME
 
-ggsave(file.path(FIG, "QC5_gsw_vs_VPD_Day1.png"),
-       p_gsw_vpd, width = 14, height = 8, dpi = 300)
+ggsave("figures/QC2_TR_vs_VPD_by_genotype.png", p_qc2,
+       width = 14, height = 7, dpi = 300)
+cat("Saved QC2\n")
 
 
-# --- QC 6: Leaf area by Rep and Genotype -------------------------------------
-p_la <- ggplot(df, aes(x = Rep, y = LeafArea, fill = Rep)) +
-  geom_boxplot(show.legend = FALSE) +
+# --- QC4: gsw distribution ---------------------------------------------------
+gsw_all <- filter(df, !is.na(gsw))
+
+p_qc4 <- ggplot(gsw_all, aes(x = Genotype, y = gsw, fill = Day_label)) +
+  geom_boxplot(outlier.size = 0.7, position = position_dodge(0.8),
+               linewidth = 0.5) +
+  scale_fill_manual(values = DAY_COLS, name = NULL) +
+  labs(title = "QC4  Stomatal conductance distribution",
+       x = NULL, y = expression(g[sw]~(mol~m^{-2}~s^{-1}))) +
+  UA_THEME +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1))
+
+ggsave("figures/QC4_gsw_distribution.png", p_qc4,
+       width = 11, height = 4.5, dpi = 300)
+cat("Saved QC4\n")
+
+
+# --- QC5: gsw vs VPD, Day 1 --------------------------------------------------
+p_qc5 <- ggplot(day1_gsw, aes(x = VPD, y = gsw, colour = WUE_class)) +
+  geom_point(size = 2.2, alpha = 0.80) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 0.8, formula = y ~ x) +
+  scale_colour_manual(values = WUE_COLS, name = "WUE class") +
+  facet_wrap(~Genotype, ncol = 5) +
+  labs(title = "QC5  Stomatal conductance vs VPD — Day 1 (LICOR)",
+       x = "VPD (kPa)", y = expression(g[sw]~(mol~m^{-2}~s^{-1}))) +
+  UA_THEME +
+  theme(legend.position = "bottom")
+
+ggsave("figures/QC5_gsw_vs_VPD_Day1.png", p_qc5,
+       width = 14, height = 6, dpi = 300)
+cat("Saved QC5\n")
+
+
+# --- QC6: Leaf area by Rep x Genotype ----------------------------------------
+p_qc6 <- ggplot(df, aes(x = Rep, y = LeafArea, colour = Rep)) +
+  geom_beeswarm(size = 1.4, alpha = 0.75, cex = 2) +
+  scale_colour_manual(values = c("1"=UA_RED,"2"=UA_BLUE,"3"="#2ca25f","4"="#f4a582"),
+                      guide = "none") +
   facet_wrap(~Genotype, ncol = 5, scales = "free_y") +
-  labs(
-    title = "QC6: Leaf area (cm2) by rep and genotype",
-    x     = "Replicate",
-    y     = expression(Leaf~area~(cm^2))
-  ) +
-  theme_bw(base_size = 9) +
-  theme(strip.text = element_text(size = 7))
+  labs(title = "QC6  Leaf area by replicate and genotype",
+       x = "Replicate", y = expression(Leaf~area~(cm^2))) +
+  UA_THEME
 
-ggsave(file.path(FIG, "QC6_leaf_area_by_rep_genotype.png"),
-       p_la, width = 14, height = 8, dpi = 300)
+ggsave("figures/QC6_leaf_area_by_rep_genotype.png", p_qc6,
+       width = 14, height = 7, dpi = 300)
+cat("Saved QC6\n")
 
 
-# --- QC 7: Chamber conditions (Temp, RH) across treatments -------------------
-p_cond <- df %>%
-  select(Treatment, Temp_C, RH_pct, VPD) %>%
-  pivot_longer(-Treatment, names_to = "variable", values_to = "value") %>%
+# --- QC7: Chamber conditions per treatment -----------------------------------
+p_qc7 <- df |>
+  select(Treatment, Temp_C, RH_pct, VPD) |>
+  pivot_longer(-Treatment, names_to = "variable", values_to = "value") |>
+  mutate(variable = recode(variable,
+    Temp_C = "Temperature (°C)",
+    RH_pct = "Relative humidity (%)",
+    VPD    = "VPD (kPa)"
+  )) |>
   ggplot(aes(x = Treatment, y = value)) +
-  geom_boxplot() +
-  facet_wrap(~variable, scales = "free_y") +
-  labs(
-    title = "QC7: Chamber conditions by treatment",
-    x     = "Treatment",
-    y     = "Value"
-  ) +
-  theme_bw()
+  geom_boxplot(fill = UA_RED, alpha = 0.55, outlier.size = 0.7,
+               linewidth = 0.5) +
+  facet_wrap(~variable, scales = "free_y", ncol = 3) +
+  labs(title = "QC7  Chamber conditions by treatment",
+       x = "Treatment", y = NULL) +
+  UA_THEME
 
-ggsave(file.path(FIG, "QC7_chamber_conditions.png"),
-       p_cond, width = 9, height = 4, dpi = 300)
-
-
-# --- QC 8: TR Day 1 vs Day 2 within same Rep × Genotype × Treatment ---------
-day_compare <- df %>%
-  select(Rep, Genotype, Treatment, Day, TR) %>%
-  pivot_wider(names_from = Day, values_from = TR,
-              values_fn = mean)  # average if >1 obs per cell
-
-p_day_comp <- ggplot(day_compare, aes(x = `Day 1`, y = `Day 2`, colour = Genotype)) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey50") +
-  geom_point(alpha = 0.6, size = 1.5) +
-  labs(
-    title = "QC8: TR Day 1 vs Day 2 (diagonal = no day effect)",
-    x     = expression(TR~Day~1~(mg~m^{-2}~s^{-1})),
-    y     = expression(TR~Day~2~(mg~m^{-2}~s^{-1}))
-  ) +
-  theme_bw() +
-  theme(legend.position = "bottom") +
-  guides(colour = guide_legend(nrow = 3))
-
-ggsave(file.path(FIG, "QC8_TR_day1_vs_day2.png"),
-       p_day_comp, width = 7, height = 6, dpi = 300)
+ggsave("figures/QC7_chamber_conditions.png", p_qc7,
+       width = 11, height = 4, dpi = 300)
+cat("Saved QC7\n")
 
 
-# --------------------------------------------------------------------------- #
-# 8. SAVE CLEANED DATA
-# --------------------------------------------------------------------------- #
+# --- QC8: Day 1 vs Day 2 TR --------------------------------------------------
+day_pivot <- df |>
+  group_by(Rep, Genotype, Treatment, Day_label) |>
+  summarise(TR = mean(TR, na.rm = TRUE), .groups = "drop") |>
+  pivot_wider(names_from = Day_label, values_from = TR)
 
-# Remove helper IQR columns; keep outlier flag for transparency
-data_clean <- df %>%
-  select(-TR_Q1, -TR_Q3, -TR_IQR)
+p_qc8 <- ggplot(day_pivot, aes(x = `Day 1`, y = `Day 2`,
+                                colour = Genotype)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed",
+              colour = UA_GRAY, linewidth = 0.6) +
+  geom_point(size = 1.8, alpha = 0.65) +
+  labs(title = "QC8  TR Day 1 vs Day 2 (diagonal = no day effect)",
+       x = expression(TR~Day~1~(mg~m^{-2}~s^{-1})),
+       y = expression(TR~Day~2~(mg~m^{-2}~s^{-1}))) +
+  UA_THEME +
+  theme(legend.position = "right") +
+  guides(colour = guide_legend(ncol = 1, override.aes = list(size = 2)))
 
-write_csv(data_clean, "data/data_clean.csv")
-cat("\nCleaned data saved to data/data_clean.csv\n")
-cat("Rows:", nrow(data_clean), "| Columns:", ncol(data_clean), "\n")
-cat("\nNote: 'TR_outlier' column flags potential outliers (3×IQR rule).\n")
-cat("      'gsw' is the mean of gsw1/gsw2/gsw3; NA where LICOR data absent.\n")
-cat("      Day 1 = first measurement day; Day 2 = second measurement day.\n")
+ggsave("figures/QC8_TR_day1_vs_day2.png", p_qc8,
+       width = 7, height = 5.5, dpi = 300)
+cat("Saved QC8\n")
+
+cat("\nQC complete — all figures in figures/\n")

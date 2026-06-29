@@ -2,587 +2,809 @@
 # 02_model_fitting_TR_gs_VPD.R
 # Growth Chamber 2026 — Soybean Limited-Transpiration Experiment
 #
-# Purpose: Fit three model types (linear, bilinear, linear plateau) for
-#          transpiration rate (TR) and stomatal conductance (gsw) vs VPD
-#          using Day 1 data only.
-#          Random effect: Rep (biological replicate).
+# Purpose : Fit three model types for TR and gsw vs VPD (Day 1 only):
+#   (A) Linear           TR = a + b·VPD
+#   (B) Bilinear         two slopes with a breakpoint (BP)
+#   (C) Linear plateau   linear then flat at TR_max (classic LT response)
 #
-# Model types:
-#   (A) Linear           — TR = a + b * VPD
-#   (B) Bilinear         — TR = a + b1 * VPD  for VPD <= BP (breakpoint)
-#                               a + b1*BP + b2*(VPD-BP)  for VPD > BP
-#   (C) Linear plateau   — TR = a + b * VPD  for VPD <= BP
-#                               a + b * BP           for VPD > BP
+#   Random effect : Rep (replicate) via nlme::lme() / nlme::nlme()
+#   Model selection : AIC (lower = better)
 #
-# Packages:
-#   lme4    — linear mixed-effects (Model A)
-#   nlme    — nonlinear mixed-effects (Models B and C)
-#   segmented — optional: breakpoint CI for Model B/C
+# Outputs (all written to figures/ and data/):
+#   Fig1  TR models per genotype (panel grid, publication layout)
+#   Fig2  TR by WUE class (pooled)
+#   Fig3  Breakpoint bar chart
+#   Fig4  Slope₁ ranking
+#   Fig5  gsw models per genotype
+#   Fig6  AIC heatmap
+#   data/TR_best_model_summary.csv
+#   data/gsw_best_model_summary.csv
+#   data/TR_model_parameters.csv
+#   data/gsw_model_parameters.csv
 #
-# Run from project root (experimental_data_soy_2026/):
+# Run from project root  (experimental_data_soy_2026/):
 #   source("script/02_model_fitting_TR_gs_VPD.R")
 # =============================================================================
 
-library(readxl)
-library(tidyverse)
-library(lme4)       # lmer()
-library(nlme)       # nlme(), lme()
-library(patchwork)  # multi-panel figures
+suppressPackageStartupMessages({
+  library(readxl)
+  library(ggplot2)
+  library(dplyr)
+  library(tidyr)
+  library(readr)
+  library(purrr)
+  library(forcats)
+  library(stringr)
+  library(tibble)
+  library(nlme)
+  library(patchwork)
+  library(scales)
+})
 
 dir.create("figures", showWarnings = FALSE)
+dir.create("data",    showWarnings = FALSE)
+
+# --------------------------------------------------------------------------- #
+# COLOUR SYSTEM — University of Arkansas
+# --------------------------------------------------------------------------- #
+UA_RED   <- "#9D2235"
+UA_WINE  <- "#6E1424"
+UA_RED2  <- "#C8102E"
+UA_BLUE  <- "#4393c3"
+UA_ORG   <- "#d4824a"
+UA_DARK  <- "#1A1A1A"
+UA_GRAY  <- "#7A7A7A"
+
+WUE_COLS <- c(
+  "slow_wilting"        = UA_WINE,
+  "high_wilting"        = UA_RED2,
+  "Plastic, High WUE"   = UA_BLUE,
+  "Nonplastic, Low WUE" = UA_ORG,
+  "MAGIC parent"        = UA_DARK
+)
+WUE_SHAPES <- c(
+  "slow_wilting"        = 21,
+  "high_wilting"        = 22,
+  "Plastic, High WUE"   = 24,
+  "Nonplastic, Low WUE" = 23,
+  "MAGIC parent"        = 25
+)
+MODEL_COLS <- c(
+  "Linear"       = UA_GRAY,
+  "Bilinear"     = UA_RED,
+  "Lin. plateau" = UA_WINE
+)
+MODEL_LTY <- c(
+  "Linear"       = "dashed",
+  "Bilinear"     = "solid",
+  "Lin. plateau" = "dotdash"
+)
+
+UA_THEME <- theme_bw(base_size = 9) +
+  theme(
+    panel.grid.minor  = element_blank(),
+    panel.grid.major  = element_line(linewidth = 0.25, colour = "grey90"),
+    strip.background  = element_rect(fill = UA_RED, colour = NA),
+    strip.text        = element_text(colour = "white", face = "bold", size = 7),
+    axis.title        = element_text(size = 8),
+    plot.title        = element_text(face = "bold", size = 9, colour = UA_DARK),
+    legend.key.size   = unit(0.4, "cm"),
+    legend.text       = element_text(size = 7.5),
+    legend.title      = element_text(size = 8, face = "bold")
+  )
+
+WUE_ORDER <- c("slow_wilting", "high_wilting",
+                "Plastic, High WUE", "Nonplastic, Low WUE", "MAGIC parent")
+
+WUE_EXPECTED <- c(
+  "slow_wilting"        = "Slow wilting / LT",
+  "high_wilting"        = "High wilting / non-LT",
+  "Plastic, High WUE"   = "Plastic – High WUE",
+  "Nonplastic, Low WUE" = "Nonplastic – Low WUE",
+  "MAGIC parent"        = "MAGIC parent"
+)
 
 
 # --------------------------------------------------------------------------- #
-# SECTION 1: LOAD DATA AND SUBSET TO DAY 1
+# 1. LOAD DATA — Day 1 only
 # --------------------------------------------------------------------------- #
-
-# Use the cleaned CSV if QC script has been run; otherwise reload from Excel
 if (file.exists("data/data_clean.csv")) {
-  df_all <- read_csv("data/data_clean.csv", show_col_types = FALSE) %>%
-    mutate(Rep = factor(Rep), Day = factor(Day), Genotype = factor(Genotype))
+  df_all <- read_csv("data/data_clean.csv", show_col_types = FALSE) |>
+    mutate(Rep = factor(Rep), Genotype = factor(Genotype),
+           WUE_class = factor(WUE_class, levels = WUE_ORDER))
 } else {
-  df_all <- read_excel("data/data_all.xlsx", sheet = "dataAll") %>%
+  df_all <- read_excel("data/data_all.xlsx", sheet = "dataAll") |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg,
-           RelTR = RelativeTransp, VPD = avg_vpd) %>%
+           RelTR = RelativeTransp, VPD = avg_vpd) |>
     mutate(
-      Rep      = factor(Rep),
-      Day      = factor(Day, levels = c(1, 2), labels = c("Day 1", "Day 2")),
-      Genotype = factor(Genotype),
-      gsw      = rowMeans(cbind(gsw1, gsw2, gsw3), na.rm = FALSE)
+      Rep       = factor(Rep),
+      Day_label = factor(ifelse(Day == 1, "Day 1", "Day 2"),
+                         levels = c("Day 1","Day 2")),
+      Genotype  = factor(Genotype),
+      WUE_class = factor(WUE_class, levels = WUE_ORDER),
+      gsw       = rowMeans(cbind(gsw1, gsw2, gsw3), na.rm = FALSE)
     )
 }
 
-# ----- Day 1 only (per analysis plan) ----------------------------------------
-day1 <- df_all %>%
-  filter(Day == "Day 1")
+day1     <- filter(df_all, Day_label == "Day 1")
+day1_gsw <- filter(day1, !is.na(gsw))
 
-cat("Day 1 dataset:\n")
-cat("  Rows       :", nrow(day1), "\n")
-cat("  Genotypes  :", nlevels(day1$Genotype), "\n")
-cat("  Reps       :", nlevels(day1$Rep), "\n")
-cat("  VPD range  :", round(min(day1$VPD), 2), "–",
-                       round(max(day1$VPD), 2), "kPa\n\n")
+genotypes <- levels(droplevels(day1$Genotype))
+geno_gsw  <- levels(droplevels(day1_gsw$Genotype))
 
-# Stomatal conductance subset (LICOR data not always present on Day 1)
-day1_gsw <- day1 %>% filter(!is.na(gsw))
-cat("Day 1 subset with gsw data:", nrow(day1_gsw), "rows\n")
-cat("  Genotypes with gsw:", paste(levels(droplevels(day1_gsw$Genotype)),
-                                    collapse = ", "), "\n\n")
+# Individual LICOR readings (gsw1/gsw2/gsw3) in long format for plotting
+# Each row in day1_gsw yields 3 plotable points showing within-plant variability
+day1_gsw_long <- day1_gsw |>
+  select(Genotype, WUE_class, VPD, Rep, gsw1, gsw2, gsw3) |>
+  pivot_longer(cols = c(gsw1, gsw2, gsw3),
+               names_to  = "reading",
+               values_to = "gsw_reading") |>
+  filter(!is.na(gsw_reading))
+
+# Lookup tables
+wue_lookup <- day1 |>
+  distinct(Genotype, WUE_class) |>
+  deframe()   # named vector: Genotype -> WUE_class
+
+cat("Day 1:", nrow(day1), "rows |", length(genotypes), "genotypes |",
+    nrow(day1_gsw), "rows with gsw |",
+    nrow(day1_gsw_long), "individual LICOR readings\n")
 
 
 # --------------------------------------------------------------------------- #
-# SECTION 2: HELPER FUNCTIONS
+# 2. MODEL FUNCTIONS
 # --------------------------------------------------------------------------- #
 
-# --- 2.1 Bilinear model function (two slopes, one breakpoint) ----------------
-# y = a + b1*x                     for x <= bp
-# y = a + b1*bp + b2*(x - bp)      for x > bp
-bilinear <- function(x, a, b1, b2, bp) {
-  ifelse(x <= bp,
-         a + b1 * x,
-         a + b1 * bp + b2 * (x - bp))
+# Bilinear: a + b1*x for x<=bp; a + b1*bp + b2*(x-bp) for x>bp
+bilinear_fn <- function(x, a, b1, b2, bp) {
+  ifelse(x <= bp, a + b1 * x, a + b1 * bp + b2 * (x - bp))
 }
 
-# --- 2.2 Linear plateau model function (slope then flat) ---------------------
-# y = a + b*x    for x <= bp
-# y = a + b*bp   for x > bp  (plateau value)
-lin_plateau <- function(x, a, b, bp) {
-  ifelse(x <= bp,
-         a + b * x,
-         a + b * bp)
+# Linear plateau: a + b*x for x<=bp; a + b*bp for x>bp
+lin_plateau_fn <- function(x, a, b, bp) {
+  ifelse(x <= bp, a + b * x, a + b * bp)
 }
 
-# --- 2.3 Fit all three models for ONE genotype, ONE response variable --------
-#   data    : data frame with columns VPD, y, Rep (factor)
-#   response: label string for plots
-#   geno    : genotype label for plots
-fit_models_one <- function(data, response = "TR", geno = "unknown") {
 
-  out <- list(geno = geno, response = response, n = nrow(data))
+# --------------------------------------------------------------------------- #
+# 3. FIT FUNCTION (per genotype)
+# --------------------------------------------------------------------------- #
+# Returns a list with elements: linear, bilinear, lin_plateau, best (name)
+# Each element is the fitted model object (lme or nls fallback).
 
-  # ---- (A) LINEAR mixed model ------------------------------------------------
-  tryCatch({
-    m_lin <- lme(y ~ VPD, random = ~1 | Rep, data = data,
-                 method = "REML", na.action = na.omit)
-    out$linear <- m_lin
-  }, error = function(e) {
-    message("Linear model failed for ", geno, ": ", conditionMessage(e))
-    out$linear <<- NULL
-  })
+fit_one <- function(data, response_col = "TR", geno_label = "?") {
+  y   <- data[[response_col]]
+  vpd <- data$VPD
+  rep <- data$Rep
+  n   <- sum(!is.na(y) & !is.na(vpd))
+  if (n < 4) return(NULL)
 
-  # ---- (B) BILINEAR — fit via nls first to get starting values ---------------
-  #   Starting values: midpoint of VPD range as breakpoint; b1 ≈ b2 ≈ slope of linear fit
-  vrange <- range(data$VPD, na.rm = TRUE)
-  bp0    <- mean(vrange)  # initial breakpoint guess
+  vmin <- min(vpd, na.rm = TRUE)
+  vmax <- max(vpd, na.rm = TRUE)
+  bp0  <- (vmin + vmax) / 2
+  # rough starting slope from OLS
+  sl0  <- coef(lm(y ~ vpd, na.action = na.omit))["vpd"]
+  if (is.na(sl0)) sl0 <- 1
+  a0   <- mean(y, na.rm = TRUE) - sl0 * mean(vpd, na.rm = TRUE)
 
-  # Rough OLS starting slope
-  sl0 <- tryCatch(coef(lm(y ~ VPD, data = data))["VPD"], error = function(e) 1)
-  a0  <- mean(data$y, na.rm = TRUE) - sl0 * mean(data$VPD, na.rm = TRUE)
+  df_fit <- data.frame(y = y, VPD = vpd, Rep = rep) |> na.omit()
 
-  nls_bilin <- tryCatch(
-    nls(y ~ bilinear(VPD, a, b1, b2, bp),
-        data  = data,
-        start = list(a = a0, b1 = sl0, b2 = sl0 * 0.1, bp = bp0),
-        control = nls.control(maxiter = 200, tol = 1e-5)),
-    error = function(e) { message("nls bilinear failed for ", geno, ": ", conditionMessage(e)); NULL }
+  out <- list()
+
+  # Keys use display names so helpers can look up by model name directly
+  # ---- (A) LINEAR mixed model -----------------------------------------------
+  out[["Linear"]] <- tryCatch(
+    lme(y ~ VPD, random = ~1 | Rep, data = df_fit, method = "ML",
+        control = lmeControl(opt = "optim")),
+    error = function(e) {
+      tryCatch(lm(y ~ VPD, data = df_fit), error = function(e2) NULL)
+    }
   )
 
-  if (!is.null(nls_bilin)) {
-    sv <- as.list(coef(nls_bilin))
-    tryCatch({
-      m_bilin <- nlme(y ~ bilinear(VPD, a, b1, b2, bp),
-                      fixed  = a + b1 + b2 + bp ~ 1,
-                      random = a ~ 1 | Rep,
-                      start  = c(a = sv$a, b1 = sv$b1, b2 = sv$b2, bp = sv$bp),
-                      data   = data, na.action = na.omit,
-                      control = nlmeControl(maxIter = 200, pnlsTol = 0.01))
-      out$bilinear <- m_bilin
-    }, error = function(e) {
-      message("nlme bilinear failed for ", geno, "; storing nls result instead. ", conditionMessage(e))
-      out$bilinear <<- nls_bilin
-    })
-  } else {
-    out$bilinear <- NULL
+  # ---- (B) BILINEAR — nls starting values, then nlme ----------------------
+  nls_bil <- tryCatch(
+    nls(y ~ bilinear_fn(VPD, a, b1, b2, bp),
+        data    = df_fit,
+        start   = list(a = a0, b1 = sl0, b2 = sl0 * 0.1, bp = bp0),
+        lower   = c(a = -Inf, b1 = 0,  b2 = -Inf, bp = vmin),
+        upper   = c(a =  Inf, b1 = Inf, b2 =  Inf, bp = vmax),
+        algorithm = "port",
+        control = nls.control(maxiter = 300, tol = 1e-5)),
+    error = function(e) NULL
+  )
+
+  if (!is.null(nls_bil)) {
+    sv <- as.list(coef(nls_bil))
+    out[["Bilinear"]] <- tryCatch(
+      nlme(y ~ bilinear_fn(VPD, a, b1, b2, bp),
+           fixed   = a + b1 + b2 + bp ~ 1,
+           random  = a ~ 1 | Rep,
+           start   = c(a = sv$a, b1 = sv$b1, b2 = sv$b2, bp = sv$bp),
+           data    = df_fit,
+           control = nlmeControl(maxIter = 200, pnlsTol = 0.05, opt = "nlminb")),
+      error = function(e) nls_bil
+    )
   }
 
-  # ---- (C) LINEAR PLATEAU ------------------------------------------------
+  # ---- (C) LINEAR PLATEAU ---------------------------------------------------
   nls_lp <- tryCatch(
-    nls(y ~ lin_plateau(VPD, a, b, bp),
-        data  = data,
-        start = list(a = a0, b = sl0, bp = bp0),
-        lower = list(a = -Inf, b = 0, bp = vrange[1]),
-        upper = list(a = Inf,  b = Inf, bp = vrange[2]),
+    nls(y ~ lin_plateau_fn(VPD, a, b, bp),
+        data    = df_fit,
+        start   = list(a = a0, b = sl0, bp = bp0),
+        lower   = c(a = -Inf, b = 0,   bp = vmin),
+        upper   = c(a =  Inf, b = Inf, bp = vmax),
         algorithm = "port",
-        control = nls.control(maxiter = 200, tol = 1e-5)),
-    error = function(e) { message("nls lin_plateau failed for ", geno, ": ", conditionMessage(e)); NULL }
+        control = nls.control(maxiter = 300, tol = 1e-5)),
+    error = function(e) NULL
   )
 
   if (!is.null(nls_lp)) {
     sv_lp <- as.list(coef(nls_lp))
-    tryCatch({
-      m_lp <- nlme(y ~ lin_plateau(VPD, a, b, bp),
-                   fixed  = a + b + bp ~ 1,
-                   random = a ~ 1 | Rep,
-                   start  = c(a = sv_lp$a, b = sv_lp$b, bp = sv_lp$bp),
-                   data   = data, na.action = na.omit,
-                   control = nlmeControl(maxIter = 200, pnlsTol = 0.01))
-      out$lin_plateau <- m_lp
-    }, error = function(e) {
-      message("nlme lin_plateau failed for ", geno, "; storing nls result instead. ", conditionMessage(e))
-      out$lin_plateau <<- nls_lp
-    })
-  } else {
-    out$lin_plateau <- NULL
+    out[["Lin. plateau"]] <- tryCatch(
+      nlme(y ~ lin_plateau_fn(VPD, a, b, bp),
+           fixed   = a + b + bp ~ 1,
+           random  = a ~ 1 | Rep,
+           start   = c(a = sv_lp$a, b = sv_lp$b, bp = sv_lp$bp),
+           data    = df_fit,
+           control = nlmeControl(maxIter = 200, pnlsTol = 0.05, opt = "nlminb")),
+      error = function(e) nls_lp
+    )
   }
 
+  # ---- Select best model by AIC --------------------------------------------
+  get_aic <- function(m) {
+    if (is.null(m)) return(NA_real_)
+    tryCatch(AIC(m), error = function(e) NA_real_)
+  }
+
+  aics <- c(
+    "Linear"       = get_aic(out[["Linear"]]),
+    "Bilinear"     = get_aic(out[["Bilinear"]]),
+    "Lin. plateau" = get_aic(out[["Lin. plateau"]])
+  )
+  out$AIC  <- aics
+  out$best <- names(which.min(aics))
   out
 }
 
-# --- 2.4 Extract fixed-effect parameters from a fitted model -----------------
-extract_params <- function(fit, model_type) {
-  if (is.null(fit)) return(NULL)
-  tryCatch({
-    cf <- fixef(fit)  # works for both lme and nlme objects
-    data.frame(model = model_type, param = names(cf), value = cf,
-               row.names = NULL)
-  }, error = function(e) {
-    cf <- coef(fit)   # fallback for nls
-    data.frame(model = model_type, param = names(cf), value = cf,
-               row.names = NULL)
-  })
-}
 
-# --- 2.5 Generate fitted curve for plotting ----------------------------------
-fitted_curve <- function(fit, model_type, vpd_seq) {
-  if (is.null(fit)) return(NULL)
-  tryCatch({
-    pars <- tryCatch(fixef(fit), error = function(e) coef(fit))
-    if (model_type == "Linear") {
-      y_hat <- pars["(Intercept)"] + pars["VPD"] * vpd_seq
-    } else if (model_type == "Bilinear") {
-      y_hat <- bilinear(vpd_seq, pars["a"], pars["b1"], pars["b2"], pars["bp"])
-    } else if (model_type == "Lin. plateau") {
-      y_hat <- lin_plateau(vpd_seq, pars["a"], pars["b"], pars["bp"])
-    }
-    data.frame(VPD = vpd_seq, y_hat = y_hat, model = model_type)
-  }, error = function(e) NULL)
-}
-
+# Null-coalescing helper (must be defined before use)
+`%||%` <- function(a, b) if (!is.null(a) && length(a) > 0 && !is.na(a[[1]])) a else b
 
 # --------------------------------------------------------------------------- #
-# SECTION 3: FIT MODELS — TRANSPIRATION RATE (TR)
+# 4. EXTRACT PARAMETERS
 # --------------------------------------------------------------------------- #
-
-cat("=== Fitting TR models (Day 1) ===\n")
-
-genotypes <- levels(droplevels(day1$Genotype))
-
-# Fit all three models for every genotype
-tr_fits <- lapply(genotypes, function(g) {
-  sub <- day1 %>% filter(Genotype == g) %>% select(VPD, y = TR, Rep)
-  cat("  Genotype:", g, "(n =", nrow(sub), ")\n")
-  fit_models_one(sub, response = "TR", geno = g)
-})
-names(tr_fits) <- genotypes
-
-
-# --------------------------------------------------------------------------- #
-# SECTION 4: FIT MODELS — STOMATAL CONDUCTANCE (gsw)
-# --------------------------------------------------------------------------- #
-
-cat("\n=== Fitting gsw models (Day 1, LICOR rows only) ===\n")
-
-geno_gsw <- levels(droplevels(day1_gsw$Genotype))
-
-gsw_fits <- lapply(geno_gsw, function(g) {
-  sub <- day1_gsw %>% filter(Genotype == g) %>% select(VPD, y = gsw, Rep)
-  cat("  Genotype:", g, "(n =", nrow(sub), ")\n")
-  fit_models_one(sub, response = "gsw", geno = g)
-})
-names(gsw_fits) <- geno_gsw
-
-
-# --------------------------------------------------------------------------- #
-# SECTION 5: PARAMETER TABLES
-# --------------------------------------------------------------------------- #
-
-# --- 5.1 TR parameter table --------------------------------------------------
-tr_params <- bind_rows(lapply(genotypes, function(g) {
-  f <- tr_fits[[g]]
-  bind_rows(
-    extract_params(f$linear,      "Linear"),
-    extract_params(f$bilinear,    "Bilinear"),
-    extract_params(f$lin_plateau, "Lin. plateau")
-  ) %>% mutate(Genotype = g)
-})) %>%
-  select(Genotype, model, param, value) %>%
-  pivot_wider(names_from = param, values_from = value)
-
-cat("\n--- TR model parameters (fixed effects) ---\n")
-print(tr_params, n = 50)
-
-write_csv(tr_params, "data/TR_model_parameters.csv")
-cat("Saved: data/TR_model_parameters.csv\n")
-
-
-# --- 5.2 gsw parameter table -------------------------------------------------
-gsw_params <- bind_rows(lapply(geno_gsw, function(g) {
-  f <- gsw_fits[[g]]
-  bind_rows(
-    extract_params(f$linear,      "Linear"),
-    extract_params(f$bilinear,    "Bilinear"),
-    extract_params(f$lin_plateau, "Lin. plateau")
-  ) %>% mutate(Genotype = g)
-})) %>%
-  select(Genotype, model, param, value) %>%
-  pivot_wider(names_from = param, values_from = value)
-
-cat("\n--- gsw model parameters (fixed effects) ---\n")
-print(gsw_params, n = 50)
-
-write_csv(gsw_params, "data/gsw_model_parameters.csv")
-cat("Saved: data/gsw_model_parameters.csv\n")
-
-
-# --------------------------------------------------------------------------- #
-# SECTION 6: AIC COMPARISON TABLE
-# --------------------------------------------------------------------------- #
-
-# Compare models by AIC (lower = better fit; valid for models fitted with ML)
-# Note: lme() uses REML by default for final estimates but ML is needed for AIC
-# Re-fit with method = "ML" for comparison
-
-aic_tr <- bind_rows(lapply(genotypes, function(g) {
-  f <- tr_fits[[g]]
-  sub <- day1 %>% filter(Genotype == g) %>% select(VPD, y = TR, Rep)
-
-  aic_lin <- tryCatch(AIC(update(f$linear, method = "ML")), error = function(e) NA)
-  aic_bil <- tryCatch(AIC(f$bilinear), error = function(e) NA)
-  aic_lp  <- tryCatch(AIC(f$lin_plateau), error = function(e) NA)
-
-  data.frame(
-    Genotype    = g,
-    AIC_linear  = aic_lin,
-    AIC_bilinear = aic_bil,
-    AIC_linplat  = aic_lp,
-    Best_model   = c("Linear", "Bilinear", "Lin. plateau")[
-      which.min(c(aic_lin, aic_bil, aic_lp))]
+get_params <- function(fit_list, model_name) {
+  m <- fit_list[[model_name]]
+  if (is.null(m)) return(NULL)
+  tryCatch(
+    {
+      cf <- if (inherits(m, "lme") || inherits(m, "nlme")) fixef(m) else coef(m)
+      as.list(cf)
+    },
+    error = function(e) NULL
   )
-}))
+}
 
-cat("\n--- AIC comparison — TR models ---\n")
-print(aic_tr)
-write_csv(aic_tr, "data/TR_AIC_comparison.csv")
+# Build one-row summary for the best model
+summarise_fit <- function(g, fit_list) {
+  if (is.null(fit_list)) return(NULL)
+  best <- fit_list$best
+  if (is.null(best)) return(NULL)
+  pars <- get_params(fit_list, best)
+  if (is.null(pars)) return(NULL)
+  wc <- as.character(wue_lookup[g])
+
+  # Slope1: first slope; BP; Slope2 (bilinear only)
+  slope1 <- switch(best,
+    "Linear"       = pars[["VPD"]],
+    "Bilinear"     = pars[["b1"]],
+    "Lin. plateau" = pars[["b"]],
+    NA_real_)
+  bp     <- switch(best,
+    "Bilinear"     = pars[["bp"]],
+    "Lin. plateau" = pars[["bp"]],
+    NA_real_)
+  slope2 <- if (best == "Bilinear") pars[["b2"]] else NA_real_
+
+  tibble(
+    Genotype          = g,
+    WUE_class         = wc,
+    Expected_behavior = WUE_EXPECTED[wc],
+    Best_model        = best,
+    Slope1            = round(slope1, 4),
+    BP_kPa            = round(bp, 3),
+    Slope2            = round(slope2, 4),
+    AIC_best          = round(fit_list$AIC[best], 1)
+  )
+}
+
+# Build full parameter table (all three models)
+full_param_table <- function(g, fit_list) {
+  if (is.null(fit_list)) return(NULL)
+  wc   <- as.character(wue_lookup[g])
+  best <- fit_list$best
+  aics <- fit_list$AIC
+
+  bind_rows(lapply(c("Linear","Bilinear","Lin. plateau"), function(mn) {
+    pars <- get_params(fit_list, mn)
+    if (is.null(pars)) return(NULL)
+    tibble(
+      Genotype   = g,
+      WUE_class  = wc,
+      Model      = mn,
+      Best_model = if (!is.null(best) && mn == best) "yes" else "",
+      a          = round(pars[["a"]] %||% pars[["(Intercept)"]] %||% NA_real_, 3),
+      Slope1     = round(switch(mn,
+        "Linear"       = pars[["VPD"]],
+        "Bilinear"     = pars[["b1"]],
+        "Lin. plateau" = pars[["b"]], NA_real_), 4),
+      Slope2     = round(if (mn == "Bilinear") pars[["b2"]] else NA_real_, 4),
+      BP_kPa     = round(if (mn %in% c("Bilinear","Lin. plateau")) pars[["bp"]]
+                         else NA_real_, 3),
+      AIC        = round(aics[mn], 1),
+      Delta_AIC  = round(aics[mn] - min(aics, na.rm = TRUE), 1)
+    )
+  }))
+}
 
 
 # --------------------------------------------------------------------------- #
-# SECTION 7: FIGURES — TR MODELS
+# 5. CURVE PREDICTION HELPERS
 # --------------------------------------------------------------------------- #
+pred_curve <- function(fit_list, model_name, vpd_seq) {
+  m <- fit_list[[model_name]]
+  if (is.null(m)) return(NULL)
+  pars <- get_params(fit_list, model_name)
+  if (is.null(pars)) return(NULL)
+  y_hat <- switch(model_name,
+    "Linear"       = pars[["(Intercept)"]] + pars[["VPD"]] * vpd_seq,
+    "Bilinear"     = bilinear_fn(vpd_seq, pars$a, pars$b1, pars$b2, pars$bp),
+    "Lin. plateau" = lin_plateau_fn(vpd_seq, pars$a, pars$b, pars$bp),
+    stop("Unknown model")
+  )
+  tibble(VPD = vpd_seq, y_hat = y_hat, Model = model_name)
+}
 
-vpd_seq <- seq(min(day1$VPD, na.rm = TRUE),
-               max(day1$VPD, na.rm = TRUE), length.out = 200)
-
-# WUE class colour palette
-wue_cols <- c(
-  "slow_wilting"        = "#1b7837",
-  "high_wilting"        = "#d73027",
-  "Plastic, High WUE"   = "#4393c3",
-  "Nonplastic, Low WUE" = "#f4a582",
-  "MAGIC parent"        = "#9970ab"
+# --------------------------------------------------------------------------- #
+# 6. FIT ALL GENOTYPES
+# --------------------------------------------------------------------------- #
+cat("\nFitting TR models (Day 1) ...\n")
+tr_fits <- setNames(
+  lapply(genotypes, function(g) {
+    sub <- filter(day1, Genotype == g) |> select(VPD, TR, Rep)
+    fit <- fit_one(sub, response_col = "TR", geno_label = g)
+    cat(sprintf("  %-15s best = %s\n", g,
+                if (!is.null(fit)) fit$best else "FAILED"))
+    fit
+  }),
+  genotypes
 )
 
-# --- Fig M1: TR vs VPD — all genotypes, Day 1 --------------------------------
-p_tr_all <- ggplot(day1, aes(x = VPD, y = TR, colour = WUE_class, shape = Rep)) +
-  geom_point(alpha = 0.7, size = 1.8) +
-  facet_wrap(~Genotype, ncol = 5) +
-  scale_colour_manual(values = wue_cols, name = "WUE class") +
-  labs(
-    title = "Fig M1: Transpiration rate vs VPD — Day 1 (all genotypes)",
-    x     = "VPD (kPa)",
-    y     = expression(TR~(mg~m^{-2}~s^{-1}))
-  ) +
-  theme_bw(base_size = 9) +
-  theme(strip.text = element_text(size = 7), legend.position = "bottom") +
-  guides(colour = guide_legend(nrow = 2))
-
-ggsave("figures/M1_TR_vs_VPD_Day1_allgeno.png",
-       p_tr_all, width = 14, height = 8, dpi = 300)
+cat("\nFitting gsw models (Day 1, LICOR only) ...\n")
+gsw_fits <- setNames(
+  lapply(geno_gsw, function(g) {
+    sub <- filter(day1_gsw, Genotype == g) |> select(VPD, gsw, Rep) |>
+           rename(TR = gsw)
+    fit <- fit_one(sub, response_col = "TR", geno_label = g)
+    cat(sprintf("  %-15s best = %s\n", g,
+                if (!is.null(fit)) fit$best else "FAILED"))
+    fit
+  }),
+  geno_gsw
+)
 
 
-# --- Fig M2: TR models overlaid per genotype ---------------------------------
-# Build fitted curve data for all genotypes
-curve_data_tr <- bind_rows(lapply(genotypes, function(g) {
-  f <- tr_fits[[g]]
-  bind_rows(
-    fitted_curve(f$linear,      "Linear",      vpd_seq),
-    fitted_curve(f$bilinear,    "Bilinear",    vpd_seq),
-    fitted_curve(f$lin_plateau, "Lin. plateau", vpd_seq)
-  ) %>% mutate(Genotype = g)
+# --------------------------------------------------------------------------- #
+# 7. PARAMETER TABLES
+# --------------------------------------------------------------------------- #
+
+# Best-model summary
+tr_best <- bind_rows(lapply(genotypes, function(g) summarise_fit(g, tr_fits[[g]])))
+gsw_best <- bind_rows(lapply(geno_gsw, function(g) summarise_fit(g, gsw_fits[[g]])))
+
+# Full parameter table (all models)
+tr_params  <- bind_rows(lapply(genotypes, function(g) full_param_table(g, tr_fits[[g]])))
+gsw_params <- bind_rows(lapply(geno_gsw,  function(g) full_param_table(g, gsw_fits[[g]])))
+
+# Rename gsw column in gsw fits (we used TR as proxy column name above)
+# Parameter names are identical, column interpretation differs
+
+write_csv(tr_best,   "data/TR_best_model_summary.csv")
+write_csv(gsw_best,  "data/gsw_best_model_summary.csv")
+write_csv(tr_params, "data/TR_model_parameters.csv")
+write_csv(gsw_params,"data/gsw_model_parameters.csv")
+
+cat("\n--- TR best-model summary ---\n")
+print(tr_best, n = 20)
+cat("\n--- gsw best-model summary ---\n")
+print(gsw_best, n = 20)
+
+
+# --------------------------------------------------------------------------- #
+# 8. FIGURES
+# --------------------------------------------------------------------------- #
+VPD_SEQ <- seq(min(day1$VPD, na.rm = TRUE) * 0.95,
+               max(day1$VPD, na.rm = TRUE) * 1.05, length.out = 300)
+
+# Fixed y-axis limits shared across TR and gsw panels for fair comparison
+TR_YLIM  <- c(0, max(day1$TR, na.rm = TRUE) * 1.05)
+GSW_YLIM <- c(0, max(day1_gsw_long$gsw_reading, na.rm = TRUE) * 1.10)
+
+# Shared legend elements
+wue_legend <- scale_colour_manual(values = WUE_COLS, name = "WUE class",
+                                   limits = names(WUE_COLS))
+wue_fill   <- scale_fill_manual(values = WUE_COLS, name = "WUE class",
+                                 limits = names(WUE_COLS))
+mod_legend <- scale_colour_manual(values = MODEL_COLS, name = "Model",
+                                   limits = names(MODEL_COLS))
+mod_lty    <- scale_linetype_manual(values = MODEL_LTY, name = "Model",
+                                    limits = names(MODEL_LTY))
+
+
+# ---- FIG 1: TR per genotype with all three model curves -------------------
+cat("Building Fig1 ...\n")
+
+# Build predicted curve data frame for all genotypes
+curves_tr <- bind_rows(lapply(genotypes, function(g) {
+  fit <- tr_fits[[g]]
+  if (is.null(fit)) return(NULL)
+  bind_rows(lapply(c("Linear","Bilinear","Lin. plateau"), function(mn) {
+    tryCatch(pred_curve(fit, mn, VPD_SEQ) |> mutate(Genotype = g),
+             error = function(e) NULL)
+  }))
 }))
 
-model_cols <- c("Linear" = "#636363", "Bilinear" = "#2166ac", "Lin. plateau" = "#d95f02")
-model_lty  <- c("Linear" = "dashed",  "Bilinear" = "solid",   "Lin. plateau" = "solid")
+# Breakpoint data frame
+bp_points_tr <- tr_best |>
+  filter(!is.na(BP_kPa)) |>
+  rowwise() |>
+  mutate(y_bp = {
+    fit <- tr_fits[[Genotype]]
+    pars <- get_params(fit, Best_model)
+    if (Best_model == "Bilinear")
+      bilinear_fn(BP_kPa, pars$a, pars$b1, pars$b2, pars$bp)
+    else
+      lin_plateau_fn(BP_kPa, pars$a, pars$b, pars$bp)
+  }) |>
+  ungroup()
 
-p_tr_models <- ggplot() +
+p1 <- ggplot() +
+  # Data points (alpha varies with Rep for depth)
+  geom_point(data = day1 |>
+               mutate(Genotype = factor(Genotype, levels = genotypes)),
+             aes(x = VPD, y = TR, fill = WUE_class, shape = WUE_class),
+             colour = "white", size = 2.0, alpha = 0.75, stroke = 0.3) +
+  scale_fill_manual(values = WUE_COLS, name = "WUE class") +
+  scale_shape_manual(values = WUE_SHAPES, name = "WUE class") +
+  # Model curves
+  geom_line(data = curves_tr,
+            aes(x = VPD, y = y_hat, colour = Model, linetype = Model,
+                linewidth = Model),
+            show.legend = TRUE) +
+  mod_legend + mod_lty +
+  scale_linewidth_manual(values = c("Linear" = 0.7, "Bilinear" = 1.4,
+                                     "Lin. plateau" = 1.4),
+                          name = "Model") +
+  # Breakpoint markers
+  geom_vline(data = bp_points_tr,
+             aes(xintercept = BP_kPa),
+             linetype = "dotted", colour = UA_DARK, linewidth = 0.5, alpha = 0.5) +
+  geom_point(data = bp_points_tr,
+             aes(x = BP_kPa, y = y_bp),
+             shape = 25, size = 2.5, fill = UA_DARK, colour = "white",
+             stroke = 0.4, inherit.aes = FALSE) +
+  facet_wrap(~Genotype, ncol = 5, scales = "fixed") +
+  coord_cartesian(ylim = TR_YLIM) +
+  labs(
+    title = "Fig 1  Transpiration rate vs VPD — Day 1  (linear, bilinear, linear-plateau models)",
+    x = "VPD (kPa)",
+    y = expression(TR~(mg~m^{-2}~s^{-1}))
+  ) +
+  UA_THEME +
+  theme(legend.position = "bottom") +
+  guides(
+    fill      = guide_legend(nrow = 2, override.aes = list(size = 3, stroke = 0)),
+    shape     = guide_legend(nrow = 2),
+    colour    = guide_legend(nrow = 1, override.aes = list(linewidth = 1.2)),
+    linetype  = guide_legend(nrow = 1),
+    linewidth = guide_legend(nrow = 1)
+  )
+
+ggsave("figures/Fig1_TR_models_per_genotype.png", p1,
+       width = 14, height = 9, dpi = 300)
+cat("Saved Fig1\n")
+
+
+# ---- FIG 2: TR by WUE class (pooled) ----------------------------------------
+cat("Building Fig2 ...\n")
+
+# Per-genotype best-curve data for thin background lines
+curves_best_tr <- bind_rows(lapply(genotypes, function(g) {
+  fit <- tr_fits[[g]]
+  if (is.null(fit) || is.null(fit$best)) return(NULL)
+  tryCatch(pred_curve(fit, fit$best, VPD_SEQ) |> mutate(Genotype = g),
+           error = function(e) NULL)
+})) |>
+  left_join(day1 |> distinct(Genotype, WUE_class), by = "Genotype")
+
+p2 <- ggplot() +
+  # Thin per-genotype curves
+  geom_line(data = curves_best_tr,
+            aes(x = VPD, y = y_hat, group = Genotype, colour = WUE_class),
+            linewidth = 0.6, alpha = 0.35) +
+  # Data scatter
   geom_point(data = day1,
-             aes(x = VPD, y = TR, colour = WUE_class),
-             alpha = 0.4, size = 1.2, show.legend = TRUE) +
-  geom_line(data = curve_data_tr,
-            aes(x = VPD, y = y_hat, linetype = model, colour = model),
-            linewidth = 0.9, inherit.aes = FALSE) +
-  scale_colour_manual(
-    values = c(wue_cols, model_cols),
-    breaks = names(model_cols),
-    name   = "Model"
-  ) +
-  scale_linetype_manual(values = model_lty, name = "Model") +
-  facet_wrap(~Genotype, ncol = 5, scales = "free_y") +
+             aes(x = VPD, y = TR, colour = WUE_class, shape = WUE_class),
+             size = 1.6, alpha = 0.50) +
+  # Pooled OLS line per WUE class
+  geom_smooth(data = day1,
+              aes(x = VPD, y = TR, colour = WUE_class),
+              method = "lm", se = TRUE, linewidth = 1.8,
+              alpha = 0.15, formula = y ~ x) +
+  wue_legend +
+  scale_shape_manual(values = WUE_SHAPES, name = "WUE class") +
+  facet_wrap(~WUE_class, ncol = 5, labeller = label_wrap_gen(15), scales = "fixed") +
+  coord_cartesian(ylim = TR_YLIM) +
   labs(
-    title = "Fig M2: TR models fitted to Day 1 data",
-    x     = "VPD (kPa)",
-    y     = expression(TR~(mg~m^{-2}~s^{-1}))
+    title = "Fig 2  TR vs VPD by WUE class — Day 1\n(thin = per-genotype best model; thick = pooled OLS +/- 95% CI)",
+    x = "VPD (kPa)",
+    y = expression(TR~(mg~m^{-2}~s^{-1}))
   ) +
-  theme_bw(base_size = 9) +
-  theme(strip.text = element_text(size = 7), legend.position = "bottom")
+  UA_THEME +
+  theme(legend.position = "none",
+        strip.text = element_text(size = 8))
 
-ggsave("figures/M2_TR_models_per_genotype.png",
-       p_tr_models, width = 14, height = 8, dpi = 300)
-
-
-# --- Fig M3: Breakpoint estimates — TR models --------------------------------
-bp_tr <- tr_params %>%
-  select(Genotype, model, bp) %>%
-  filter(!is.na(bp), model %in% c("Bilinear", "Lin. plateau")) %>%
-  left_join(day1 %>% distinct(Genotype, WUE_class), by = "Genotype")
-
-if (nrow(bp_tr) > 0) {
-  p_bp_tr <- ggplot(bp_tr, aes(x = Genotype, y = bp, colour = WUE_class,
-                                shape = model)) +
-    geom_hline(yintercept = 1.73, linetype = "dashed", colour = "grey40") +
-    geom_point(size = 3, position = position_dodge(0.4)) +
-    annotate("text", x = 0.5, y = 1.73, label = "BP = 1.73 kPa (lit.)",
-             hjust = 0, vjust = -0.3, size = 3, colour = "grey30") +
-    scale_colour_manual(values = wue_cols, name = "WUE class") +
-    scale_shape_manual(values = c("Bilinear" = 16, "Lin. plateau" = 17),
-                       name = "Model") +
-    labs(
-      title = "Fig M3: Breakpoint (VPD, kPa) from bilinear and linear plateau models — TR",
-      x     = NULL,
-      y     = "Breakpoint VPD (kPa)"
-    ) +
-    theme_bw() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-          legend.position = "right")
-
-  ggsave("figures/M3_TR_breakpoints.png",
-         p_bp_tr, width = 10, height = 5, dpi = 300)
-}
+ggsave("figures/Fig2_TR_by_WUEclass.png", p2,
+       width = 14, height = 4, dpi = 300)
+cat("Saved Fig2\n")
 
 
-# --- Fig M4: Slopes (linear segment) — TR model B and C ----------------------
-slope_tr <- tr_params %>%
-  mutate(
-    slope = case_when(
-      model == "Linear"       ~ `VPD`,
-      model == "Bilinear"     ~ b1,
-      model == "Lin. plateau" ~ b
-    )
-  ) %>%
-  filter(!is.na(slope)) %>%
-  left_join(day1 %>% distinct(Genotype, WUE_class), by = "Genotype")
+# ---- FIG 3: Breakpoints -------------------------------------------------------
+cat("Building Fig3 ...\n")
+bp_df <- tr_best |>
+  filter(!is.na(BP_kPa)) |>
+  mutate(Genotype = fct_reorder(Genotype, BP_kPa))
 
-p_slope_tr <- ggplot(slope_tr, aes(x = reorder(Genotype, slope),
-                                    y = slope, fill = WUE_class)) +
-  geom_col() +
-  facet_wrap(~model, ncol = 3) +
-  scale_fill_manual(values = wue_cols, name = "WUE class") +
-  coord_flip() +
+p3 <- ggplot(bp_df, aes(y = Genotype, x = BP_kPa, fill = WUE_class)) +
+  geom_col(width = 0.65, colour = "white", linewidth = 0.3) +
+  geom_vline(xintercept = 1.73, linetype = "dashed",
+             colour = UA_DARK, linewidth = 0.7) +
+  annotate("text", x = 1.73 + 0.04, y = 0.4, label = "lit. BP = 1.73 kPa",
+           hjust = 0, size = 2.9, colour = UA_DARK) +
+  wue_fill +
   labs(
-    title = "Fig M4: Transpiration sensitivity slope (mg m-2 s-1 per kPa) — Day 1",
-    x     = NULL,
-    y     = expression(Slope~(mg~m^{-2}~s^{-1}~kPa^{-1}))
+    title = "Fig 3  Estimated breakpoint VPD (bilinear or linear-plateau models) — TR",
+    x = "Breakpoint VPD (kPa)", y = NULL
   ) +
-  theme_bw(base_size = 10) +
-  theme(legend.position = "bottom")
+  UA_THEME +
+  theme(legend.position = "right")
 
-ggsave("figures/M4_TR_slopes.png",
-       p_slope_tr, width = 10, height = 6, dpi = 300)
+ggsave("figures/Fig3_TR_breakpoints.png", p3,
+       width = 8, height = 4, dpi = 300)
+cat("Saved Fig3\n")
 
 
-# --------------------------------------------------------------------------- #
-# SECTION 8: FIGURES — gsw MODELS (if data available)
-# --------------------------------------------------------------------------- #
+# ---- FIG 4: Slope₁ ranking ---------------------------------------------------
+cat("Building Fig4 ...\n")
+slope_df <- tr_best |>
+  filter(!is.na(Slope1)) |>
+  mutate(Genotype = fct_reorder(Genotype, Slope1))
 
-if (nrow(day1_gsw) > 5) {
+p4 <- ggplot(slope_df, aes(y = Genotype, x = Slope1, fill = WUE_class)) +
+  geom_col(width = 0.65, colour = "white", linewidth = 0.3) +
+  wue_fill +
+  labs(
+    title = "Fig 4  Transpiration sensitivity (Slope₁) by genotype — Day 1",
+    x     = expression(Slope[1]~(mg~m^{-2}~s^{-1}~kPa^{-1})),
+    y     = NULL
+  ) +
+  UA_THEME +
+  theme(legend.position = "right")
 
-  vpd_seq_gsw <- seq(min(day1_gsw$VPD, na.rm = TRUE),
-                     max(day1_gsw$VPD, na.rm = TRUE), length.out = 200)
+ggsave("figures/Fig4_TR_slopes.png", p4,
+       width = 8, height = 5, dpi = 300)
+cat("Saved Fig4\n")
 
-  # --- Fig M5: gsw vs VPD, Day 1 --------------------------------------------
-  p_gsw_all <- ggplot(day1_gsw, aes(x = VPD, y = gsw, colour = WUE_class)) +
-    geom_point(alpha = 0.8, size = 2) +
-    facet_wrap(~Genotype, ncol = 5) +
-    scale_colour_manual(values = wue_cols, name = "WUE class") +
+
+# ---- FIG 5: gsw per genotype ------------------------------------------------
+if (length(geno_gsw) > 0) {
+  cat("Building Fig5 ...\n")
+  VPD_SEQ_GSW <- seq(min(day1_gsw$VPD, na.rm = TRUE) * 0.95,
+                     max(day1_gsw$VPD, na.rm = TRUE) * 1.05, length.out = 300)
+
+  curves_gsw <- bind_rows(lapply(geno_gsw, function(g) {
+    fit <- gsw_fits[[g]]
+    if (is.null(fit)) return(NULL)
+    bind_rows(lapply(c("Linear","Bilinear","Lin. plateau"), function(mn) {
+      tryCatch(pred_curve(fit, mn, VPD_SEQ_GSW) |> mutate(Genotype = g),
+               error = function(e) NULL)
+    }))
+  }))
+
+  bp_gsw_pts <- gsw_best |>
+    filter(!is.na(BP_kPa))
+
+  if (nrow(bp_gsw_pts) > 0) {
+    bp_gsw_pts <- bp_gsw_pts |>
+      rowwise() |>
+      mutate(y_bp = {
+        fit  <- gsw_fits[[Genotype]]
+        pars <- get_params(fit, Best_model)
+        if (Best_model == "Bilinear")
+          bilinear_fn(BP_kPa, pars$a, pars$b1, pars$b2, pars$bp)
+        else
+          lin_plateau_fn(BP_kPa, pars$a, pars$b, pars$bp)
+      }) |>
+      ungroup()
+  } else {
+    bp_gsw_pts <- bp_gsw_pts |> mutate(y_bp = numeric(0))
+  }
+
+  p5 <- ggplot() +
+    geom_point(data = day1_gsw_long |>
+                 mutate(Genotype = factor(Genotype, levels = geno_gsw)),
+               aes(x = VPD, y = gsw_reading, fill = WUE_class, shape = WUE_class),
+               colour = "white", size = 2.5, alpha = 0.80, stroke = 0.3,
+               position = position_jitter(width = 0.02, height = 0, seed = 42)) +
+    scale_fill_manual(values = WUE_COLS, name = "WUE class") +
+    scale_shape_manual(values = WUE_SHAPES, name = "WUE class") +
+    geom_line(data = curves_gsw,
+              aes(x = VPD, y = y_hat, colour = Model, linetype = Model,
+                  linewidth = Model)) +
+    mod_legend + mod_lty +
+    scale_linewidth_manual(values = c("Linear" = 0.7,"Bilinear" = 1.4,
+                                       "Lin. plateau" = 1.4), name = "Model") +
+    {if (nrow(bp_gsw_pts) > 0)
+       list(
+         geom_vline(data = bp_gsw_pts, aes(xintercept = BP_kPa),
+                    linetype = "dotted", colour = UA_DARK, linewidth = 0.5, alpha = 0.5),
+         geom_point(data = bp_gsw_pts, aes(x = BP_kPa, y = y_bp),
+                    shape = 25, size = 2.5, fill = UA_DARK, colour = "white",
+                    stroke = 0.4, inherit.aes = FALSE)
+       )
+    } +
+    facet_wrap(~Genotype, ncol = 4, scales = "fixed") +
+    coord_cartesian(ylim = GSW_YLIM) +
     labs(
-      title = "Fig M5: Stomatal conductance vs VPD — Day 1",
+      title = "Fig 5  Stomatal conductance vs VPD — Day 1 (3 LICOR readings per plant; model fit to mean)",
       x     = "VPD (kPa)",
       y     = expression(g[sw]~(mol~m^{-2}~s^{-1}))
     ) +
-    theme_bw(base_size = 9) +
-    theme(strip.text = element_text(size = 7), legend.position = "bottom")
+    UA_THEME +
+    theme(legend.position = "bottom") +
+    guides(
+      fill      = guide_legend(nrow = 2, override.aes = list(size = 3, stroke = 0)),
+      shape     = guide_legend(nrow = 2),
+      colour    = guide_legend(nrow = 1, override.aes = list(linewidth = 1.2)),
+      linetype  = guide_legend(nrow = 1),
+      linewidth = guide_legend(nrow = 1)
+    )
 
-  ggsave("figures/M5_gsw_vs_VPD_Day1_allgeno.png",
-         p_gsw_all, width = 14, height = 8, dpi = 300)
-
-
-  # --- Fig M6: gsw models per genotype (only if fits converged) -------------
-  curve_data_gsw <- bind_rows(lapply(geno_gsw, function(g) {
-    f <- gsw_fits[[g]]
-    bind_rows(
-      fitted_curve(f$linear,      "Linear",      vpd_seq_gsw),
-      fitted_curve(f$bilinear,    "Bilinear",    vpd_seq_gsw),
-      fitted_curve(f$lin_plateau, "Lin. plateau", vpd_seq_gsw)
-    ) %>% mutate(Genotype = g)
-  }))
-
-  if (nrow(curve_data_gsw) > 0) {
-    p_gsw_models <- ggplot() +
-      geom_point(data = day1_gsw,
-                 aes(x = VPD, y = gsw, colour = WUE_class),
-                 alpha = 0.6, size = 2, show.legend = TRUE) +
-      geom_line(data = curve_data_gsw,
-                aes(x = VPD, y = y_hat, linetype = model, colour = model),
-                linewidth = 1, inherit.aes = FALSE) +
-      scale_colour_manual(
-        values = c(wue_cols, model_cols),
-        breaks = names(model_cols), name = "Model"
-      ) +
-      scale_linetype_manual(values = model_lty, name = "Model") +
-      facet_wrap(~Genotype, ncol = 4, scales = "free_y") +
-      labs(
-        title = "Fig M6: gsw models fitted to Day 1 LICOR data",
-        x     = "VPD (kPa)",
-        y     = expression(g[sw]~(mol~m^{-2}~s^{-1}))
-      ) +
-      theme_bw(base_size = 9) +
-      theme(strip.text = element_text(size = 7), legend.position = "bottom")
-
-    ggsave("figures/M6_gsw_models_per_genotype.png",
-           p_gsw_models, width = 12, height = 8, dpi = 300)
-  }
-
-  # --- Fig M7: Breakpoints — gsw models -------------------------------------
-  bp_gsw <- gsw_params %>%
-    select(Genotype, model, bp) %>%
-    filter(!is.na(bp), model %in% c("Bilinear", "Lin. plateau")) %>%
-    left_join(day1_gsw %>% distinct(Genotype, WUE_class), by = "Genotype")
-
-  if (nrow(bp_gsw) > 0) {
-    p_bp_gsw <- ggplot(bp_gsw, aes(x = Genotype, y = bp, colour = WUE_class,
-                                    shape = model)) +
-      geom_hline(yintercept = 1.73, linetype = "dashed", colour = "grey40") +
-      geom_point(size = 3, position = position_dodge(0.4)) +
-      scale_colour_manual(values = wue_cols, name = "WUE class") +
-      scale_shape_manual(values = c("Bilinear" = 16, "Lin. plateau" = 17),
-                         name = "Model") +
-      labs(
-        title = "Fig M7: Breakpoint (VPD, kPa) — gsw models",
-        x     = NULL,
-        y     = "Breakpoint VPD (kPa)"
-      ) +
-      theme_bw() +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-    ggsave("figures/M7_gsw_breakpoints.png",
-           p_bp_gsw, width = 8, height = 5, dpi = 300)
-  }
-
-} else {
-  cat("\nSkipping gsw model figures: too few Day 1 rows with gsw data.\n")
+  ggsave("figures/Fig5_gsw_models_per_genotype.png", p5,
+         width = 12, height = 8, dpi = 300)
+  cat("Saved Fig5\n")
 }
 
 
-# --------------------------------------------------------------------------- #
-# SECTION 9: POOLED ANALYSIS BY WUE CLASS
-# --------------------------------------------------------------------------- #
+# ---- FIG 6: AIC heatmap (TR) ------------------------------------------------
+cat("Building Fig6 ...\n")
+aic_heatmap_df <- tr_params |>
+  filter(!is.na(Delta_AIC)) |>
+  mutate(
+    Model     = factor(Model, levels = c("Linear","Bilinear","Lin. plateau")),
+    WUE_class = factor(WUE_class, levels = WUE_ORDER),
+    Genotype  = fct_reorder(Genotype, as.integer(WUE_class))
+  )
 
-cat("\n=== Pooled analysis by WUE class ===\n")
-
-# Linear mixed model: TR ~ VPD * WUE_class + (1|Rep) + (1|Genotype)
-# Genotype is nested within WUE_class; both Rep and Genotype are random
-pool_lin <- lme(TR ~ VPD * WUE_class, data = day1,
-                random = list(Rep = ~1, Genotype = ~1),
-                method = "REML", na.action = na.omit)
-
-cat("\n--- Pooled linear model: TR ~ VPD * WUE_class ---\n")
-print(summary(pool_lin))
-
-# Pooled linear model: gsw
-if (nrow(day1_gsw) > 10) {
-  pool_lin_gsw <- lme(gsw ~ VPD * WUE_class, data = day1_gsw,
-                      random = list(Rep = ~1, Genotype = ~1),
-                      method = "REML", na.action = na.omit)
-  cat("\n--- Pooled linear model: gsw ~ VPD * WUE_class ---\n")
-  print(summary(pool_lin_gsw))
-}
-
-
-# --- Fig M8: Pooled TR vs VPD by WUE class ----------------------------------
-p_pool <- ggplot(day1, aes(x = VPD, y = TR, colour = WUE_class)) +
-  geom_point(alpha = 0.4, size = 1.5) +
-  geom_smooth(method = "lm", se = TRUE, linewidth = 1) +
-  scale_colour_manual(values = wue_cols, name = "WUE class") +
+p6 <- ggplot(aic_heatmap_df, aes(x = Model, y = Genotype, fill = Delta_AIC)) +
+  geom_tile(colour = "white", linewidth = 0.5) +
+  geom_text(aes(label = sprintf("%.1f", Delta_AIC),
+                colour = Delta_AIC > 6),
+            size = 2.8, fontface = "bold") +
+  scale_fill_gradient2(low = UA_RED, mid = "#F7C6CC", high = "white",
+                       midpoint = 6, limits = c(0, NA),
+                       name = "ΔAIC", na.value = "grey85") +
+  scale_colour_manual(values = c("TRUE" = UA_DARK, "FALSE" = "white"),
+                      guide = "none") +
   labs(
-    title = "Fig M8: TR vs VPD by WUE class — Day 1 (pooled across genotypes)",
-    x     = "VPD (kPa)",
-    y     = expression(TR~(mg~m^{-2}~s^{-1}))
+    title = "Fig 6  Model comparison — ΔAIC (TR, Day 1)\nΔAIC = 0 → best model for that genotype",
+    x = NULL, y = NULL
   ) +
-  theme_bw() +
+  UA_THEME +
+  theme(
+    panel.grid = element_blank(),
+    axis.text.x = element_text(size = 9, face = "bold")
+  )
+
+ggsave("figures/Fig6_TR_AIC_heatmap.png", p6,
+       width = 7, height = 6, dpi = 300)
+cat("Saved Fig6\n")
+
+
+# ---- FIG 7: TR mean ± SD per genotype × VPD treatment ----------------------
+cat("Building Fig7 ...\n")
+
+tr_summary <- day1 |>
+  group_by(Genotype, WUE_class, Treatment, VPD) |>
+  summarise(
+    mean_TR = mean(TR, na.rm = TRUE),
+    sd_TR   = sd(TR, na.rm = TRUE),
+    n_TR    = sum(!is.na(TR)),
+    .groups = "drop"
+  ) |>
+  mutate(
+    se_TR = sd_TR / sqrt(n_TR),
+    WUE_class = factor(WUE_class, levels = WUE_ORDER)
+  )
+
+p7 <- ggplot(tr_summary, aes(x = VPD, y = mean_TR,
+                               colour = WUE_class, fill = WUE_class,
+                               shape = WUE_class, group = Genotype)) +
+  geom_errorbar(aes(ymin = mean_TR - sd_TR, ymax = mean_TR + sd_TR),
+                width = 0.05, linewidth = 0.55, alpha = 0.55) +
+  geom_point(size = 3, alpha = 0.85, colour = "white", stroke = 0.4) +
+  scale_fill_manual(values = WUE_COLS, name = "WUE class") +
+  scale_colour_manual(values = WUE_COLS, name = "WUE class") +
+  scale_shape_manual(values = WUE_SHAPES, name = "WUE class") +
+  coord_cartesian(ylim = TR_YLIM) +
+  labs(
+    title = "Fig 7  Transpiration rate — genotype mean +/- SD across replicates",
+    subtitle = "Day 1; one symbol per genotype per VPD treatment",
+    x = "VPD (kPa)",
+    y = expression(TR~(mg~m^{-2}~s^{-1}))
+  ) +
+  UA_THEME +
   theme(legend.position = "right")
 
-ggsave("figures/M8_TR_vs_VPD_by_WUEclass.png",
-       p_pool, width = 8, height = 5, dpi = 300)
+ggsave("figures/Fig7_TR_mean_SD.png", p7,
+       width = 10, height = 5.5, dpi = 300)
+cat("Saved Fig7\n")
 
-cat("\n=== Done ===\n")
-cat("Figures saved to figures/\n")
-cat("Parameter tables saved to data/\n")
+
+# ---- FIG 8: gsw mean ± SD (from 3 LICOR readings) per genotype × VPD ------
+if (nrow(day1_gsw_long) > 0) {
+  cat("Building Fig8 ...\n")
+
+  gsw_summary <- day1_gsw_long |>
+    group_by(Genotype, WUE_class, VPD) |>
+    summarise(
+      mean_gsw = mean(gsw_reading, na.rm = TRUE),
+      sd_gsw   = sd(gsw_reading, na.rm = TRUE),
+      n_gsw    = sum(!is.na(gsw_reading)),
+      .groups  = "drop"
+    ) |>
+    filter(!is.na(VPD)) |>
+    mutate(WUE_class = factor(WUE_class, levels = WUE_ORDER))
+
+  p8 <- ggplot(gsw_summary, aes(x = VPD, y = mean_gsw,
+                                  colour = WUE_class, fill = WUE_class,
+                                  shape = WUE_class, group = Genotype)) +
+    geom_errorbar(aes(ymin = mean_gsw - sd_gsw, ymax = mean_gsw + sd_gsw),
+                  width = 0.05, linewidth = 0.55, alpha = 0.55) +
+    geom_point(size = 3, alpha = 0.85, colour = "white", stroke = 0.4) +
+    scale_fill_manual(values = WUE_COLS, name = "WUE class") +
+    scale_colour_manual(values = WUE_COLS, name = "WUE class") +
+    scale_shape_manual(values = WUE_SHAPES, name = "WUE class") +
+    coord_cartesian(ylim = GSW_YLIM) +
+    labs(
+      title = "Fig 8  Stomatal conductance — genotype mean +/- SD across 3 LICOR readings",
+      subtitle = "Day 1; one symbol per genotype per VPD treatment",
+      x = "VPD (kPa)",
+      y = expression(g[sw]~(mol~m^{-2}~s^{-1}))
+    ) +
+    UA_THEME +
+    theme(legend.position = "right")
+
+  ggsave("figures/Fig8_gsw_mean_SD.png", p8,
+         width = 10, height = 5.5, dpi = 300)
+  cat("Saved Fig8\n")
+}
+
+
+cat("\n=== Model fitting complete ===\n")
+cat("Figures : figures/\n")
+cat("Tables  : data/TR_best_model_summary.csv\n")
+cat("          data/gsw_best_model_summary.csv\n")
+cat("          data/TR_model_parameters.csv\n")
+cat("          data/gsw_model_parameters.csv\n")
