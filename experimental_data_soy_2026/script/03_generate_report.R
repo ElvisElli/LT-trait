@@ -326,9 +326,9 @@ img_tag("Fig6_TR_AIC_heatmap.png"),
 
 <h3>Fig 7 - TR mean &#xB1; SD per genotype</h3>
 <div class="fig-wrap">',
-img_tag("Fig7_TR_mean_SD.png"),
-'<div class="fig-caption"><strong>Fig. 7.</strong> Transpiration rate: genotype mean +/- SD across replicates per VPD treatment.
-Each symbol = one genotype; error bars = 1 SD across replicates.</div></div>
+img_tag("Fig7_TR_best_model.png"),
+'<div class="fig-caption"><strong>Fig. 7.</strong> Transpiration rate vs VPD per genotype (Day 1) — best-fit model only.
+All raw data points shown; curve colour matches WUE class.</div></div>
 </section>
 
 <!-- GSW MODELS -->
@@ -346,9 +346,9 @@ Negative slopes indicate stomatal closure in response to increasing VPD.</div></
 
 <h3>Fig 8 - g<sub>sw</sub> mean &#xB1; SD per genotype</h3>
 <div class="fig-wrap">',
-img_tag("Fig8_gsw_mean_SD.png"),
-'<div class="fig-caption"><strong>Fig. 8.</strong> Stomatal conductance: genotype mean +/- SD across the 3 LICOR readings per VPD treatment.
-Each symbol = one genotype; error bars = 1 SD across the three LICOR readings.</div></div>
+img_tag("Fig8_gsw_best_model.png"),
+'<div class="fig-caption"><strong>Fig. 8.</strong> Stomatal conductance vs VPD per genotype (Day 1) — best-fit model only.
+Three individual LICOR readings shown per plant per treatment; curve colour matches WUE class.</div></div>
 </section>
 
 <!-- TABLES -->
