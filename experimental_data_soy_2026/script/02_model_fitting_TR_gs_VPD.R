@@ -722,82 +722,133 @@ ggsave("figures/Fig6_TR_AIC_heatmap.png", p6,
 cat("Saved Fig6\n")
 
 
-# ---- FIG 7: TR mean ± SD per genotype × VPD treatment ----------------------
+# ---- FIG 7: TR mean ± SD per rep, one panel per genotype, best model curve --
 cat("Building Fig7 ...\n")
 
+# Mean and SD of TR across replicates for each genotype × VPD treatment
 tr_summary <- day1 |>
   group_by(Genotype, WUE_class, Treatment, VPD) |>
   summarise(
     mean_TR = mean(TR, na.rm = TRUE),
-    sd_TR   = sd(TR, na.rm = TRUE),
+    sd_TR   = sd(TR,  na.rm = TRUE),
     n_TR    = sum(!is.na(TR)),
     .groups = "drop"
   ) |>
-  mutate(
-    se_TR = sd_TR / sqrt(n_TR),
-    WUE_class = factor(WUE_class, levels = WUE_ORDER)
-  )
+  mutate(WUE_class = factor(WUE_class, levels = WUE_ORDER),
+         Genotype  = factor(Genotype,  levels = genotypes))
 
-p7 <- ggplot(tr_summary, aes(x = VPD, y = mean_TR,
-                               colour = WUE_class, fill = WUE_class,
-                               shape = WUE_class, group = Genotype)) +
-  geom_errorbar(aes(ymin = mean_TR - sd_TR, ymax = mean_TR + sd_TR),
-                width = 0.05, linewidth = 0.55, alpha = 0.55) +
-  geom_point(size = 3, alpha = 0.85, colour = "white", stroke = 0.4) +
-  scale_fill_manual(values = WUE_COLS, name = "WUE class") +
-  scale_colour_manual(values = WUE_COLS, name = "WUE class") +
+# Best-model curves (one curve per genotype, already computed in curves_tr)
+curves_best_tr_only <- bind_rows(lapply(genotypes, function(g) {
+  fit <- tr_fits[[g]]
+  if (is.null(fit)) return(NULL)
+  tryCatch(pred_curve(fit, fit$best, VPD_SEQ) |>
+             mutate(Genotype = factor(g, levels = genotypes),
+                    WUE_class = as.character(wue_lookup[g])),
+           error = function(e) NULL)
+}))
+
+p7 <- ggplot() +
+  # Best-model curve
+  geom_line(data = curves_best_tr_only,
+            aes(x = VPD, y = y_hat, colour = WUE_class),
+            linewidth = 1.2, alpha = 0.9) +
+  # Error bars
+  geom_errorbar(data = tr_summary,
+                aes(x = VPD, ymin = mean_TR - sd_TR, ymax = mean_TR + sd_TR,
+                    colour = WUE_class),
+                width = 0.06, linewidth = 0.6, alpha = 0.7) +
+  # Mean points
+  geom_point(data = tr_summary,
+             aes(x = VPD, y = mean_TR, fill = WUE_class, shape = WUE_class),
+             colour = "white", size = 2.8, stroke = 0.4, alpha = 0.95) +
+  scale_fill_manual(values  = WUE_COLS,   name = "WUE class") +
+  scale_colour_manual(values = WUE_COLS,  name = "WUE class") +
   scale_shape_manual(values = WUE_SHAPES, name = "WUE class") +
+  facet_wrap(~Genotype, ncol = 5, scales = "fixed") +
   coord_cartesian(ylim = TR_YLIM) +
   labs(
-    title = "Fig 7  Transpiration rate — genotype mean +/- SD across replicates",
-    subtitle = "Day 1; one symbol per genotype per VPD treatment",
+    title = "Fig 7  TR mean +/- SD per VPD treatment — best model overlay (Day 1)",
+    subtitle = "Points = mean across replicates; error bars = 1 SD; curve = best-fit model",
     x = "VPD (kPa)",
     y = expression(TR~(mg~m^{-2}~s^{-1}))
   ) +
   UA_THEME +
-  theme(legend.position = "right")
+  theme(legend.position = "bottom") +
+  guides(
+    fill   = guide_legend(nrow = 2, override.aes = list(size = 3, stroke = 0)),
+    shape  = guide_legend(nrow = 2),
+    colour = guide_legend(nrow = 2, override.aes = list(linewidth = 1.2))
+  )
 
 ggsave("figures/Fig7_TR_mean_SD.png", p7,
-       width = 10, height = 5.5, dpi = 300)
+       width = 14, height = 6, dpi = 300)
 cat("Saved Fig7\n")
 
 
-# ---- FIG 8: gsw mean ± SD (from 3 LICOR readings) per genotype × VPD ------
+# ---- FIG 8: gsw mean ± SD per genotype, best model curve -------------------
 if (nrow(day1_gsw_long) > 0) {
   cat("Building Fig8 ...\n")
 
+  # Mean and SD of the 3 LICOR readings per genotype × VPD treatment
   gsw_summary <- day1_gsw_long |>
     group_by(Genotype, WUE_class, VPD) |>
     summarise(
       mean_gsw = mean(gsw_reading, na.rm = TRUE),
-      sd_gsw   = sd(gsw_reading, na.rm = TRUE),
+      sd_gsw   = sd(gsw_reading,  na.rm = TRUE),
       n_gsw    = sum(!is.na(gsw_reading)),
       .groups  = "drop"
     ) |>
     filter(!is.na(VPD)) |>
-    mutate(WUE_class = factor(WUE_class, levels = WUE_ORDER))
+    mutate(WUE_class = factor(WUE_class, levels = WUE_ORDER),
+           Genotype  = factor(Genotype,  levels = geno_gsw))
 
-  p8 <- ggplot(gsw_summary, aes(x = VPD, y = mean_gsw,
-                                  colour = WUE_class, fill = WUE_class,
-                                  shape = WUE_class, group = Genotype)) +
-    geom_errorbar(aes(ymin = mean_gsw - sd_gsw, ymax = mean_gsw + sd_gsw),
-                  width = 0.05, linewidth = 0.55, alpha = 0.55) +
-    geom_point(size = 3, alpha = 0.85, colour = "white", stroke = 0.4) +
-    scale_fill_manual(values = WUE_COLS, name = "WUE class") +
-    scale_colour_manual(values = WUE_COLS, name = "WUE class") +
-    scale_shape_manual(values = WUE_SHAPES, name = "WUE class") +
+  # Best-model curves for gsw genotypes
+  curves_best_gsw_only <- bind_rows(lapply(geno_gsw, function(g) {
+    fit <- gsw_fits[[g]]
+    if (is.null(fit)) return(NULL)
+    tryCatch(pred_curve(fit, fit$best, VPD_SEQ_GSW) |>
+               mutate(Genotype  = factor(g, levels = geno_gsw),
+                      WUE_class = as.character(wue_lookup[g])),
+             error = function(e) NULL)
+  }))
+
+  p8 <- ggplot() +
+    # Best-model curve
+    {if (!is.null(curves_best_gsw_only) && nrow(curves_best_gsw_only) > 0)
+      geom_line(data = curves_best_gsw_only,
+                aes(x = VPD, y = y_hat, colour = WUE_class),
+                linewidth = 1.2, alpha = 0.9)
+    } +
+    # Error bars
+    geom_errorbar(data = gsw_summary,
+                  aes(x = VPD, ymin = mean_gsw - sd_gsw, ymax = mean_gsw + sd_gsw,
+                      colour = WUE_class),
+                  width = 0.06, linewidth = 0.6, alpha = 0.7) +
+    # Mean points
+    geom_point(data = gsw_summary,
+               aes(x = VPD, y = mean_gsw, fill = WUE_class, shape = WUE_class),
+               colour = "white", size = 2.8, stroke = 0.4, alpha = 0.95) +
+    scale_fill_manual(values   = WUE_COLS,   name = "WUE class") +
+    scale_colour_manual(values = WUE_COLS,   name = "WUE class") +
+    scale_shape_manual(values  = WUE_SHAPES, name = "WUE class") +
+    facet_wrap(~Genotype, ncol = 4, scales = "fixed") +
     coord_cartesian(ylim = GSW_YLIM) +
     labs(
-      title = "Fig 8  Stomatal conductance — genotype mean +/- SD across 3 LICOR readings",
-      subtitle = "Day 1; one symbol per genotype per VPD treatment",
+      title = "Fig 8  g[sw] mean +/- SD per VPD treatment — best model overlay (Day 1)",
+      subtitle = "Points = mean of 3 LICOR readings; error bars = 1 SD; curve = best-fit model",
       x = "VPD (kPa)",
       y = expression(g[sw]~(mol~m^{-2}~s^{-1}))
     ) +
     UA_THEME +
-    theme(legend.position = "right")
+    theme(legend.position = "bottom") +
+    guides(
+      fill   = guide_legend(nrow = 2, override.aes = list(size = 3, stroke = 0)),
+      shape  = guide_legend(nrow = 2),
+      colour = guide_legend(nrow = 2, override.aes = list(linewidth = 1.2))
+    )
 
   ggsave("figures/Fig8_gsw_mean_SD.png", p8,
-         width = 10, height = 5.5, dpi = 300)
+         width = 12, height = 7, dpi = 300)
   cat("Saved Fig8\n")
 }
 
