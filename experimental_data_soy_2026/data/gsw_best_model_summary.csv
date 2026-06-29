@@ -1,12 +1,10 @@
-Genotype,WUE_class,Expected_behavior,Best_model,Slope1,BP_kPa,Slope2
-A5959,high_wilting,High wilting / non-LT,FAILED,,,
-AG43XF2,high_wilting,High wilting / non-LT,Linear,-0.2376,,
-PI377574,"Nonplastic, Low WUE",Nonplastic – Low WUE,FAILED,,,
-PI398198,MAGIC parent,MAGIC parent,Linear,-0.1975,,
-PI398492,"Plastic, High WUE",Plastic – High WUE,Linear,-0.0959,,
-PI398617,"Plastic, High WUE",Plastic – High WUE,Linear,-0.2564,,
-PI416937,slow_wilting,Slow wilting / LT,Linear,-0.1351,,
-PI424231,"Plastic, High WUE",Plastic – High WUE,Linear,-0.188,,
-PI471938,slow_wilting,Slow wilting / LT,Linear,-0.1464,,
-PI603171,"Nonplastic, Low WUE",Nonplastic – Low WUE,Linear,-0.3398,,
-PI603418D,"Plastic, High WUE",Plastic – High WUE,Bilinear,0.0003,1.865,-0.1864
+Genotype,WUE_class,Expected_behavior,Best_model,Slope1,BP_kPa,Slope2,AIC_best
+AG43XF2,high_wilting,High wilting / non-LT,Linear,-0.2376,NA,NA,-6.4
+PI398198,MAGIC parent,MAGIC parent,Linear,-0.1975,NA,NA,-4.1
+PI398492,"Plastic, High WUE",Plastic <e2><80><93> High WUE,Linear,-0.0959,NA,NA,-15.5
+PI398617,"Plastic, High WUE",Plastic <e2><80><93> High WUE,Linear,-0.2564,NA,NA,-9.4
+PI416937,slow_wilting,Slow wilting / LT,Linear,-0.1351,NA,NA,-10.8
+PI424231,"Plastic, High WUE",Plastic <e2><80><93> High WUE,Linear,-0.188,NA,NA,-5
+PI471938,slow_wilting,Slow wilting / LT,Linear,-0.1464,NA,NA,-8.8
+PI603171,"Nonplastic, Low WUE",Nonplastic <e2><80><93> Low WUE,Linear,-0.3398,NA,NA,-2.7
+PI603418D,"Plastic, High WUE",Plastic <e2><80><93> High WUE,Linear,-0.1593,NA,NA,-12.3
