@@ -385,6 +385,18 @@ Three individual LICOR readings shown per plant per treatment; curve colour matc
 <section id="tr-gsw">
 <h2>TR vs g<sub>sw</sub> slope analysis</h2>
 
+<h3>Fig 11 - Predicted SC and TR at VPD 1.5 and 3.5 kPa — Plastic vs Non-plastic</h3>
+<div class="fig-wrap">',
+img_tag("Fig11_plastic_nonplastic_VPD_comparison.png", width = "55%"),
+'<div class="fig-caption"><strong>Fig. 11.</strong>
+Model-predicted stomatal conductance (upper) and transpiration rate (lower) at
+VPD&nbsp;1.5&nbsp;kPa and VPD&nbsp;3.5&nbsp;kPa for Plastic (blue) and Non-plastic (dark red) genotypes.
+Values are extracted from each genotype&#x2019;s best-fit model at the two VPD targets and
+then averaged across genotypes within each plasticity group (bars = group mean; error bars = 1 SD).
+TR: Plastic n&nbsp;=&nbsp;5, Non-plastic n&nbsp;=&nbsp;4 genotypes.
+SC (g<sub>sw</sub>): Plastic n&nbsp;=&nbsp;4, Non-plastic n&nbsp;=&nbsp;1 (interpret SC panel with caution).
+</div></div>
+
 <h3>Fig 10 - TR Slope 1 vs g<sub>sw</sub> Slope 1</h3>
 <div class="fig-wrap">',
 img_tag("Fig10_TR_vs_gsw_slope.png"),
