@@ -1,0 +1,7 @@
+# Allow the R project file for this subdirectory
+!*.Rproj
+
+# R artifacts
+.Rhistory
+.RData
+.Rproj.user/
