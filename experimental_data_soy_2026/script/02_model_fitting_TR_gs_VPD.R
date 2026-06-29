@@ -39,6 +39,7 @@ suppressPackageStartupMessages({
   library(nlme)
   library(patchwork)
   library(scales)
+  library(ggrepel)
 })
 
 dir.create("figures", showWarnings = FALSE)
@@ -295,6 +296,8 @@ summarise_fit <- function(g, fit_list) {
   if (is.null(pars)) return(NULL)
   wc <- as.character(wue_lookup[g])
 
+  intercept <- pars[["a"]] %||% pars[["(Intercept)"]] %||% NA_real_
+
   # Slope1: first slope; BP; Slope2 (bilinear only)
   slope1 <- switch(best,
     "Linear"       = pars[["VPD"]],
@@ -312,6 +315,7 @@ summarise_fit <- function(g, fit_list) {
     WUE_class         = wc,
     Expected_behavior = WUE_EXPECTED[wc],
     Best_model        = best,
+    Intercept         = round(intercept, 3),
     Slope1            = round(slope1, 4),
     BP_kPa            = round(bp, 3),
     Slope2            = round(slope2, 4),
@@ -585,26 +589,154 @@ ggsave("figures/Fig3_TR_breakpoints.png", p3,
 cat("Saved Fig3\n")
 
 
-# ---- FIG 4: Slope₁ ranking ---------------------------------------------------
+# ---- FIG 4: Slope1 + Slope2 ranking ------------------------------------------
 cat("Building Fig4 ...\n")
-slope_df <- tr_best |>
-  filter(!is.na(Slope1)) |>
-  mutate(Genotype = fct_reorder(Genotype, Slope1))
 
-p4 <- ggplot(slope_df, aes(y = Genotype, x = Slope1, fill = WUE_class)) +
-  geom_col(width = 0.65, colour = "white", linewidth = 0.3) +
+# For genotypes with a breakpoint include slope2 (0 for lin. plateau = plateau)
+slope_long <- tr_best |>
+  filter(!is.na(Slope1)) |>
+  mutate(
+    Slope2_plot = case_when(
+      Best_model == "Bilinear"     ~ Slope2,
+      Best_model == "Lin. plateau" ~ 0,
+      TRUE                         ~ NA_real_
+    ),
+    Genotype  = fct_reorder(Genotype, Slope1),
+    WUE_class = factor(WUE_class, levels = WUE_ORDER)
+  ) |>
+  pivot_longer(cols = c(Slope1, Slope2_plot),
+               names_to = "Slope_type", values_to = "Value") |>
+  mutate(Slope_label = ifelse(Slope_type == "Slope1",
+                              "Slope 1 (below BP)",
+                              "Slope 2 (above BP / plateau)")) |>
+  filter(!is.na(Value))
+
+p4 <- ggplot(slope_long,
+             aes(y = Genotype, x = Value, fill = WUE_class, alpha = Slope_label)) +
+  geom_col(position = position_dodge2(width = 0.75, preserve = "single"),
+           colour = "white", linewidth = 0.3) +
+  scale_alpha_manual(values = c("Slope 1 (below BP)" = 1.0,
+                                "Slope 2 (above BP / plateau)" = 0.45),
+                     name = "Segment") +
   wue_fill +
   labs(
-    title = "Fig 4  Transpiration sensitivity (Slope₁) by genotype — Day 1",
-    x     = expression(Slope[1]~(mg~m^{-2}~s^{-1}~kPa^{-1})),
+    title = "Fig 4  Transpiration sensitivity by genotype — Slope 1 and Slope 2 (Day 1)",
+    subtitle = "Lighter bar = post-breakpoint slope (0 for linear-plateau models)",
+    x     = expression(Slope~(mg~m^{-2}~s^{-1}~kPa^{-1})),
     y     = NULL
+  ) +
+  UA_THEME +
+  theme(legend.position = "right") +
+  guides(fill  = guide_legend(override.aes = list(alpha = 1)),
+         alpha = guide_legend(override.aes = list(fill  = UA_GRAY)))
+
+ggsave("figures/Fig4_TR_slopes.png", p4,
+       width = 9, height = 5.5, dpi = 300)
+cat("Saved Fig4\n")
+
+
+# ---- FIG 9: Intercept ranking ------------------------------------------------
+cat("Building Fig9 ...\n")
+
+intercept_df <- tr_best |>
+  filter(!is.na(Intercept)) |>
+  mutate(Genotype  = fct_reorder(Genotype, Intercept),
+         WUE_class = factor(WUE_class, levels = WUE_ORDER))
+
+p9 <- ggplot(intercept_df, aes(y = Genotype, x = Intercept, fill = WUE_class)) +
+  geom_col(width = 0.65, colour = "white", linewidth = 0.3) +
+  geom_vline(xintercept = 0, linewidth = 0.5, colour = UA_DARK) +
+  wue_fill +
+  labs(
+    title = "Fig 9  Transpiration intercept (a) by genotype — Day 1",
+    subtitle = "Intercept = fitted TR at VPD = 0; reflects baseline residual transpiration",
+    x = expression(Intercept~a~(mg~m^{-2}~s^{-1})),
+    y = NULL
   ) +
   UA_THEME +
   theme(legend.position = "right")
 
-ggsave("figures/Fig4_TR_slopes.png", p4,
-       width = 8, height = 5, dpi = 300)
-cat("Saved Fig4\n")
+ggsave("figures/Fig9_TR_intercept.png", p9,
+       width = 9, height = 5.5, dpi = 300)
+cat("Saved Fig9\n")
+
+
+# ---- FIG 10: TR slope vs gsw slope -------------------------------------------
+cat("Building Fig10 ...\n")
+
+# Join overlapping genotypes with both TR and gsw estimates
+tr_gsw_comp <- tr_best |>
+  select(Genotype, WUE_class, Best_model,
+         TR_Intercept = Intercept, TR_Slope1 = Slope1) |>
+  inner_join(
+    gsw_best |>
+      select(Genotype, gsw_Intercept = Intercept, gsw_Slope1 = Slope1),
+    by = "Genotype"
+  ) |>
+  mutate(WUE_class = factor(WUE_class, levels = WUE_ORDER))
+
+# Correlation and regression
+cor_res  <- cor.test(tr_gsw_comp$TR_Slope1, tr_gsw_comp$gsw_Slope1, method = "pearson")
+lm_res   <- lm(gsw_Slope1 ~ TR_Slope1, data = tr_gsw_comp)
+lm_sum   <- summary(lm_res)
+
+cat(sprintf("\n--- TR Slope1 vs gsw Slope1 (n = %d genotypes) ---\n", nrow(tr_gsw_comp)))
+cat(sprintf("  Pearson r = %.3f  (p = %.4f)\n", cor_res$estimate, cor_res$p.value))
+cat(sprintf("  Regression: gsw_Slope = %.4f + %.4f * TR_Slope  (R2 = %.3f)\n",
+            coef(lm_res)[1], coef(lm_res)[2], lm_sum$r.squared))
+
+# Save the comparison table
+write_csv(tr_gsw_comp, "data/TR_gsw_slope_comparison.csv")
+
+# Prediction band for the regression line
+pred_df <- data.frame(TR_Slope1 = seq(min(tr_gsw_comp$TR_Slope1),
+                                       max(tr_gsw_comp$TR_Slope1),
+                                       length.out = 200))
+pred_df <- cbind(pred_df, predict(lm_res, newdata = pred_df, interval = "confidence"))
+
+p10 <- ggplot(tr_gsw_comp, aes(x = TR_Slope1, y = gsw_Slope1)) +
+  geom_ribbon(data = pred_df, aes(x = TR_Slope1, ymin = lwr, ymax = upr),
+              inherit.aes = FALSE, fill = UA_RED, alpha = 0.12) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 0.9,
+              colour = UA_RED, linetype = "solid", formula = y ~ x) +
+  geom_hline(yintercept = 0, linewidth = 0.4, colour = UA_GRAY, linetype = "dashed") +
+  geom_point(aes(fill = WUE_class, shape = WUE_class),
+             colour = "white", size = 4, stroke = 0.5, alpha = 0.9) +
+  ggrepel::geom_text_repel(aes(label = Genotype), size = 2.6,
+                            colour = UA_DARK, max.overlaps = 12,
+                            box.padding = 0.3, seed = 42) +
+  scale_fill_manual(values  = WUE_COLS,   name = "WUE class") +
+  scale_shape_manual(values = WUE_SHAPES, name = "WUE class") +
+  annotate("text",
+           x = max(tr_gsw_comp$TR_Slope1) * 0.98,
+           y = max(tr_gsw_comp$gsw_Slope1),
+           hjust = 1, vjust = 1, size = 3, colour = UA_DARK,
+           label = sprintf("r = %.2f  p = %.3f\nR² = %.2f  n = %d",
+                           cor_res$estimate, cor_res$p.value,
+                           lm_sum$r.squared, nrow(tr_gsw_comp))) +
+  labs(
+    title = "Fig 10  TR Slope1 vs g[sw] Slope1 — Day 1",
+    subtitle = "Negative gsw slope = stomatal closure with VPD; positive TR slope = transpiration sensitivity",
+    x = expression(TR~Slope[1]~(mg~m^{-2}~s^{-1}~kPa^{-1})),
+    y = expression(g[sw]~Slope[1]~(mol~m^{-2}~s^{-1}~kPa^{-1}))
+  ) +
+  UA_THEME +
+  theme(legend.position = "right")
+
+ggsave("figures/Fig10_TR_vs_gsw_slope.png", p10,
+       width = 9, height = 6.5, dpi = 300)
+cat("Saved Fig10\n")
+
+# Save key stats for report
+tr_gsw_stats <- list(
+  n        = nrow(tr_gsw_comp),
+  r        = round(cor_res$estimate, 3),
+  p        = round(cor_res$p.value, 4),
+  r2       = round(lm_sum$r.squared, 3),
+  intercept= round(coef(lm_res)[1], 4),
+  slope    = round(coef(lm_res)[2], 4)
+)
+saveRDS(tr_gsw_stats, "data/tr_gsw_stats.rds")
 
 
 # ---- FIG 5: gsw per genotype ------------------------------------------------
@@ -822,3 +954,4 @@ cat("Tables  : data/TR_best_model_summary.csv\n")
 cat("          data/gsw_best_model_summary.csv\n")
 cat("          data/TR_model_parameters.csv\n")
 cat("          data/gsw_model_parameters.csv\n")
+cat("          data/TR_gsw_slope_comparison.csv\n")

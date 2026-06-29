@@ -1,0 +1,10 @@
+Genotype,WUE_class,Best_model,TR_Intercept,TR_Slope1,gsw_Intercept,gsw_Slope1
+AG43XF2,high_wilting,Lin. plateau,34.876,7.9696,0.862,-0.2376
+PI398198,MAGIC parent,Linear,26.029,6.9172,0.84,-0.1975
+PI398492,"Plastic, High WUE",Lin. plateau,27.175,9.5569,0.406,-0.0959
+PI398617,"Plastic, High WUE",Bilinear,5.728,26.1812,0.951,-0.2564
+PI416937,slow_wilting,Linear,32.146,7.6965,0.52,-0.1351
+PI424231,"Plastic, High WUE",Linear,32.177,3.8812,0.688,-0.188
+PI471938,slow_wilting,Linear,30.073,11.8467,0.56,-0.1464
+PI603171,"Nonplastic, Low WUE",Linear,44.456,7.8262,1.222,-0.3398
+PI603418D,"Plastic, High WUE",Lin. plateau,27.265,13.7432,0.681,-0.1593

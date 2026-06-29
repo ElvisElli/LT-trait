@@ -67,10 +67,11 @@ safe_csv <- function(f) {
   if (file.exists(p)) read_csv(p, show_col_types = FALSE) else tibble()
 }
 
-tr_best   <- safe_csv("TR_best_model_summary.csv")
-gsw_best  <- safe_csv("gsw_best_model_summary.csv")
-tr_params <- safe_csv("TR_model_parameters.csv")
-gsw_params<- safe_csv("gsw_model_parameters.csv")
+tr_best     <- safe_csv("TR_best_model_summary.csv")
+gsw_best    <- safe_csv("gsw_best_model_summary.csv")
+tr_params   <- safe_csv("TR_model_parameters.csv")
+gsw_params  <- safe_csv("gsw_model_parameters.csv")
+tr_gsw_comp <- safe_csv("TR_gsw_slope_comparison.csv")
 
 df_clean  <- safe_csv("data_clean.csv")
 day1      <- filter(df_clean, Day_label == "Day 1")
@@ -79,6 +80,13 @@ n_geno    <- n_distinct(day1$Genotype)
 n_rep     <- n_distinct(day1$Rep)
 vpd_range <- sprintf("%.2f-%.2f", min(day1$VPD, na.rm=TRUE), max(day1$VPD, na.rm=TRUE))
 tr_range  <- sprintf("%.1f-%.1f", min(day1$TR, na.rm=TRUE), max(day1$TR, na.rm=TRUE))
+
+# TR-gsw stats
+tg_stats <- if (file.exists("data/tr_gsw_stats.rds")) readRDS("data/tr_gsw_stats.rds") else list()
+tg_r  <- if (length(tg_stats)) tg_stats$r  else "NA"
+tg_p  <- if (length(tg_stats)) tg_stats$p  else "NA"
+tg_r2 <- if (length(tg_stats)) tg_stats$r2 else "NA"
+tg_n  <- if (length(tg_stats)) tg_stats$n  else "NA"
 
 # --------------------------------------------------------------------------- #
 # BUILD TABLE HTML FRAGMENTS
@@ -96,24 +104,27 @@ vpd_tbl <- tibble(
 tr_disp <- tr_best |>
   mutate(
     Best_model = colour_model(Best_model),
+    Intercept  = ifelse(is.na(Intercept), "-", sprintf("%.2f", Intercept)),
     Slope1     = ifelse(is.na(Slope1), "-", sprintf("%.3f", Slope1)),
-    BP_kPa     = ifelse(is.na(BP_kPa), "-", sprintf("%.3f", BP_kPa)),
+    BP_kPa     = ifelse(is.na(BP_kPa), "-", sprintf("%.2f", BP_kPa)),
     Slope2     = ifelse(is.na(Slope2), "-", sprintf("%.3f", Slope2))
   ) |>
   rename(
     `WUE class`         = WUE_class,
     `Expected phenotype`= Expected_behavior,
     `Best model`        = Best_model,
+    `Intercept (a)`     = Intercept,
     `Slope1`            = Slope1,
     `BP (kPa)`          = BP_kPa,
     `Slope2`            = Slope2
   ) |>
   select(Genotype, `WUE class`, `Expected phenotype`,
-         `Best model`, `Slope1`, `BP (kPa)`, `Slope2`)
+         `Best model`, `Intercept (a)`, `Slope1`, `BP (kPa)`, `Slope2`)
 
 gsw_disp <- gsw_best |>
   mutate(
     Best_model = colour_model(Best_model),
+    Intercept  = ifelse(is.na(Intercept), "-", sprintf("%.3f", Intercept)),
     Slope1     = ifelse(is.na(Slope1), "-", sprintf("%.4f", Slope1)),
     BP_kPa     = ifelse(is.na(BP_kPa), "-", sprintf("%.3f", BP_kPa)),
     Slope2     = ifelse(is.na(Slope2), "-", sprintf("%.4f", Slope2))
@@ -122,12 +133,13 @@ gsw_disp <- gsw_best |>
     `WUE class`         = WUE_class,
     `Expected phenotype`= Expected_behavior,
     `Best model`        = Best_model,
+    `Intercept (a)`     = Intercept,
     `Slope1`            = Slope1,
     `BP (kPa)`          = BP_kPa,
     `Slope2`            = Slope2
   ) |>
   select(Genotype, `WUE class`, `Expected phenotype`,
-         `Best model`, `Slope1`, `BP (kPa)`, `Slope2`)
+         `Best model`, `Intercept (a)`, `Slope1`, `BP (kPa)`, `Slope2`)
 
 # AIC tables
 tr_aic_disp <- tr_params |>
@@ -206,7 +218,9 @@ html_body <- paste0('
   <a href="#qc">QC</a>
   <a href="#tr-models">TR models</a>
   <a href="#gsw-models">gsw models</a>
+  <a href="#tr-gsw">TR vs gsw</a>
   <a href="#tables">Tables</a>
+  <a href="#data-cleaning">Data</a>
   <a href="#methods">Methods</a>
 </nav>
 
@@ -319,12 +333,28 @@ img_tag("Fig4_TR_slopes.png"),
 '<div class="fig-caption"><strong>Fig. 4.</strong> Initial slope of TR vs VPD per genotype.
 Higher = greater sensitivity to VPD in the linear range.</div></div>
 
+<h3>Fig 4 - Slope 1 and Slope 2 by genotype</h3>
+<div class="fig-wrap">',
+img_tag("Fig4_TR_slopes.png"),
+'<div class="fig-caption"><strong>Fig. 4.</strong> Transpiration sensitivity per genotype.
+Solid bars = Slope 1 (below breakpoint or full range for linear models).
+Lighter bars = Slope 2 (above breakpoint; 0 for linear-plateau models; absent for linear models).
+Genotypes ordered by Slope 1.</div></div>
+
+<h3>Fig 9 - Intercept by genotype</h3>
+<div class="fig-wrap">',
+img_tag("Fig9_TR_intercept.png"),
+'<div class="fig-caption"><strong>Fig. 9.</strong> Fitted intercept (parameter <em>a</em>) per genotype.
+Represents the model-predicted TR at VPD = 0, i.e., the baseline residual transpiration
+not driven by the vapour pressure deficit. Large positive intercepts indicate
+cuticular or minimum stomatal conductance operating even at near-zero VPD.</div></div>
+
 <h3>Fig 6 - AIC model comparison</h3>
 <div class="fig-wrap">',
 img_tag("Fig6_TR_AIC_heatmap.png"),
 '<div class="fig-caption"><strong>Fig. 6.</strong> &#x394;AIC heatmap. Red = best model (&#x394;AIC = 0).</div></div>
 
-<h3>Fig 7 - TR mean &#xB1; SD per genotype</h3>
+<h3>Fig 7 - All data points with best model</h3>
 <div class="fig-wrap">',
 img_tag("Fig7_TR_best_model.png"),
 '<div class="fig-caption"><strong>Fig. 7.</strong> Transpiration rate vs VPD per genotype (Day 1) — best-fit model only.
@@ -351,21 +381,127 @@ img_tag("Fig8_gsw_best_model.png"),
 Three individual LICOR readings shown per plant per treatment; curve colour matches WUE class.</div></div>
 </section>
 
+<!-- TR vs GSW ANALYSIS -->
+<section id="tr-gsw">
+<h2>TR vs g<sub>sw</sub> slope analysis</h2>
+
+<h3>Fig 10 - TR Slope 1 vs g<sub>sw</sub> Slope 1</h3>
+<div class="fig-wrap">',
+img_tag("Fig10_TR_vs_gsw_slope.png"),
+'<div class="fig-caption"><strong>Fig. 10.</strong> Scatter plot of transpiration sensitivity (TR Slope 1)
+against stomatal closure rate (g<sub>sw</sub> Slope 1) for the ', tg_n, ' genotypes with both
+measurements. Red line = OLS regression with 95% CI band.
+Pearson r = ', tg_r, ', p = ', tg_p, ', R&sup2; = ', tg_r2, '.</div></div>
+
+<h3>Critical analysis</h3>
+<div class="qc-warn">
+<strong>Key finding:</strong> No significant linear relationship between TR Slope 1 and
+g<sub>sw</sub> Slope 1 (Pearson r&nbsp;=&nbsp;', tg_r, ', p&nbsp;=&nbsp;', tg_p,
+', R&sup2;&nbsp;=&nbsp;', tg_r2, ', n&nbsp;=&nbsp;', tg_n, ').
+</div>
+
+<p><strong>Physiological background.</strong>
+Vapour pressure deficit (VPD) drives water loss through two pathways: (1) directly, by
+increasing the concentration gradient between the leaf interior and bulk air, and
+(2) indirectly, by triggering ABA-mediated stomatal closure that reduces g<sub>sw</sub>
+and therefore limits transpiration. In well-coupled canopies, stomata are the primary
+control: a steeper decline in g<sub>sw</sub> with VPD (more negative Slope 1) should in
+principle suppress the TR increase (lower TR Slope 1). The limited-transpiration (LT)
+trait in soybean is proposed to operate through this hydraulic-stomatal feedback, capping
+TR above a breakpoint VPD.</p>
+
+<p><strong>Why the correlation is absent here.</strong>
+Despite the intuitive expectation of coupling, four structural features of this dataset
+most likely explain the lack of correlation:</p>
+<ul>
+  <li><strong>Sample scale mismatch.</strong> TR is derived from a gravimetric whole-pot
+  measurement integrating over 40&nbsp;min and all leaf area; g<sub>sw</sub> is an
+  instantaneous LICOR reading from a single leaf cuvette (~&nbsp;2&nbsp;cm&sup2;). A single
+  leaf is not representative of canopy-level conductance, especially in a potted plant
+  where leaf-to-leaf variation in hydraulic supply can be large.</li>
+  <li><strong>Incomplete VPD coverage in the LICOR data.</strong> LICOR measurements were
+  available only for Treatments 2-5 (VPD&nbsp;1.5-3.5&nbsp;kPa) for most genotypes,
+  missing Treatment&nbsp;1 (the low-VPD baseline used to normalise TR). The fitted g<sub>sw</sub>
+  slopes therefore do not span the same VPD window as the TR slopes.</li>
+  <li><strong>Severely limited replication for g<sub>sw</sub>.</strong> LICOR data come from
+  a single replicate (Rep&nbsp;4) per genotype, giving only one plant per VPD level. This leaves
+  zero within-treatment replication to distinguish true genotypic signal from measurement noise
+  in the LICOR readings. With n&nbsp;=&nbsp;9 genotypes and one observation per VPD level,
+  any fitted g<sub>sw</sub> slope has very high uncertainty.</li>
+  <li><strong>Different stomatal dynamics.</strong> g<sub>sw</sub> responds to instantaneous
+  VPD; TR in this experiment integrates a physiological state that evolved over the preceding
+  VPD step. Non-linear hysteresis between stomatal aperture and VPD (stomata open slowly
+  but close quickly) further decouples the two measurements temporally.</li>
+</ul>
+
+<p><strong>Interpretation for the LT trait.</strong>
+The absence of a TR-g<sub>sw</sub> correlation does not invalidate the LT phenotype concept.
+Rather, it underscores that gravimetric TR is the appropriate primary variable for quantifying
+the LT response, while g<sub>sw</sub> measured by LICOR in this experiment provides only
+qualitative, supplementary evidence. All genotypes show negative g<sub>sw</sub> slopes
+(stomata close as VPD rises), consistent with the general stomatal response to atmospheric
+demand. The magnitude of this closure, however, cannot be reliably ranked from single-plant
+LICOR data. A dedicated stomatal experiment (multiple replicates per genotype per VPD,
+same-leaf pressure-flow or porometry) would be needed to quantify the stomatal component
+of the LT mechanism.</p>
+</section>
+
 <!-- TABLES -->
 <section id="tables">
 <h2>Summary tables</h2>
 <h3>Table 3 - TR best-model parameters</h3>
-<p style="font-size:0.88em;color:#555">Slope&#x2081; = initial slope; BP = breakpoint VPD (kPa);
-Slope&#x2082; = second-segment slope (bilinear only). &#x2014; = not applicable.</p>',
+<p style="font-size:0.88em;color:#555">
+Intercept (a) = fitted TR at VPD = 0 (baseline residual transpiration);
+Slope1 = initial (below-BP) sensitivity to VPD;
+BP = breakpoint VPD (kPa);
+Slope2 = post-BP slope (bilinear only; 0 by definition for linear-plateau).
+- = not applicable.</p>',
 ua_table(tr_disp, "Table 3. Transpiration rate - best-model parameters per genotype."),
 '<h3>Table 4 - g<sub>sw</sub> best-model parameters</h3>
-<p style="font-size:0.88em;color:#555">Negative Slope&#x2081; = stomatal closure with increasing VPD. FAILED = too few observations.</p>',
+<p style="font-size:0.88em;color:#555">
+Intercept (a) = fitted g<sub>sw</sub> at VPD = 0;
+negative Slope1 = stomatal closure with increasing VPD.
+FAILED = too few valid observations to fit the model.</p>',
 ua_table(gsw_disp, "Table 4. Stomatal conductance - best-model parameters per genotype."),
 '<h3>Table 5 - AIC comparison (TR)</h3>',
 ua_table(tr_aic_disp, "Table 5. AIC and DeltaAIC for all three TR model types per genotype."),
 '<h3>Table 6 - AIC comparison (g<sub>sw</sub>)</h3>',
 ua_table(gsw_aic_disp, "Table 6. AIC and DeltaAIC for all three gsw model types per genotype."),
 '</section>
+
+<!-- DATA CLEANING -->
+<section id="data-cleaning">
+<h2>Data transparency: original vs clean data</h2>
+<p>The original data file is <code>data/data_all.xlsx</code> (sheet "dataAll",
+', nrow(df_clean), ' rows &#xD7; 31 columns). The cleaned file <code>data/data_clean.csv</code>
+differs from the original in the following documented ways:</p>
+<ul>
+  <li><strong>Column renaming.</strong> Technical column names were standardised for readability:
+  <code>RepNo</code> &#x2192; <code>Rep</code>, <code>day</code> &#x2192; <code>Day</code>,
+  <code>TR_mg_sqm_seg</code> &#x2192; <code>TR</code>, <code>RelativeTransp</code> &#x2192; <code>RelTR</code>,
+  <code>avg_vpd</code> &#x2192; <code>VPD</code>, <code>avg_temperature</code> &#x2192; <code>Temp_C</code>,
+  <code>avg_rh</code> &#x2192; <code>RH_pct</code>, <code>LeafArea_squarecm</code> &#x2192; <code>LeafArea</code>,
+  <code>treatment_time_mins</code> &#x2192; <code>duration_min</code>.
+  No values were altered.</li>
+  <li><strong>Derived variables added.</strong> (a) <code>Day_label</code>: factor "Day 1" / "Day 2"
+  derived from the numeric <code>Day</code> column. (b) <code>gsw</code>: row-mean of the three
+  LICOR stomatal conductance readings (<code>gsw1</code>, <code>gsw2</code>, <code>gsw3</code>);
+  set to NA when all three readings are missing.</li>
+  <li><strong>Outlier flag added (not removed).</strong> A column <code>TR_outlier</code> (logical)
+  was computed using the 3&#xD7;IQR rule within each Genotype &#xD7; Day &#xD7; Treatment group.
+  No observations were excluded; the flag is retained for downstream filtering if needed.
+  Zero outliers were detected.</li>
+  <li><strong>Empty trailing column removed.</strong> The raw Excel file contains one entirely-NA
+  column (column 31) introduced by Excel formatting. It was dropped during import.</li>
+  <li><strong>Factor encoding.</strong> <code>Rep</code>, <code>Genotype</code>, <code>WUE_class</code>,
+  and <code>Treatment</code> were encoded as ordered factors (with <code>WUE_class</code> following
+  the biological order: slow wilting &#x2192; high wilting &#x2192; Plastic High WUE &#x2192;
+  Nonplastic Low WUE &#x2192; MAGIC parent).</li>
+  <li><strong>No imputation or value modification.</strong> All original measurements are preserved
+  exactly. The 10 rows with missing TR / VPD values remain in the clean file and are excluded
+  only at the model-fitting stage via <code>na.omit()</code>.</li>
+</ul>
+</section>
 
 <!-- METHODS -->
 <section id="methods">
