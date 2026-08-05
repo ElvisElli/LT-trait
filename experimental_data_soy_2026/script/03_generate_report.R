@@ -157,15 +157,15 @@ quad_csv <- safe_csv("TR_quadrant_classification.csv")
 quad_disp <- if (nrow(quad_csv) > 0) {
   quad_csv |>
     mutate(
-      TR_at_1p5 = sprintf("%.2f", TR_at_1p5),
+      Intercept = sprintf("%.2f", Intercept),
       Slope1    = sprintf("%.3f", Slope1)
     ) |>
     rename(
-      `WUE class`              = WUE_class,
-      `Best model`             = Best_model,
-      `TR at 1.5 kPa (mg m-2 s-1)` = TR_at_1p5,
-      `Slope 1`                = Slope1,
-      `Quadrant`               = Quadrant
+      `WUE class`                  = WUE_class,
+      `Best model`                 = Best_model,
+      `Intercept (mg m-2 s-1)`     = Intercept,
+      `Slope`                      = Slope1,
+      `Quadrant`                   = Quadrant
     )
 } else tibble()
 
