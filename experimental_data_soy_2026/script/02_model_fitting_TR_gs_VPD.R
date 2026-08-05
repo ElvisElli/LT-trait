@@ -785,22 +785,27 @@ p12 <- ggplot(fig12_df, aes(x = Intercept, y = Slope1, colour = WUE_group)) +
              colour = UA_GRAY, linewidth = 0.65) +
   geom_hline(yintercept = slope_mid, linetype = "dashed",
              colour = UA_GRAY, linewidth = 0.65) +
-  # Quadrant labels — blue quadrant label placed at its upper-right corner
-  annotate("text", x = x_mid, y =  Inf,
+  # Quadrant labels: y anchored at panel edge (vjust controls vertical gap);
+  # x uses data coordinates with 5% padding so text sits clear of left/right borders
+  annotate("text",
+           x = x_mid - diff(x_rng) * 0.03, y = Inf,
            label = "Low intercept\nHigh sensitivity",
-           hjust = 0.95, vjust = 2.0, size = 2.6,
+           hjust = 1, vjust = 2.0, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
-  annotate("text", x =  Inf, y =  Inf,
+  annotate("text",
+           x = x_rng[2] - diff(x_rng) * 0.05, y = Inf,
            label = "High intercept\nHigh sensitivity",
-           hjust = 0.97, vjust = 2.0, size = 2.6,
+           hjust = 1, vjust = 2.0, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
-  annotate("text", x = -Inf, y = -Inf,
+  annotate("text",
+           x = x_rng[1] + diff(x_rng) * 0.05, y = -Inf,
            label = "Low intercept\nLow sensitivity",
-           hjust = 0.03, vjust = -1.0, size = 2.6,
+           hjust = 0, vjust = -1.0, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
-  annotate("text", x =  Inf, y = -Inf,
+  annotate("text",
+           x = x_rng[2] - diff(x_rng) * 0.05, y = -Inf,
            label = "High intercept\nLow sensitivity",
-           hjust = 0.97, vjust = -1.0, size = 2.6,
+           hjust = 1, vjust = -1.0, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
   # Points and repel labels
   geom_point(aes(shape = Best_model), size = 4, alpha = 0.92) +
