@@ -785,22 +785,22 @@ p12 <- ggplot(fig12_df, aes(x = Intercept, y = Slope1, colour = WUE_group)) +
              colour = UA_GRAY, linewidth = 0.65) +
   geom_hline(yintercept = slope_mid, linetype = "dashed",
              colour = UA_GRAY, linewidth = 0.65) +
-  # Quadrant labels pinned to panel corners
-  annotate("text", x = -Inf, y =  Inf,
+  # Quadrant labels — blue quadrant label placed at its upper-right corner
+  annotate("text", x = x_mid, y =  Inf,
            label = "Low intercept\nHigh sensitivity",
-           hjust = 0.02, vjust = 1.3, size = 2.6,
+           hjust = 0.95, vjust = 2.0, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
   annotate("text", x =  Inf, y =  Inf,
            label = "High intercept\nHigh sensitivity",
-           hjust = 0.98, vjust = 1.3, size = 2.6,
+           hjust = 0.97, vjust = 2.0, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
   annotate("text", x = -Inf, y = -Inf,
            label = "Low intercept\nLow sensitivity",
-           hjust = 0.02, vjust = -0.3, size = 2.6,
+           hjust = 0.03, vjust = -1.0, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
   annotate("text", x =  Inf, y = -Inf,
            label = "High intercept\nLow sensitivity",
-           hjust = 0.98, vjust = -0.3, size = 2.6,
+           hjust = 0.97, vjust = -1.0, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
   # Points and repel labels
   geom_point(aes(shape = Best_model), size = 4, alpha = 0.92) +
