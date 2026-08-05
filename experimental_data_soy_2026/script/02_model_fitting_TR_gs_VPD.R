@@ -785,26 +785,22 @@ p12 <- ggplot(fig12_df, aes(x = Intercept, y = Slope1, colour = WUE_group)) +
              colour = UA_GRAY, linewidth = 0.65) +
   geom_hline(yintercept = slope_mid, linetype = "dashed",
              colour = UA_GRAY, linewidth = 0.65) +
-  # Quadrant labels: inward from corners, no median text
-  annotate("text",
-           x = x_rng[1] + xq_pad, y = y_rng[2] - yq_pad,
+  # Quadrant labels pinned to panel corners
+  annotate("text", x = -Inf, y =  Inf,
            label = "Low intercept\nHigh sensitivity",
-           hjust = 0, vjust = 1, size = 2.6,
+           hjust = 0.02, vjust = 1.3, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
-  annotate("text",
-           x = x_rng[2] - xq_pad, y = y_rng[2] - yq_pad,
+  annotate("text", x =  Inf, y =  Inf,
            label = "High intercept\nHigh sensitivity",
-           hjust = 1, vjust = 1, size = 2.6,
+           hjust = 0.98, vjust = 1.3, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
-  annotate("text",
-           x = x_rng[1] + xq_pad, y = y_rng[1] + yq_pad,
+  annotate("text", x = -Inf, y = -Inf,
            label = "Low intercept\nLow sensitivity",
-           hjust = 0, vjust = 0, size = 2.6,
+           hjust = 0.02, vjust = -0.3, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
-  annotate("text",
-           x = x_rng[2] - xq_pad, y = y_rng[1] + yq_pad,
+  annotate("text", x =  Inf, y = -Inf,
            label = "High intercept\nLow sensitivity",
-           hjust = 1, vjust = 0, size = 2.6,
+           hjust = 0.98, vjust = -0.3, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
   # Points and repel labels
   geom_point(aes(shape = Best_model), size = 4, alpha = 0.92) +
@@ -821,7 +817,7 @@ p12 <- ggplot(fig12_df, aes(x = Intercept, y = Slope1, colour = WUE_group)) +
     name = NULL
   ) +
   labs(
-    x = expression(Intercept~(a)~~(mg~m^{-2}~s^{-1})),
+    x = expression(Intercept~~(mg~m^{-2}~s^{-1})),
     y = expression(Slope~~(mg~m^{-2}~s^{-1}~kPa^{-1}))
   ) +
   UA_THEME +
