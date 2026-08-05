@@ -739,15 +739,27 @@ tr_gsw_stats <- list(
 saveRDS(tr_gsw_stats, "data/tr_gsw_stats.rds")
 
 
-# ---- FIG 12: Intercept vs Slope1 quadrant classification --------------------
+# ---- FIG 12: TR at 1.5 kPa vs Slope1 quadrant classification ----------------
 cat("Building Fig12 ...\n")
 
-# Quadrant thresholds: median of each axis
-int_mid   <- median(tr_best$Intercept, na.rm = TRUE)
-slope_mid <- median(tr_best$Slope1,    na.rm = TRUE)
+# Predicted TR at VPD = 1.5 kPa: within the measurement range, no extrapolation
+tr_at_low <- bind_rows(lapply(genotypes, function(g) {
+  fit <- tr_fits[[g]]
+  if (is.null(fit)) return(NULL)
+  tryCatch({
+    preds <- pred_curve(fit, fit$best, 1.5)
+    tibble(Genotype = g, TR_at_1p5 = preds$y_hat)
+  }, error = function(e) NULL)
+}))
 
-x_rng <- range(tr_best$Intercept)
-y_rng <- range(tr_best$Slope1)
+fig12_df <- tr_best |> left_join(tr_at_low, by = "Genotype")
+
+# Quadrant thresholds: median of each axis
+x_mid     <- median(fig12_df$TR_at_1p5, na.rm = TRUE)
+slope_mid <- median(fig12_df$Slope1,    na.rm = TRUE)
+
+x_rng <- range(fig12_df$TR_at_1p5, na.rm = TRUE)
+y_rng <- range(fig12_df$Slope1,    na.rm = TRUE)
 x_pad <- diff(x_rng) * 0.05
 y_pad <- diff(y_rng) * 0.06
 
@@ -759,85 +771,111 @@ quad_df <- data.frame(
              y_rng[1] + y_pad, y_rng[1] + y_pad),
   hjust = c(0, 1, 0, 1),
   vjust = c(1, 1, 0, 0),
-  label = c("Low baseline TR\nHigh VPD sensitivity",
-            "High baseline TR\nHigh VPD sensitivity",
-            "Low baseline TR\nLow VPD sensitivity",
-            "High baseline TR\nLow VPD sensitivity")
+  label = c("Low TR at low VPD\nHigh VPD sensitivity",
+            "High TR at low VPD\nHigh VPD sensitivity",
+            "Low TR at low VPD\nLow VPD sensitivity",
+            "High TR at low VPD\nLow VPD sensitivity")
 )
 
 # Background quadrant shading
 quad_shade <- data.frame(
-  xmin  = c(-Inf,    int_mid, -Inf,    int_mid),
-  xmax  = c(int_mid, Inf,     int_mid, Inf),
+  xmin  = c(-Inf,  x_mid, -Inf,  x_mid),
+  xmax  = c(x_mid, Inf,   x_mid, Inf),
   ymin  = c(slope_mid, slope_mid, -Inf,    -Inf),
-  ymax  = c(Inf,       Inf,     slope_mid, slope_mid),
+  ymax  = c(Inf,       Inf,       slope_mid, slope_mid),
   fill  = c("#e8f0fb", "#fde8e8", "#eafaea", "#fef6e0")
 )
 
-p12 <- ggplot(tr_best, aes(x = Intercept, y = Slope1)) +
-  # Quadrant backgrounds
+# Highlight only Plastic / Nonplastic; grey out other WUE classes
+WUE_COLS_12 <- c(
+  "Plastic, High WUE"   = UA_BLUE,
+  "Nonplastic, Low WUE" = "#d4824a",
+  "slow_wilting"        = "#AAAAAA",
+  "high_wilting"        = "#AAAAAA",
+  "MAGIC parent"        = "#AAAAAA"
+)
+WUE_LABELS_12 <- c(
+  "Plastic, High WUE"   = "Plastic, High WUE",
+  "Nonplastic, Low WUE" = "Nonplastic, Low WUE",
+  "slow_wilting"        = "Other",
+  "high_wilting"        = "Other",
+  "MAGIC parent"        = "Other"
+)
+
+p12 <- ggplot(fig12_df, aes(x = TR_at_1p5, y = Slope1)) +
   geom_rect(data = quad_shade,
             aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill),
             inherit.aes = FALSE, alpha = 0.55) +
   scale_fill_identity() +
-  # Quadrant dividers
-  geom_vline(xintercept = int_mid,   linetype = "dashed",
+  geom_vline(xintercept = x_mid,     linetype = "dashed",
              colour = UA_GRAY, linewidth = 0.65) +
   geom_hline(yintercept = slope_mid, linetype = "dashed",
              colour = UA_GRAY, linewidth = 0.65) +
-  # Threshold value labels on axes
-  annotate("text", x = int_mid, y = y_rng[1] - y_pad * 0.5,
-           label = sprintf("median = %.1f", int_mid),
-           hjust = 0.5, vjust = 1, size = 2.6, colour = UA_GRAY,
+  # Median value annotations on axes
+  annotate("text", x = x_mid, y = -Inf,
+           label = sprintf("median = %.1f", x_mid),
+           hjust = 0.5, vjust = 1.6, size = 2.5, colour = UA_GRAY,
            fontface = "italic") +
-  annotate("text", x = x_rng[1] - x_pad * 0.5, y = slope_mid,
+  annotate("text", x = -Inf, y = slope_mid,
            label = sprintf("median = %.1f", slope_mid),
-           hjust = 1, vjust = 0.4, size = 2.6, colour = UA_GRAY,
+           hjust = -0.1, vjust = -0.3, size = 2.5, colour = UA_GRAY,
            fontface = "italic") +
-  # Quadrant corner labels
-  geom_text(data = quad_df,
-            aes(x = x, y = y, label = label,
-                hjust = hjust, vjust = vjust),
-            size = 2.65, colour = "#444444", fontface = "italic",
-            lineheight = 0.92, inherit.aes = FALSE) +
-  # Points shaped by model type, coloured by WUE class
+  # Quadrant labels pinned to panel corners (Inf / -Inf)
+  annotate("text", x = -Inf, y =  Inf,
+           label = "Low TR at low VPD\nHigh VPD sensitivity",
+           hjust = -0.04, vjust = 1.15, size = 2.55,
+           colour = "#555555", fontface = "italic", lineheight = 0.9) +
+  annotate("text", x =  Inf, y =  Inf,
+           label = "High TR at low VPD\nHigh VPD sensitivity",
+           hjust = 1.04, vjust = 1.15, size = 2.55,
+           colour = "#555555", fontface = "italic", lineheight = 0.9) +
+  annotate("text", x = -Inf, y = -Inf,
+           label = "Low TR at low VPD\nLow VPD sensitivity",
+           hjust = -0.04, vjust = -0.15, size = 2.55,
+           colour = "#555555", fontface = "italic", lineheight = 0.9) +
+  annotate("text", x =  Inf, y = -Inf,
+           label = "High TR at low VPD\nLow VPD sensitivity",
+           hjust = 1.04, vjust = -0.15, size = 2.55,
+           colour = "#555555", fontface = "italic", lineheight = 0.9) +
+  # Points
   geom_point(aes(colour = WUE_class, shape = Best_model),
              size = 4, alpha = 0.92) +
   ggrepel::geom_label_repel(
     aes(label = Genotype, colour = WUE_class),
-    size = 2.7, box.padding = 0.45, max.overlaps = 20,
-    label.size = 0.2, alpha = 0.92, show.legend = FALSE
+    size = 2.7, box.padding = 0.5, point.padding = 0.3,
+    max.overlaps = 20, label.size = 0.2, alpha = 0.92,
+    show.legend = FALSE, seed = 42
   ) +
-  scale_colour_manual(values = WUE_COLS, name = "WUE class") +
+  scale_colour_manual(values = WUE_COLS_12, labels = WUE_LABELS_12,
+                      name = NULL,
+                      breaks = c("Plastic, High WUE",
+                                 "Nonplastic, Low WUE", "slow_wilting")) +
   scale_shape_manual(
     values = c("Linear" = 16, "Bilinear" = 17, "Lin. plateau" = 15),
-    name = "Best model"
+    name = NULL
   ) +
   labs(
-    title    = "Fig 12  TR baseline vs VPD sensitivity: genotype quadrant classification",
-    subtitle = sprintf(
-      "Thresholds = median intercept (%.1f mg m-2 s-1) and median Slope 1 (%.2f mg m-2 s-1 kPa-1)",
-      int_mid, slope_mid),
-    x = expression(Intercept~(a)~~(mg~m^{-2}~s^{-1})~~"[TR at VPD = 0]"),
-    y = expression(Slope~1~~(mg~m^{-2}~s^{-1}~kPa^{-1})~~"[VPD sensitivity]")
+    x = expression(Predicted~TR~at~VPD~1.5~kPa~~(mg~m^{-2}~s^{-1})),
+    y = expression(Slope~~(mg~m^{-2}~s^{-1}~kPa^{-1}))
   ) +
   UA_THEME +
-  theme(legend.position = "right",
-        plot.subtitle   = element_text(size = 7.5, colour = UA_GRAY))
+  theme(legend.position = "right")
 
 ggsave("figures/Fig12_intercept_vs_slope_quadrants.png", p12,
        width = 9, height = 6.5, dpi = 300)
 cat("Saved Fig12\n")
 
 # Save quadrant assignments
-tr_best_quad <- tr_best |>
+tr_best_quad <- fig12_df |>
   mutate(
-    TR_baseline = ifelse(Intercept >= int_mid, "High baseline", "Low baseline"),
-    VPD_sensitivity = ifelse(Slope1 >= slope_mid, "High sensitivity", "Low sensitivity"),
-    Quadrant = paste0(TR_baseline, " / ", VPD_sensitivity)
+    TR_low_label    = ifelse(TR_at_1p5 >= x_mid,
+                             "High TR at low VPD", "Low TR at low VPD"),
+    VPD_sensitivity = ifelse(Slope1 >= slope_mid,
+                             "High sensitivity", "Low sensitivity"),
+    Quadrant        = paste0(TR_low_label, " / ", VPD_sensitivity)
   )
 write_csv(tr_best_quad |>
-            select(Genotype, WUE_class, Best_model, Intercept, Slope1, Quadrant),
+            select(Genotype, WUE_class, Best_model, TR_at_1p5, Slope1, Quadrant),
           "data/TR_quadrant_classification.csv")
 cat("  Quadrant classification saved\n")
 

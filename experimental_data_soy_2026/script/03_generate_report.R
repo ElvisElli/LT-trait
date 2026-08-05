@@ -157,15 +157,15 @@ quad_csv <- safe_csv("TR_quadrant_classification.csv")
 quad_disp <- if (nrow(quad_csv) > 0) {
   quad_csv |>
     mutate(
-      Intercept = sprintf("%.2f", Intercept),
+      TR_at_1p5 = sprintf("%.2f", TR_at_1p5),
       Slope1    = sprintf("%.3f", Slope1)
     ) |>
     rename(
-      `WUE class`       = WUE_class,
-      `Best model`      = Best_model,
-      `Intercept (a)`   = Intercept,
-      `Slope 1`         = Slope1,
-      `Quadrant`        = Quadrant
+      `WUE class`              = WUE_class,
+      `Best model`             = Best_model,
+      `TR at 1.5 kPa (mg m-2 s-1)` = TR_at_1p5,
+      `Slope 1`                = Slope1,
+      `Quadrant`               = Quadrant
     )
 } else tibble()
 
@@ -370,19 +370,21 @@ cuticular or minimum stomatal conductance operating even at near-zero VPD.</div>
 <div class="fig-wrap">',
 img_tag("Fig12_intercept_vs_slope_quadrants.png"),
 '<div class="fig-caption"><strong>Fig. 12.</strong>
-Genotype classification by TR baseline (intercept, x-axis) vs VPD sensitivity (Slope 1, y-axis).
+Genotype classification by TR at VPD&nbsp;1.5&nbsp;kPa (x-axis, within the measured range)
+vs VPD sensitivity (Slope&nbsp;1, y-axis).
+Using the model-predicted TR at the lowest treatment VPD avoids extrapolating the fitted line
+to VPD&nbsp;=&nbsp;0, where no measurements exist and transpiration should approach zero.
 Dashed lines = median threshold for each axis.
-<em>High baseline / Low sensitivity</em> (bottom-right, yellow): high residual TR at low VPD
-but limited increase with VPD &#x2014; these genotypes maintain moderate transpiration across
-the full VPD range, consistent with partial LT behaviour on top of a high cuticle conductance.
-<em>Low baseline / High sensitivity</em> (top-left, blue): low TR at low VPD but steep initial
-rise &#x2014; stomata respond strongly to VPD before any plateau; classic non-LT response from
-a conservative starting point.
-<em>Low baseline / Low sensitivity</em> (bottom-left, green): both metrics below median &#x2014;
-conservative genotypes that minimise water use across all VPD levels.
-<em>High baseline / High sensitivity</em> (top-right, red): high baseline TR and steep rise
-&#x2014; maximal water use, typical of non-LT high-wilting types.
-Point shape encodes the best-fit model; colour encodes WUE class.
+<em>High TR at low VPD / Low sensitivity</em> (bottom-right, yellow): high water use under
+mild conditions but limited further increase with rising VPD &#x2014; consistent with partial
+LT regulation that engages across the whole VPD range.
+<em>Low TR at low VPD / High sensitivity</em> (top-left, blue): conservative at low VPD
+but stomata open substantially as VPD rises &#x2014; the LT brake has not yet engaged or is weak.
+<em>Low TR at low VPD / Low sensitivity</em> (bottom-left, green): low water use and
+limited VPD response across the board &#x2014; strongly conservative phenotype.
+<em>High TR at low VPD / High sensitivity</em> (top-right, red): high water use and strong
+VPD response &#x2014; non-LT, high-wilting behaviour.
+Point shape = best-fit model; colour = WUE class.
 </div></div>
 
 <h3>Fig 6 - AIC model comparison</h3>
