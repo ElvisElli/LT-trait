@@ -1,0 +1,15 @@
+Genotype,WUE_class,Best_model,Intercept,Slope1,Quadrant
+A5959,high_wilting,Linear,39.619,5.5332,High baseline / Low sensitivity
+AG43XF2,high_wilting,Lin. plateau,34.876,7.9696,High baseline / Low sensitivity
+PI377574,"Nonplastic, Low WUE",Linear,31.03,9.9559,High baseline / High sensitivity
+PI398198,MAGIC parent,Linear,26.029,6.9172,Low baseline / Low sensitivity
+PI398272,"Nonplastic, Low WUE",Linear,30.644,4.3837,High baseline / Low sensitivity
+PI398492,"Plastic, High WUE",Lin. plateau,27.175,9.5569,Low baseline / High sensitivity
+PI398617,"Plastic, High WUE",Bilinear,5.728,26.1812,Low baseline / High sensitivity
+PI404191,"Nonplastic, Low WUE",Lin. plateau,19.648,23.361,Low baseline / High sensitivity
+PI416937,slow_wilting,Linear,32.146,7.6965,High baseline / Low sensitivity
+PI424231,"Plastic, High WUE",Linear,32.177,3.8812,High baseline / Low sensitivity
+PI442012A,"Plastic, High WUE",Lin. plateau,6.935,22.7939,Low baseline / High sensitivity
+PI471938,slow_wilting,Linear,30.073,11.8467,Low baseline / High sensitivity
+PI603171,"Nonplastic, Low WUE",Linear,44.456,7.8262,High baseline / Low sensitivity
+PI603418D,"Plastic, High WUE",Lin. plateau,27.265,13.7432,Low baseline / High sensitivity

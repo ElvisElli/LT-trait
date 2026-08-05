@@ -152,6 +152,23 @@ gsw_aic_disp <- gsw_params |>
   rename(DeltaAIC = Delta_AIC) |>
   mutate(across(c(AIC, DeltaAIC), ~round(., 1)))
 
+# Quadrant classification table
+quad_csv <- safe_csv("TR_quadrant_classification.csv")
+quad_disp <- if (nrow(quad_csv) > 0) {
+  quad_csv |>
+    mutate(
+      Intercept = sprintf("%.2f", Intercept),
+      Slope1    = sprintf("%.3f", Slope1)
+    ) |>
+    rename(
+      `WUE class`       = WUE_class,
+      `Best model`      = Best_model,
+      `Intercept (a)`   = Intercept,
+      `Slope 1`         = Slope1,
+      `Quadrant`        = Quadrant
+    )
+} else tibble()
+
 # --------------------------------------------------------------------------- #
 # CSS
 # --------------------------------------------------------------------------- #
@@ -349,6 +366,25 @@ Represents the model-predicted TR at VPD = 0, i.e., the baseline residual transp
 not driven by the vapour pressure deficit. Large positive intercepts indicate
 cuticular or minimum stomatal conductance operating even at near-zero VPD.</div></div>
 
+<h3>Fig 12 - Intercept vs Slope 1 quadrant classification</h3>
+<div class="fig-wrap">',
+img_tag("Fig12_intercept_vs_slope_quadrants.png"),
+'<div class="fig-caption"><strong>Fig. 12.</strong>
+Genotype classification by TR baseline (intercept, x-axis) vs VPD sensitivity (Slope 1, y-axis).
+Dashed lines = median threshold for each axis.
+<em>High baseline / Low sensitivity</em> (bottom-right, yellow): high residual TR at low VPD
+but limited increase with VPD &#x2014; these genotypes maintain moderate transpiration across
+the full VPD range, consistent with partial LT behaviour on top of a high cuticle conductance.
+<em>Low baseline / High sensitivity</em> (top-left, blue): low TR at low VPD but steep initial
+rise &#x2014; stomata respond strongly to VPD before any plateau; classic non-LT response from
+a conservative starting point.
+<em>Low baseline / Low sensitivity</em> (bottom-left, green): both metrics below median &#x2014;
+conservative genotypes that minimise water use across all VPD levels.
+<em>High baseline / High sensitivity</em> (top-right, red): high baseline TR and steep rise
+&#x2014; maximal water use, typical of non-LT high-wilting types.
+Point shape encodes the best-fit model; colour encodes WUE class.
+</div></div>
+
 <h3>Fig 6 - AIC model comparison</h3>
 <div class="fig-wrap">',
 img_tag("Fig6_TR_AIC_heatmap.png"),
@@ -479,6 +515,11 @@ ua_table(gsw_disp, "Table 4. Stomatal conductance - best-model parameters per ge
 ua_table(tr_aic_disp, "Table 5. AIC and DeltaAIC for all three TR model types per genotype."),
 '<h3>Table 6 - AIC comparison (g<sub>sw</sub>)</h3>',
 ua_table(gsw_aic_disp, "Table 6. AIC and DeltaAIC for all three gsw model types per genotype."),
+'<h3>Table 7 - Genotype quadrant classification (Fig. 12)</h3>
+<p style="font-size:0.88em;color:#555">
+Thresholds = median intercept and median Slope 1 across all 14 genotypes.
+Intercept units: mg m&#x207B;&#xB2; s&#x207B;&#xB9;; Slope 1 units: mg m&#x207B;&#xB2; s&#x207B;&#xB9; kPa&#x207B;&#xB9;.</p>',
+ua_table(quad_disp, "Table 7. TR baseline vs VPD sensitivity quadrant assignment."),
 '</section>
 
 <!-- DATA CLEANING -->
