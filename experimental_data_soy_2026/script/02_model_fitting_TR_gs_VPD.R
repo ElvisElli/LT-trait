@@ -1087,6 +1087,77 @@ write_csv(all_pred |> select(Genotype, WUE_class, VPD_target, variable, value),
           "data/predicted_TR_gsw_at_target_VPD.csv")
 
 
+# ---- Individual figures per genotype ----------------------------------------
+cat("Building individual genotype figures ...\n")
+dir.create("figures/individual", showWarnings = FALSE)
+
+# All genotypes with at least TR data
+all_geno <- unique(tr_pred$Genotype)
+
+for (g in all_geno) {
+  tr_g  <- tr_pred_plot  |> filter(Genotype == g)
+  gsw_g <- gsw_pred_plot |> filter(Genotype == g)
+
+  wue_lbl  <- unique(tr_g$WUE_short)
+  wue_col  <- WUE_STRIP_COLS[wue_lbl]
+  has_gsw  <- nrow(gsw_g) > 0
+
+  # TR panel
+  p_tr_g <- ggplot(tr_g, aes(x = VPD_label, y = value, fill = VPD_label)) +
+    geom_col(width = 0.55, colour = "white", linewidth = 0.5) +
+    geom_text(aes(label = sprintf("%.1f", value)),
+              vjust = -0.4, size = 3.2, fontface = "bold") +
+    scale_fill_manual(values = VPD_COLS, name = "VPD") +
+    coord_cartesian(ylim = c(0, TR_YLIM[2] * 1.08)) +
+    labs(x = "VPD treatment",
+         y = expression(TR~(mg~m^{-2}~s^{-1}))) +
+    UA_THEME +
+    theme(legend.position = if (has_gsw) "none" else "top")
+
+  if (has_gsw) {
+    # gsw panel
+    p_gsw_g <- ggplot(gsw_g, aes(x = VPD_label, y = value, fill = VPD_label)) +
+      geom_col(width = 0.55, colour = "white", linewidth = 0.5) +
+      geom_text(aes(label = sprintf("%.3f", value)),
+                vjust = -0.4, size = 3.2, fontface = "bold") +
+      scale_fill_manual(values = VPD_COLS, name = "VPD") +
+      coord_cartesian(ylim = c(0, GSW_YLIM[2] * 1.08)) +
+      labs(x = NULL,
+           y = expression(g[sw]~(mol~m^{-2}~s^{-1}))) +
+      UA_THEME +
+      theme(legend.position = "top",
+            axis.text.x  = element_blank(),
+            axis.ticks.x = element_blank())
+
+    p_ind <- p_gsw_g / p_tr_g +
+      plot_layout(heights = c(1, 1.3)) +
+      plot_annotation(
+        title    = g,
+        subtitle = wue_lbl,
+        theme    = theme(
+          plot.title    = element_text(face = "bold", size = 12, colour = UA_DARK),
+          plot.subtitle = element_text(size = 9,  colour = wue_col,
+                                       face = "bold")
+        )
+      )
+    out_h <- 6.5
+  } else {
+    p_ind <- p_tr_g +
+      labs(title    = g,
+           subtitle = wue_lbl) +
+      theme(plot.title    = element_text(face = "bold", size = 12, colour = UA_DARK),
+            plot.subtitle = element_text(size = 9, colour = wue_col, face = "bold"))
+    out_h <- 4.0
+  }
+
+  fname <- file.path("figures", "individual",
+                     paste0(gsub("[^A-Za-z0-9]", "_", g), "_VPD_comparison.png"))
+  ggsave(fname, p_ind, width = 3.5, height = out_h, dpi = 300)
+}
+
+cat(sprintf("  Saved %d individual figures in figures/individual/\n", length(all_geno)))
+
+
 cat("\n=== Model fitting complete ===\n")
 cat("Figures : figures/\n")
 cat("Tables  : data/TR_best_model_summary.csv\n")
