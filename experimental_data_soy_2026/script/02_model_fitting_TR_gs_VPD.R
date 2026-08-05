@@ -739,55 +739,11 @@ tr_gsw_stats <- list(
 saveRDS(tr_gsw_stats, "data/tr_gsw_stats.rds")
 
 
-# ---- FIG 12: TR at 1.5 kPa vs Slope1 quadrant classification ----------------
+# ---- FIG 12: Intercept vs Slope1 quadrant classification --------------------
 cat("Building Fig12 ...\n")
 
-# Predicted TR at VPD = 1.5 kPa: within the measurement range, no extrapolation
-tr_at_low <- bind_rows(lapply(genotypes, function(g) {
-  fit <- tr_fits[[g]]
-  if (is.null(fit)) return(NULL)
-  tryCatch({
-    preds <- pred_curve(fit, fit$best, 1.5)
-    tibble(Genotype = g, TR_at_1p5 = preds$y_hat)
-  }, error = function(e) NULL)
-}))
-
-fig12_df <- tr_best |> left_join(tr_at_low, by = "Genotype")
-
-# Quadrant thresholds: median of each axis
-x_mid     <- median(fig12_df$TR_at_1p5, na.rm = TRUE)
-slope_mid <- median(fig12_df$Slope1,    na.rm = TRUE)
-
-x_rng <- range(fig12_df$TR_at_1p5, na.rm = TRUE)
-y_rng <- range(fig12_df$Slope1,    na.rm = TRUE)
-x_pad <- diff(x_rng) * 0.05
-y_pad <- diff(y_rng) * 0.06
-
-# Quadrant corner labels
-quad_df <- data.frame(
-  x     = c(x_rng[1] + x_pad, x_rng[2] - x_pad,
-             x_rng[1] + x_pad, x_rng[2] - x_pad),
-  y     = c(y_rng[2] - y_pad, y_rng[2] - y_pad,
-             y_rng[1] + y_pad, y_rng[1] + y_pad),
-  hjust = c(0, 1, 0, 1),
-  vjust = c(1, 1, 0, 0),
-  label = c("Low TR at low VPD\nHigh VPD sensitivity",
-            "High TR at low VPD\nHigh VPD sensitivity",
-            "Low TR at low VPD\nLow VPD sensitivity",
-            "High TR at low VPD\nLow VPD sensitivity")
-)
-
-# Background quadrant shading
-quad_shade <- data.frame(
-  xmin  = c(-Inf,  x_mid, -Inf,  x_mid),
-  xmax  = c(x_mid, Inf,   x_mid, Inf),
-  ymin  = c(slope_mid, slope_mid, -Inf,    -Inf),
-  ymax  = c(Inf,       Inf,       slope_mid, slope_mid),
-  fill  = c("#e8f0fb", "#fde8e8", "#eafaea", "#fef6e0")
-)
-
-# Highlight only Plastic / Nonplastic; collapse others into "Other"
-fig12_df <- fig12_df |>
+# Highlight only Plastic / Nonplastic; grey the rest (not shown in legend)
+fig12_df <- tr_best |>
   mutate(WUE_group = case_when(
     WUE_class == "Plastic, High WUE"   ~ "Plastic, High WUE",
     WUE_class == "Nonplastic, Low WUE" ~ "Nonplastic, Low WUE",
@@ -800,7 +756,27 @@ WUE_COLS_12 <- c(
   "Other"               = "#AAAAAA"
 )
 
-p12 <- ggplot(fig12_df, aes(x = TR_at_1p5, y = Slope1, colour = WUE_group)) +
+# Quadrant thresholds: median of each axis
+x_mid     <- median(fig12_df$Intercept, na.rm = TRUE)
+slope_mid <- median(fig12_df$Slope1,    na.rm = TRUE)
+
+x_rng <- range(fig12_df$Intercept, na.rm = TRUE)
+y_rng <- range(fig12_df$Slope1,    na.rm = TRUE)
+
+# Inward padding for quadrant labels (5% of range from each corner)
+xq_pad <- diff(x_rng) * 0.05
+yq_pad <- diff(y_rng) * 0.06
+
+# Background quadrant shading
+quad_shade <- data.frame(
+  xmin  = c(-Inf,  x_mid, -Inf,  x_mid),
+  xmax  = c(x_mid, Inf,   x_mid, Inf),
+  ymin  = c(slope_mid, slope_mid, -Inf,    -Inf),
+  ymax  = c(Inf,       Inf,       slope_mid, slope_mid),
+  fill  = c("#e8f0fb", "#fde8e8", "#eafaea", "#fef6e0")
+)
+
+p12 <- ggplot(fig12_df, aes(x = Intercept, y = Slope1, colour = WUE_group)) +
   geom_rect(data = quad_shade,
             aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill),
             inherit.aes = FALSE, alpha = 0.55) +
@@ -809,33 +785,28 @@ p12 <- ggplot(fig12_df, aes(x = TR_at_1p5, y = Slope1, colour = WUE_group)) +
              colour = UA_GRAY, linewidth = 0.65) +
   geom_hline(yintercept = slope_mid, linetype = "dashed",
              colour = UA_GRAY, linewidth = 0.65) +
-  # Median value annotations on axes
-  annotate("text", x = x_mid, y = -Inf,
-           label = sprintf("median = %.1f", x_mid),
-           hjust = 0.5, vjust = 1.6, size = 2.5, colour = UA_GRAY,
-           fontface = "italic") +
-  annotate("text", x = -Inf, y = slope_mid,
-           label = sprintf("median = %.1f", slope_mid),
-           hjust = -0.1, vjust = -0.3, size = 2.5, colour = UA_GRAY,
-           fontface = "italic") +
-  # Quadrant labels pinned to panel corners (Inf / -Inf)
-  annotate("text", x = -Inf, y =  Inf,
-           label = "Low TR at low VPD\nHigh VPD sensitivity",
-           hjust = -0.04, vjust = 1.15, size = 2.55,
+  # Quadrant labels: inward from corners, no median text
+  annotate("text",
+           x = x_rng[1] + xq_pad, y = y_rng[2] - yq_pad,
+           label = "Low intercept\nHigh sensitivity",
+           hjust = 0, vjust = 1, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
-  annotate("text", x =  Inf, y =  Inf,
-           label = "High TR at low VPD\nHigh VPD sensitivity",
-           hjust = 1.04, vjust = 1.15, size = 2.55,
+  annotate("text",
+           x = x_rng[2] - xq_pad, y = y_rng[2] - yq_pad,
+           label = "High intercept\nHigh sensitivity",
+           hjust = 1, vjust = 1, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
-  annotate("text", x = -Inf, y = -Inf,
-           label = "Low TR at low VPD\nLow VPD sensitivity",
-           hjust = -0.04, vjust = -0.15, size = 2.55,
+  annotate("text",
+           x = x_rng[1] + xq_pad, y = y_rng[1] + yq_pad,
+           label = "Low intercept\nLow sensitivity",
+           hjust = 0, vjust = 0, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
-  annotate("text", x =  Inf, y = -Inf,
-           label = "High TR at low VPD\nLow VPD sensitivity",
-           hjust = 1.04, vjust = -0.15, size = 2.55,
+  annotate("text",
+           x = x_rng[2] - xq_pad, y = y_rng[1] + yq_pad,
+           label = "High intercept\nLow sensitivity",
+           hjust = 1, vjust = 0, size = 2.6,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
-  # Points
+  # Points and repel labels
   geom_point(aes(shape = Best_model), size = 4, alpha = 0.92) +
   ggrepel::geom_label_repel(
     aes(label = Genotype),
@@ -843,13 +814,14 @@ p12 <- ggplot(fig12_df, aes(x = TR_at_1p5, y = Slope1, colour = WUE_group)) +
     max.overlaps = 20, label.size = 0.2, alpha = 0.92,
     show.legend = FALSE, seed = 42
   ) +
-  scale_colour_manual(values = WUE_COLS_12, name = NULL) +
+  scale_colour_manual(values = WUE_COLS_12, name = NULL,
+                      breaks = c("Plastic, High WUE", "Nonplastic, Low WUE")) +
   scale_shape_manual(
     values = c("Linear" = 16, "Bilinear" = 17, "Lin. plateau" = 15),
     name = NULL
   ) +
   labs(
-    x = expression(Predicted~TR~at~VPD~1.5~kPa~~(mg~m^{-2}~s^{-1})),
+    x = expression(Intercept~(a)~~(mg~m^{-2}~s^{-1})),
     y = expression(Slope~~(mg~m^{-2}~s^{-1}~kPa^{-1}))
   ) +
   UA_THEME +
@@ -862,14 +834,12 @@ cat("Saved Fig12\n")
 # Save quadrant assignments
 tr_best_quad <- fig12_df |>
   mutate(
-    TR_low_label    = ifelse(TR_at_1p5 >= x_mid,
-                             "High TR at low VPD", "Low TR at low VPD"),
-    VPD_sensitivity = ifelse(Slope1 >= slope_mid,
-                             "High sensitivity", "Low sensitivity"),
-    Quadrant        = paste0(TR_low_label, " / ", VPD_sensitivity)
+    Int_label       = ifelse(Intercept >= x_mid, "High intercept", "Low intercept"),
+    VPD_sensitivity = ifelse(Slope1 >= slope_mid, "High sensitivity", "Low sensitivity"),
+    Quadrant        = paste0(Int_label, " / ", VPD_sensitivity)
   )
 write_csv(tr_best_quad |>
-            select(Genotype, WUE_class, Best_model, TR_at_1p5, Slope1, Quadrant),
+            select(Genotype, WUE_class, Best_model, Intercept, Slope1, Quadrant),
           "data/TR_quadrant_classification.csv")
 cat("  Quadrant classification saved\n")
 

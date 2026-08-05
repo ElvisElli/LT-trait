@@ -1,15 +1,15 @@
-Genotype,WUE_class,Best_model,TR_at_1p5,Slope1,Quadrant
-A5959,high_wilting,Linear,47.91839225539083,5.5332,High TR at low VPD / Low sensitivity
-AG43XF2,high_wilting,Lin. plateau,46.830402833207785,7.9696,High TR at low VPD / Low sensitivity
-PI377574,"Nonplastic, Low WUE",Linear,45.96404823434048,9.9559,High TR at low VPD / High sensitivity
-PI398198,MAGIC parent,Linear,36.404816461055816,6.9172,Low TR at low VPD / Low sensitivity
-PI398272,"Nonplastic, Low WUE",Linear,37.21922113994468,4.3837,Low TR at low VPD / Low sensitivity
-PI398492,"Plastic, High WUE",Lin. plateau,41.51014769072058,9.5569,Low TR at low VPD / High sensitivity
-PI398617,"Plastic, High WUE",Bilinear,44.99977106747613,26.1812,Low TR at low VPD / High sensitivity
-PI404191,"Nonplastic, Low WUE",Lin. plateau,54.689939297484926,23.361,High TR at low VPD / High sensitivity
-PI416937,slow_wilting,Linear,43.69075263187849,7.6965,Low TR at low VPD / Low sensitivity
-PI424231,"Plastic, High WUE",Linear,37.99834459203679,3.8812,Low TR at low VPD / Low sensitivity
-PI442012A,"Plastic, High WUE",Lin. plateau,41.12581510864919,22.7939,Low TR at low VPD / High sensitivity
-PI471938,slow_wilting,Linear,47.843107341049055,11.8467,High TR at low VPD / High sensitivity
-PI603171,"Nonplastic, Low WUE",Linear,56.19509758274653,7.8262,High TR at low VPD / Low sensitivity
-PI603418D,"Plastic, High WUE",Lin. plateau,47.87934432363052,13.7432,High TR at low VPD / High sensitivity
+Genotype,WUE_class,Best_model,Intercept,Slope1,Quadrant
+A5959,high_wilting,Linear,39.619,5.5332,High intercept / Low sensitivity
+AG43XF2,high_wilting,Lin. plateau,34.876,7.9696,High intercept / Low sensitivity
+PI377574,"Nonplastic, Low WUE",Linear,31.03,9.9559,High intercept / High sensitivity
+PI398198,MAGIC parent,Linear,26.029,6.9172,Low intercept / Low sensitivity
+PI398272,"Nonplastic, Low WUE",Linear,30.644,4.3837,High intercept / Low sensitivity
+PI398492,"Plastic, High WUE",Lin. plateau,27.175,9.5569,Low intercept / High sensitivity
+PI398617,"Plastic, High WUE",Bilinear,5.728,26.1812,Low intercept / High sensitivity
+PI404191,"Nonplastic, Low WUE",Lin. plateau,19.648,23.361,Low intercept / High sensitivity
+PI416937,slow_wilting,Linear,32.146,7.6965,High intercept / Low sensitivity
+PI424231,"Plastic, High WUE",Linear,32.177,3.8812,High intercept / Low sensitivity
+PI442012A,"Plastic, High WUE",Lin. plateau,6.935,22.7939,Low intercept / High sensitivity
+PI471938,slow_wilting,Linear,30.073,11.8467,Low intercept / High sensitivity
+PI603171,"Nonplastic, Low WUE",Linear,44.456,7.8262,High intercept / Low sensitivity
+PI603418D,"Plastic, High WUE",Lin. plateau,27.265,13.7432,Low intercept / High sensitivity
