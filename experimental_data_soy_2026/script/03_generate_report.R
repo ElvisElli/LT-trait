@@ -152,6 +152,23 @@ gsw_aic_disp <- gsw_params |>
   rename(DeltaAIC = Delta_AIC) |>
   mutate(across(c(AIC, DeltaAIC), ~round(., 1)))
 
+# Quadrant classification table
+quad_csv <- safe_csv("TR_quadrant_classification.csv")
+quad_disp <- if (nrow(quad_csv) > 0) {
+  quad_csv |>
+    mutate(
+      Intercept = sprintf("%.2f", Intercept),
+      Slope1    = sprintf("%.3f", Slope1)
+    ) |>
+    rename(
+      `WUE class`                  = WUE_class,
+      `Best model`                 = Best_model,
+      `Intercept (mg m-2 s-1)`     = Intercept,
+      `Slope`                      = Slope1,
+      `Quadrant`                   = Quadrant
+    )
+} else tibble()
+
 # --------------------------------------------------------------------------- #
 # CSS
 # --------------------------------------------------------------------------- #
@@ -349,6 +366,27 @@ Represents the model-predicted TR at VPD = 0, i.e., the baseline residual transp
 not driven by the vapour pressure deficit. Large positive intercepts indicate
 cuticular or minimum stomatal conductance operating even at near-zero VPD.</div></div>
 
+<h3>Fig 12 - Intercept vs Slope 1 quadrant classification</h3>
+<div class="fig-wrap">',
+img_tag("Fig12_intercept_vs_slope_quadrants.png"),
+'<div class="fig-caption"><strong>Fig. 12.</strong>
+Genotype classification by TR at VPD&nbsp;1.5&nbsp;kPa (x-axis, within the measured range)
+vs VPD sensitivity (Slope&nbsp;1, y-axis).
+Using the model-predicted TR at the lowest treatment VPD avoids extrapolating the fitted line
+to VPD&nbsp;=&nbsp;0, where no measurements exist and transpiration should approach zero.
+Dashed lines = median threshold for each axis.
+<em>High TR at low VPD / Low sensitivity</em> (bottom-right, yellow): high water use under
+mild conditions but limited further increase with rising VPD &#x2014; consistent with partial
+LT regulation that engages across the whole VPD range.
+<em>Low TR at low VPD / High sensitivity</em> (top-left, blue): conservative at low VPD
+but stomata open substantially as VPD rises &#x2014; the LT brake has not yet engaged or is weak.
+<em>Low TR at low VPD / Low sensitivity</em> (bottom-left, green): low water use and
+limited VPD response across the board &#x2014; strongly conservative phenotype.
+<em>High TR at low VPD / High sensitivity</em> (top-right, red): high water use and strong
+VPD response &#x2014; non-LT, high-wilting behaviour.
+Point shape = best-fit model; colour = WUE class.
+</div></div>
+
 <h3>Fig 6 - AIC model comparison</h3>
 <div class="fig-wrap">',
 img_tag("Fig6_TR_AIC_heatmap.png"),
@@ -385,16 +423,16 @@ Three individual LICOR readings shown per plant per treatment; curve colour matc
 <section id="tr-gsw">
 <h2>TR vs g<sub>sw</sub> slope analysis</h2>
 
-<h3>Fig 11 - Predicted SC and TR at VPD 1.5 and 3.5 kPa — Plastic vs Non-plastic</h3>
+<h3>Fig 11 - Predicted g<sub>sw</sub> and TR at VPD 1.5 and 3.5 kPa — individual genotypes</h3>
 <div class="fig-wrap">',
-img_tag("Fig11_plastic_nonplastic_VPD_comparison.png", width = "55%"),
+img_tag("Fig11_plastic_nonplastic_VPD_comparison.png", width = "95%"),
 '<div class="fig-caption"><strong>Fig. 11.</strong>
-Model-predicted stomatal conductance (upper) and transpiration rate (lower) at
-VPD&nbsp;1.5&nbsp;kPa and VPD&nbsp;3.5&nbsp;kPa for Plastic (blue) and Non-plastic (dark red) genotypes.
-Values are extracted from each genotype&#x2019;s best-fit model at the two VPD targets and
-then averaged across genotypes within each plasticity group (bars = group mean; error bars = 1 SD).
-TR: Plastic n&nbsp;=&nbsp;5, Non-plastic n&nbsp;=&nbsp;4 genotypes.
-SC (g<sub>sw</sub>): Plastic n&nbsp;=&nbsp;4, Non-plastic n&nbsp;=&nbsp;1 (interpret SC panel with caution).
+Model-predicted stomatal conductance (upper, 9 genotypes with LICOR data) and
+transpiration rate (lower, 14 genotypes) at VPD&nbsp;1.5&nbsp;kPa (blue) and
+VPD&nbsp;3.5&nbsp;kPa (dark red) for each genotype individually.
+Values are extracted from each genotype&#x2019;s best-fit model at the two VPD targets.
+A larger bar at 3.5 kPa relative to 1.5 kPa indicates continued stomatal opening under
+high atmospheric demand; a smaller bar indicates stomatal limitation (LT response).
 </div></div>
 
 <h3>Fig 10 - TR Slope 1 vs g<sub>sw</sub> Slope 1</h3>
@@ -479,6 +517,11 @@ ua_table(gsw_disp, "Table 4. Stomatal conductance - best-model parameters per ge
 ua_table(tr_aic_disp, "Table 5. AIC and DeltaAIC for all three TR model types per genotype."),
 '<h3>Table 6 - AIC comparison (g<sub>sw</sub>)</h3>',
 ua_table(gsw_aic_disp, "Table 6. AIC and DeltaAIC for all three gsw model types per genotype."),
+'<h3>Table 7 - Genotype quadrant classification (Fig. 12)</h3>
+<p style="font-size:0.88em;color:#555">
+Thresholds = median intercept and median Slope 1 across all 14 genotypes.
+Intercept units: mg m&#x207B;&#xB2; s&#x207B;&#xB9;; Slope 1 units: mg m&#x207B;&#xB2; s&#x207B;&#xB9; kPa&#x207B;&#xB9;.</p>',
+ua_table(quad_disp, "Table 7. TR baseline vs VPD sensitivity quadrant assignment."),
 '</section>
 
 <!-- DATA CLEANING -->

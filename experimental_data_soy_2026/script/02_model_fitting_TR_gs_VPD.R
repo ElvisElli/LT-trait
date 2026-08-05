@@ -739,6 +739,112 @@ tr_gsw_stats <- list(
 saveRDS(tr_gsw_stats, "data/tr_gsw_stats.rds")
 
 
+# ---- FIG 12: Intercept vs Slope1 quadrant classification --------------------
+cat("Building Fig12 ...\n")
+
+# Highlight only Plastic / Nonplastic; grey the rest (not shown in legend)
+fig12_df <- tr_best |>
+  mutate(WUE_group = case_when(
+    WUE_class == "Plastic, High WUE"   ~ "Plastic, High WUE",
+    WUE_class == "Nonplastic, Low WUE" ~ "Nonplastic, Low WUE",
+    TRUE                                ~ "Other"
+  ))
+
+WUE_COLS_12 <- c(
+  "Plastic, High WUE"   = UA_BLUE,
+  "Nonplastic, Low WUE" = "#d4824a",
+  "Other"               = "#AAAAAA"
+)
+
+# Quadrant thresholds: median of each axis
+x_mid     <- median(fig12_df$Intercept, na.rm = TRUE)
+slope_mid <- median(fig12_df$Slope1,    na.rm = TRUE)
+
+x_rng <- range(fig12_df$Intercept, na.rm = TRUE)
+y_rng <- range(fig12_df$Slope1,    na.rm = TRUE)
+
+# Inward padding for quadrant labels (5% of range from each corner)
+xq_pad <- diff(x_rng) * 0.05
+yq_pad <- diff(y_rng) * 0.06
+
+# Background quadrant shading
+quad_shade <- data.frame(
+  xmin  = c(-Inf,  x_mid, -Inf,  x_mid),
+  xmax  = c(x_mid, Inf,   x_mid, Inf),
+  ymin  = c(slope_mid, slope_mid, -Inf,    -Inf),
+  ymax  = c(Inf,       Inf,       slope_mid, slope_mid),
+  fill  = c("#e8f0fb", "#fde8e8", "#eafaea", "#fef6e0")
+)
+
+p12 <- ggplot(fig12_df, aes(x = Intercept, y = Slope1, colour = WUE_group)) +
+  geom_rect(data = quad_shade,
+            aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill),
+            inherit.aes = FALSE, alpha = 0.55) +
+  scale_fill_identity() +
+  geom_vline(xintercept = x_mid,     linetype = "dashed",
+             colour = UA_GRAY, linewidth = 0.65) +
+  geom_hline(yintercept = slope_mid, linetype = "dashed",
+             colour = UA_GRAY, linewidth = 0.65) +
+  # Quadrant labels: y anchored at panel edge (vjust controls vertical gap);
+  # x uses data coordinates with 5% padding so text sits clear of left/right borders
+  annotate("text",
+           x = x_mid - diff(x_rng) * 0.03, y = Inf,
+           label = "Low intercept\nHigh sensitivity",
+           hjust = 1, vjust = 2.0, size = 2.6,
+           colour = "#555555", fontface = "italic", lineheight = 0.9) +
+  annotate("text",
+           x = x_rng[2] - diff(x_rng) * 0.05, y = Inf,
+           label = "High intercept\nHigh sensitivity",
+           hjust = 1, vjust = 2.0, size = 2.6,
+           colour = "#555555", fontface = "italic", lineheight = 0.9) +
+  annotate("text",
+           x = x_rng[1] + diff(x_rng) * 0.05, y = -Inf,
+           label = "Low intercept\nLow sensitivity",
+           hjust = 0, vjust = -1.0, size = 2.6,
+           colour = "#555555", fontface = "italic", lineheight = 0.9) +
+  annotate("text",
+           x = x_rng[2] - diff(x_rng) * 0.05, y = -Inf,
+           label = "High intercept\nLow sensitivity",
+           hjust = 1, vjust = -1.0, size = 2.6,
+           colour = "#555555", fontface = "italic", lineheight = 0.9) +
+  # Points and repel labels
+  geom_point(aes(shape = Best_model), size = 4, alpha = 0.92) +
+  ggrepel::geom_label_repel(
+    aes(label = Genotype),
+    size = 2.7, box.padding = 0.5, point.padding = 0.3,
+    max.overlaps = 20, label.size = 0.2, alpha = 0.92,
+    show.legend = FALSE, seed = 42
+  ) +
+  scale_colour_manual(values = WUE_COLS_12, name = NULL,
+                      breaks = c("Plastic, High WUE", "Nonplastic, Low WUE")) +
+  scale_shape_manual(
+    values = c("Linear" = 16, "Bilinear" = 17, "Lin. plateau" = 15),
+    name = NULL
+  ) +
+  labs(
+    x = expression(Intercept~~(mg~m^{-2}~s^{-1})),
+    y = expression(Slope~~(mg~m^{-2}~s^{-1}~kPa^{-1}))
+  ) +
+  UA_THEME +
+  theme(legend.position = "right")
+
+ggsave("figures/Fig12_intercept_vs_slope_quadrants.png", p12,
+       width = 9, height = 6.5, dpi = 300)
+cat("Saved Fig12\n")
+
+# Save quadrant assignments
+tr_best_quad <- fig12_df |>
+  mutate(
+    Int_label       = ifelse(Intercept >= x_mid, "High intercept", "Low intercept"),
+    VPD_sensitivity = ifelse(Slope1 >= slope_mid, "High sensitivity", "Low sensitivity"),
+    Quadrant        = paste0(Int_label, " / ", VPD_sensitivity)
+  )
+write_csv(tr_best_quad |>
+            select(Genotype, WUE_class, Best_model, Intercept, Slope1, Quadrant),
+          "data/TR_quadrant_classification.csv")
+cat("  Quadrant classification saved\n")
+
+
 # ---- FIG 5: gsw per genotype ------------------------------------------------
 if (length(geno_gsw) > 0) {
   cat("Building Fig5 ...\n")
@@ -948,20 +1054,11 @@ if (nrow(day1_gsw_long) > 0) {
 }
 
 
-# ---- FIG 11: Predicted TR and gsw at VPD 1.5 and 3.5 — Plastic vs Non-plastic ---
+# ---- FIG 11: Predicted TR and gsw at VPD 1.5 and 3.5 — individual genotype panels ---
 cat("Building Fig11 ...\n")
 
 VPD_PRED <- c(1.5, 3.5)
-
-# Plasticity grouping (two focal groups)
-plasticity_map <- c(
-  "Plastic, High WUE"   = "Plastic",
-  "Nonplastic, Low WUE" = "Non-plastic",
-  "slow_wilting"        = "Slow wilting",
-  "high_wilting"        = "High wilting",
-  "MAGIC parent"        = "MAGIC parent"
-)
-GROUP_COLS <- c("Plastic" = UA_BLUE, "Non-plastic" = UA_WINE)
+VPD_COLS <- c("1.5 kPa" = UA_BLUE, "3.5 kPa" = UA_WINE)
 
 # Predicted TR per genotype at VPD 1.5 and 3.5
 tr_pred <- bind_rows(lapply(genotypes, function(g) {
@@ -991,93 +1088,180 @@ gsw_pred <- bind_rows(lapply(geno_gsw, function(g) {
   }, error = function(e) NULL)
 }))
 
-# Combine and group
-all_pred <- bind_rows(tr_pred, gsw_pred) |>
-  mutate(Group = plasticity_map[WUE_class]) |>
-  filter(Group %in% c("Plastic", "Non-plastic"))
+# Short WUE class labels for panel strips (no special chars)
+wue_short <- c(
+  "slow_wilting"        = "Slow wilting",
+  "high_wilting"        = "High wilting",
+  "Plastic, High WUE"   = "Plastic / High WUE",
+  "Nonplastic, Low WUE" = "Nonplastic / Low WUE",
+  "MAGIC parent"        = "MAGIC parent"
+)
 
-# Summarise: mean +/- SD across genotypes within each group
-pred_summary <- all_pred |>
-  group_by(variable, Group, VPD_target) |>
-  summarise(
-    mean_val = mean(value, na.rm = TRUE),
-    sd_val   = sd(value,   na.rm = TRUE),
-    n_geno   = n(),
-    .groups  = "drop"
-  ) |>
-  mutate(
-    VPD_label = factor(paste0(VPD_target, " kPa"),
-                       levels = c("1.5 kPa", "3.5 kPa")),
-    Group     = factor(Group, levels = c("Plastic", "Non-plastic"))
-  )
+# Ordered panel label: WUE class then genotype within class
+make_panel_df <- function(df) {
+  df |>
+    mutate(
+      VPD_label  = factor(paste0(VPD_target, " kPa"),
+                          levels = c("1.5 kPa", "3.5 kPa")),
+      WUE_short  = wue_short[WUE_class],
+      Panel_label = paste0(Genotype, "\n[", WUE_short, "]")
+    ) |>
+    # Order panels: by WUE_ORDER then alphabetical genotype
+    mutate(
+      wue_rank = match(WUE_class, WUE_ORDER),
+      Panel_label = factor(Panel_label,
+                           levels = unique(Panel_label[order(wue_rank, Genotype)]))
+    )
+}
 
-tr_sum  <- filter(pred_summary, variable == "TR")
-gsw_sum <- filter(pred_summary, variable == "gsw")
+tr_pred_plot  <- make_panel_df(tr_pred)
+gsw_pred_plot <- make_panel_df(gsw_pred)
 
-# Count genotypes per group for caption
-n_tr  <- all_pred |> filter(variable == "TR")  |> distinct(Group, Genotype) |> count(Group)
-n_gsw <- all_pred |> filter(variable == "gsw") |> distinct(Group, Genotype) |> count(Group)
-cat(sprintf("  TR:  Plastic n=%d, Non-plastic n=%d\n",
-            n_tr$n[n_tr$Group == "Plastic"], n_tr$n[n_tr$Group == "Non-plastic"]))
-cat(sprintf("  gsw: Plastic n=%d, Non-plastic n=%d\n",
-            n_gsw$n[n_gsw$Group == "Plastic"], n_gsw$n[n_gsw$Group == "Non-plastic"]))
+# Strip colors per WUE class
+WUE_STRIP_COLS <- c(
+  "Slow wilting"         = "#6E1424",
+  "High wilting"         = "#C8102E",
+  "Plastic / High WUE"   = "#4393c3",
+  "Nonplastic / Low WUE" = "#d4824a",
+  "MAGIC parent"         = "#555555"
+)
 
-bar_dodge  <- position_dodge(0.6)
-cap_n_tr   <- paste(paste(n_tr$Group,  paste0("n=", n_tr$n),  sep = " "), collapse = "; ")
-cap_n_gsw  <- paste(paste(n_gsw$Group, paste0("n=", n_gsw$n), sep = " "), collapse = "; ")
+# Build a named vector of strip fill per Panel_label for each dataset
+strip_fill_for <- function(df) {
+  lvls  <- levels(df$Panel_label)
+  wshort <- gsub("^.*\\[(.*)\\]$", "\\1", lvls)
+  setNames(WUE_STRIP_COLS[wshort], lvls)
+}
 
-p_gsw_bar <- ggplot(gsw_sum,
-                    aes(x = VPD_label, y = mean_val, fill = Group)) +
-  geom_col(position = bar_dodge, width = 0.52,
-           colour = "white", linewidth = 0.4) +
-  geom_errorbar(aes(ymin = pmax(0, mean_val - sd_val),
-                    ymax = mean_val + sd_val),
-                position = bar_dodge, width = 0.18, linewidth = 0.55) +
-  scale_fill_manual(values = GROUP_COLS, name = NULL) +
+gsw_strip_cols <- strip_fill_for(gsw_pred_plot)
+tr_strip_cols  <- strip_fill_for(tr_pred_plot)
+
+# Upper panel: gsw per genotype
+p_gsw11 <- ggplot(gsw_pred_plot,
+                  aes(x = VPD_label, y = value, fill = VPD_label)) +
+  geom_col(width = 0.6, colour = "white", linewidth = 0.4) +
+  scale_fill_manual(values = VPD_COLS, name = "VPD") +
+  ggh4x::facet_wrap2(~Panel_label, ncol = 5, scales = "fixed",
+                     strip = ggh4x::strip_themed(
+                       background_x = ggh4x::elem_list_rect(
+                         fill = unname(gsw_strip_cols)))) +
   coord_cartesian(ylim = c(0, GSW_YLIM[2])) +
-  labs(title = "Stomatal conductance (g[sw])",
-       subtitle = paste("LICOR-based models —", cap_n_gsw),
+  labs(title = "Stomatal conductance predicted at two VPD levels",
        x = NULL,
        y = expression(g[sw]~(mol~m^{-2}~s^{-1}))) +
   UA_THEME +
-  theme(legend.position  = "top",
-        axis.text.x      = element_blank(),
-        axis.ticks.x     = element_blank(),
-        plot.subtitle    = element_text(size = 7.5, colour = UA_GRAY))
+  theme(legend.position    = "top",
+        axis.text.x        = element_blank(),
+        axis.ticks.x       = element_blank(),
+        strip.text         = element_text(colour = "white", face = "bold",
+                                          size = 6.5, lineheight = 1.1))
 
-p_tr_bar <- ggplot(tr_sum,
-                   aes(x = VPD_label, y = mean_val, fill = Group)) +
-  geom_col(position = bar_dodge, width = 0.52,
-           colour = "white", linewidth = 0.4) +
-  geom_errorbar(aes(ymin = pmax(0, mean_val - sd_val),
-                    ymax = mean_val + sd_val),
-                position = bar_dodge, width = 0.18, linewidth = 0.55) +
-  scale_fill_manual(values = GROUP_COLS, name = NULL) +
+# Lower panel: TR per genotype
+p_tr11 <- ggplot(tr_pred_plot,
+                 aes(x = VPD_label, y = value, fill = VPD_label)) +
+  geom_col(width = 0.6, colour = "white", linewidth = 0.4) +
+  scale_fill_manual(values = VPD_COLS, name = "VPD") +
+  ggh4x::facet_wrap2(~Panel_label, ncol = 5, scales = "fixed",
+                     strip = ggh4x::strip_themed(
+                       background_x = ggh4x::elem_list_rect(
+                         fill = unname(tr_strip_cols)))) +
   coord_cartesian(ylim = c(0, TR_YLIM[2])) +
-  labs(title = "Transpiration rate (TR)",
-       subtitle = paste("Gravimetric models —", cap_n_tr),
+  labs(title = "Transpiration rate predicted at two VPD levels",
        x = "VPD treatment",
        y = expression(TR~(mg~m^{-2}~s^{-1}))) +
   UA_THEME +
-  theme(legend.position  = "none",
-        plot.subtitle    = element_text(size = 7.5, colour = UA_GRAY))
+  theme(legend.position = "none",
+        strip.text      = element_text(colour = "white", face = "bold",
+                                       size = 6.5, lineheight = 1.1))
 
-p11 <- p_gsw_bar / p_tr_bar +
+p11 <- p_gsw11 / p_tr11 +
+  plot_layout(heights = c(1, 1.4)) +
   plot_annotation(
-    title    = "Fig 11  Model-predicted SC and TR at VPD 1.5 vs 3.5 kPa — Plastic vs Non-plastic",
-    subtitle = "Values estimated from best-fit model of each genotype; bars = group mean +/- SD",
+    title    = "Fig 11  Model-predicted gsw and TR at VPD 1.5 vs 3.5 kPa",
+    subtitle = "Values estimated from best-fit model; upper = stomatal conductance (9 genotypes), lower = transpiration rate (14 genotypes)",
     theme    = theme(plot.title    = element_text(face = "bold", size = 10, colour = UA_DARK),
                      plot.subtitle = element_text(size = 8, colour = UA_GRAY))
   )
 
 ggsave("figures/Fig11_plastic_nonplastic_VPD_comparison.png", p11,
-       width = 6, height = 7, dpi = 300)
+       width = 13, height = 9, dpi = 300)
 cat("Saved Fig11\n")
 
-# Save predictions table
-write_csv(all_pred |>
-            select(Genotype, WUE_class, Group, VPD_target, variable, value),
+# Save predictions table (all genotypes)
+all_pred <- bind_rows(tr_pred, gsw_pred)
+write_csv(all_pred |> select(Genotype, WUE_class, VPD_target, variable, value),
           "data/predicted_TR_gsw_at_target_VPD.csv")
+
+
+# ---- Individual figures per genotype ----------------------------------------
+cat("Building individual genotype figures ...\n")
+dir.create("figures/individual", showWarnings = FALSE)
+
+# All genotypes with at least TR data
+all_geno <- unique(tr_pred$Genotype)
+
+for (g in all_geno) {
+  tr_g  <- tr_pred_plot  |> filter(Genotype == g)
+  gsw_g <- gsw_pred_plot |> filter(Genotype == g)
+
+  wue_lbl  <- unique(tr_g$WUE_short)
+  wue_col  <- WUE_STRIP_COLS[wue_lbl]
+  has_gsw  <- nrow(gsw_g) > 0
+
+  # TR panel
+  p_tr_g <- ggplot(tr_g, aes(x = VPD_label, y = value, fill = VPD_label)) +
+    geom_col(width = 0.55, colour = "white", linewidth = 0.5) +
+    geom_text(aes(label = sprintf("%.1f", value)),
+              vjust = -0.4, size = 3.2, fontface = "bold") +
+    scale_fill_manual(values = VPD_COLS, name = "VPD") +
+    coord_cartesian(ylim = c(0, TR_YLIM[2] * 1.08)) +
+    labs(x = "VPD treatment",
+         y = expression(TR~(mg~m^{-2}~s^{-1}))) +
+    UA_THEME +
+    theme(legend.position = if (has_gsw) "none" else "top")
+
+  if (has_gsw) {
+    # gsw panel
+    p_gsw_g <- ggplot(gsw_g, aes(x = VPD_label, y = value, fill = VPD_label)) +
+      geom_col(width = 0.55, colour = "white", linewidth = 0.5) +
+      geom_text(aes(label = sprintf("%.3f", value)),
+                vjust = -0.4, size = 3.2, fontface = "bold") +
+      scale_fill_manual(values = VPD_COLS, name = "VPD") +
+      coord_cartesian(ylim = c(0, GSW_YLIM[2] * 1.08)) +
+      labs(x = NULL,
+           y = expression(g[sw]~(mol~m^{-2}~s^{-1}))) +
+      UA_THEME +
+      theme(legend.position = "top",
+            axis.text.x  = element_blank(),
+            axis.ticks.x = element_blank())
+
+    p_ind <- p_gsw_g / p_tr_g +
+      plot_layout(heights = c(1, 1.3)) +
+      plot_annotation(
+        title    = g,
+        subtitle = wue_lbl,
+        theme    = theme(
+          plot.title    = element_text(face = "bold", size = 12, colour = UA_DARK),
+          plot.subtitle = element_text(size = 9,  colour = wue_col,
+                                       face = "bold")
+        )
+      )
+    out_h <- 6.5
+  } else {
+    p_ind <- p_tr_g +
+      labs(title    = g,
+           subtitle = wue_lbl) +
+      theme(plot.title    = element_text(face = "bold", size = 12, colour = UA_DARK),
+            plot.subtitle = element_text(size = 9, colour = wue_col, face = "bold"))
+    out_h <- 4.0
+  }
+
+  fname <- file.path("figures", "individual",
+                     paste0(gsub("[^A-Za-z0-9]", "_", g), "_VPD_comparison.png"))
+  ggsave(fname, p_ind, width = 3.5, height = out_h, dpi = 300)
+}
+
+cat(sprintf("  Saved %d individual figures in figures/individual/\n", length(all_geno)))
 
 
 cat("\n=== Model fitting complete ===\n")
