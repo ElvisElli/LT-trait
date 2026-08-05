@@ -786,23 +786,21 @@ quad_shade <- data.frame(
   fill  = c("#e8f0fb", "#fde8e8", "#eafaea", "#fef6e0")
 )
 
-# Highlight only Plastic / Nonplastic; grey out other WUE classes
+# Highlight only Plastic / Nonplastic; collapse others into "Other"
+fig12_df <- fig12_df |>
+  mutate(WUE_group = case_when(
+    WUE_class == "Plastic, High WUE"   ~ "Plastic, High WUE",
+    WUE_class == "Nonplastic, Low WUE" ~ "Nonplastic, Low WUE",
+    TRUE                                ~ "Other"
+  ))
+
 WUE_COLS_12 <- c(
   "Plastic, High WUE"   = UA_BLUE,
   "Nonplastic, Low WUE" = "#d4824a",
-  "slow_wilting"        = "#AAAAAA",
-  "high_wilting"        = "#AAAAAA",
-  "MAGIC parent"        = "#AAAAAA"
-)
-WUE_LABELS_12 <- c(
-  "Plastic, High WUE"   = "Plastic, High WUE",
-  "Nonplastic, Low WUE" = "Nonplastic, Low WUE",
-  "slow_wilting"        = "Other",
-  "high_wilting"        = "Other",
-  "MAGIC parent"        = "Other"
+  "Other"               = "#AAAAAA"
 )
 
-p12 <- ggplot(fig12_df, aes(x = TR_at_1p5, y = Slope1)) +
+p12 <- ggplot(fig12_df, aes(x = TR_at_1p5, y = Slope1, colour = WUE_group)) +
   geom_rect(data = quad_shade,
             aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill),
             inherit.aes = FALSE, alpha = 0.55) +
@@ -838,18 +836,14 @@ p12 <- ggplot(fig12_df, aes(x = TR_at_1p5, y = Slope1)) +
            hjust = 1.04, vjust = -0.15, size = 2.55,
            colour = "#555555", fontface = "italic", lineheight = 0.9) +
   # Points
-  geom_point(aes(colour = WUE_class, shape = Best_model),
-             size = 4, alpha = 0.92) +
+  geom_point(aes(shape = Best_model), size = 4, alpha = 0.92) +
   ggrepel::geom_label_repel(
-    aes(label = Genotype, colour = WUE_class),
+    aes(label = Genotype),
     size = 2.7, box.padding = 0.5, point.padding = 0.3,
     max.overlaps = 20, label.size = 0.2, alpha = 0.92,
     show.legend = FALSE, seed = 42
   ) +
-  scale_colour_manual(values = WUE_COLS_12, labels = WUE_LABELS_12,
-                      name = NULL,
-                      breaks = c("Plastic, High WUE",
-                                 "Nonplastic, Low WUE", "slow_wilting")) +
+  scale_colour_manual(values = WUE_COLS_12, name = NULL) +
   scale_shape_manual(
     values = c("Linear" = 16, "Bilinear" = 17, "Lin. plateau" = 15),
     name = NULL
