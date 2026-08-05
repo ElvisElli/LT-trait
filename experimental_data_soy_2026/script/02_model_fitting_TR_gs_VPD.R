@@ -948,20 +948,11 @@ if (nrow(day1_gsw_long) > 0) {
 }
 
 
-# ---- FIG 11: Predicted TR and gsw at VPD 1.5 and 3.5 — Plastic vs Non-plastic ---
+# ---- FIG 11: Predicted TR and gsw at VPD 1.5 and 3.5 — individual genotype panels ---
 cat("Building Fig11 ...\n")
 
 VPD_PRED <- c(1.5, 3.5)
-
-# Plasticity grouping (two focal groups)
-plasticity_map <- c(
-  "Plastic, High WUE"   = "Plastic",
-  "Nonplastic, Low WUE" = "Non-plastic",
-  "slow_wilting"        = "Slow wilting",
-  "high_wilting"        = "High wilting",
-  "MAGIC parent"        = "MAGIC parent"
-)
-GROUP_COLS <- c("Plastic" = UA_BLUE, "Non-plastic" = UA_WINE)
+VPD_COLS <- c("1.5 kPa" = UA_BLUE, "3.5 kPa" = UA_WINE)
 
 # Predicted TR per genotype at VPD 1.5 and 3.5
 tr_pred <- bind_rows(lapply(genotypes, function(g) {
@@ -991,92 +982,61 @@ gsw_pred <- bind_rows(lapply(geno_gsw, function(g) {
   }, error = function(e) NULL)
 }))
 
-# Combine and group
-all_pred <- bind_rows(tr_pred, gsw_pred) |>
-  mutate(Group = plasticity_map[WUE_class]) |>
-  filter(Group %in% c("Plastic", "Non-plastic"))
+# Prepare plot data: VPD as labelled factor
+tr_pred_plot <- tr_pred |>
+  mutate(VPD_label = factor(paste0(VPD_target, " kPa"),
+                            levels = c("1.5 kPa", "3.5 kPa")),
+         Genotype  = factor(Genotype))
 
-# Summarise: mean +/- SD across genotypes within each group
-pred_summary <- all_pred |>
-  group_by(variable, Group, VPD_target) |>
-  summarise(
-    mean_val = mean(value, na.rm = TRUE),
-    sd_val   = sd(value,   na.rm = TRUE),
-    n_geno   = n(),
-    .groups  = "drop"
-  ) |>
-  mutate(
-    VPD_label = factor(paste0(VPD_target, " kPa"),
-                       levels = c("1.5 kPa", "3.5 kPa")),
-    Group     = factor(Group, levels = c("Plastic", "Non-plastic"))
-  )
+gsw_pred_plot <- gsw_pred |>
+  mutate(VPD_label = factor(paste0(VPD_target, " kPa"),
+                            levels = c("1.5 kPa", "3.5 kPa")),
+         Genotype  = factor(Genotype))
 
-tr_sum  <- filter(pred_summary, variable == "TR")
-gsw_sum <- filter(pred_summary, variable == "gsw")
-
-# Count genotypes per group for caption
-n_tr  <- all_pred |> filter(variable == "TR")  |> distinct(Group, Genotype) |> count(Group)
-n_gsw <- all_pred |> filter(variable == "gsw") |> distinct(Group, Genotype) |> count(Group)
-cat(sprintf("  TR:  Plastic n=%d, Non-plastic n=%d\n",
-            n_tr$n[n_tr$Group == "Plastic"], n_tr$n[n_tr$Group == "Non-plastic"]))
-cat(sprintf("  gsw: Plastic n=%d, Non-plastic n=%d\n",
-            n_gsw$n[n_gsw$Group == "Plastic"], n_gsw$n[n_gsw$Group == "Non-plastic"]))
-
-bar_dodge  <- position_dodge(0.6)
-cap_n_tr   <- paste(paste(n_tr$Group,  paste0("n=", n_tr$n),  sep = " "), collapse = "; ")
-cap_n_gsw  <- paste(paste(n_gsw$Group, paste0("n=", n_gsw$n), sep = " "), collapse = "; ")
-
-p_gsw_bar <- ggplot(gsw_sum,
-                    aes(x = VPD_label, y = mean_val, fill = Group)) +
-  geom_col(position = bar_dodge, width = 0.52,
-           colour = "white", linewidth = 0.4) +
-  geom_errorbar(aes(ymin = pmax(0, mean_val - sd_val),
-                    ymax = mean_val + sd_val),
-                position = bar_dodge, width = 0.18, linewidth = 0.55) +
-  scale_fill_manual(values = GROUP_COLS, name = NULL) +
+# Upper panel: gsw per genotype
+p_gsw11 <- ggplot(gsw_pred_plot,
+                  aes(x = VPD_label, y = value, fill = VPD_label)) +
+  geom_col(width = 0.6, colour = "white", linewidth = 0.4) +
+  scale_fill_manual(values = VPD_COLS, name = "VPD") +
+  facet_wrap(~Genotype, ncol = 5, scales = "fixed") +
   coord_cartesian(ylim = c(0, GSW_YLIM[2])) +
-  labs(title = "Stomatal conductance (g[sw])",
-       subtitle = paste("LICOR-based models —", cap_n_gsw),
+  labs(title = "Stomatal conductance predicted at two VPD levels",
        x = NULL,
        y = expression(g[sw]~(mol~m^{-2}~s^{-1}))) +
   UA_THEME +
-  theme(legend.position  = "top",
-        axis.text.x      = element_blank(),
-        axis.ticks.x     = element_blank(),
-        plot.subtitle    = element_text(size = 7.5, colour = UA_GRAY))
+  theme(legend.position = "top",
+        axis.text.x     = element_blank(),
+        axis.ticks.x    = element_blank())
 
-p_tr_bar <- ggplot(tr_sum,
-                   aes(x = VPD_label, y = mean_val, fill = Group)) +
-  geom_col(position = bar_dodge, width = 0.52,
-           colour = "white", linewidth = 0.4) +
-  geom_errorbar(aes(ymin = pmax(0, mean_val - sd_val),
-                    ymax = mean_val + sd_val),
-                position = bar_dodge, width = 0.18, linewidth = 0.55) +
-  scale_fill_manual(values = GROUP_COLS, name = NULL) +
+# Lower panel: TR per genotype
+p_tr11 <- ggplot(tr_pred_plot,
+                 aes(x = VPD_label, y = value, fill = VPD_label)) +
+  geom_col(width = 0.6, colour = "white", linewidth = 0.4) +
+  scale_fill_manual(values = VPD_COLS, name = "VPD") +
+  facet_wrap(~Genotype, ncol = 5, scales = "fixed") +
   coord_cartesian(ylim = c(0, TR_YLIM[2])) +
-  labs(title = "Transpiration rate (TR)",
-       subtitle = paste("Gravimetric models —", cap_n_tr),
+  labs(title = "Transpiration rate predicted at two VPD levels",
        x = "VPD treatment",
        y = expression(TR~(mg~m^{-2}~s^{-1}))) +
   UA_THEME +
-  theme(legend.position  = "none",
-        plot.subtitle    = element_text(size = 7.5, colour = UA_GRAY))
+  theme(legend.position = "none")
 
-p11 <- p_gsw_bar / p_tr_bar +
+p11 <- p_gsw11 / p_tr11 +
+  plot_layout(heights = c(1, 1.4)) +
   plot_annotation(
-    title    = "Fig 11  Model-predicted SC and TR at VPD 1.5 vs 3.5 kPa — Plastic vs Non-plastic",
-    subtitle = "Values estimated from best-fit model of each genotype; bars = group mean +/- SD",
+    title    = "Fig 11  Model-predicted gsw and TR at VPD 1.5 vs 3.5 kPa",
+    subtitle = "Values estimated from best-fit model; upper = stomatal conductance (9 genotypes), lower = transpiration rate (14 genotypes)",
     theme    = theme(plot.title    = element_text(face = "bold", size = 10, colour = UA_DARK),
                      plot.subtitle = element_text(size = 8, colour = UA_GRAY))
   )
 
 ggsave("figures/Fig11_plastic_nonplastic_VPD_comparison.png", p11,
-       width = 6, height = 7, dpi = 300)
+       width = 13, height = 9, dpi = 300)
 cat("Saved Fig11\n")
 
-# Save predictions table
-write_csv(all_pred |>
-            select(Genotype, WUE_class, Group, VPD_target, variable, value),
+# Save predictions table (all genotypes)
+all_pred <- bind_rows(tr_pred, gsw_pred)
+write_csv(all_pred |> select(Genotype, WUE_class, VPD_target, variable, value),
           "data/predicted_TR_gsw_at_target_VPD.csv")
 
 
