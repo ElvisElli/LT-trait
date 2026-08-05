@@ -982,44 +982,91 @@ gsw_pred <- bind_rows(lapply(geno_gsw, function(g) {
   }, error = function(e) NULL)
 }))
 
-# Prepare plot data: VPD as labelled factor
-tr_pred_plot <- tr_pred |>
-  mutate(VPD_label = factor(paste0(VPD_target, " kPa"),
-                            levels = c("1.5 kPa", "3.5 kPa")),
-         Genotype  = factor(Genotype))
+# Short WUE class labels for panel strips (no special chars)
+wue_short <- c(
+  "slow_wilting"        = "Slow wilting",
+  "high_wilting"        = "High wilting",
+  "Plastic, High WUE"   = "Plastic / High WUE",
+  "Nonplastic, Low WUE" = "Nonplastic / Low WUE",
+  "MAGIC parent"        = "MAGIC parent"
+)
 
-gsw_pred_plot <- gsw_pred |>
-  mutate(VPD_label = factor(paste0(VPD_target, " kPa"),
-                            levels = c("1.5 kPa", "3.5 kPa")),
-         Genotype  = factor(Genotype))
+# Ordered panel label: WUE class then genotype within class
+make_panel_df <- function(df) {
+  df |>
+    mutate(
+      VPD_label  = factor(paste0(VPD_target, " kPa"),
+                          levels = c("1.5 kPa", "3.5 kPa")),
+      WUE_short  = wue_short[WUE_class],
+      Panel_label = paste0(Genotype, "\n[", WUE_short, "]")
+    ) |>
+    # Order panels: by WUE_ORDER then alphabetical genotype
+    mutate(
+      wue_rank = match(WUE_class, WUE_ORDER),
+      Panel_label = factor(Panel_label,
+                           levels = unique(Panel_label[order(wue_rank, Genotype)]))
+    )
+}
+
+tr_pred_plot  <- make_panel_df(tr_pred)
+gsw_pred_plot <- make_panel_df(gsw_pred)
+
+# Strip colors per WUE class
+WUE_STRIP_COLS <- c(
+  "Slow wilting"         = "#6E1424",
+  "High wilting"         = "#C8102E",
+  "Plastic / High WUE"   = "#4393c3",
+  "Nonplastic / Low WUE" = "#d4824a",
+  "MAGIC parent"         = "#555555"
+)
+
+# Build a named vector of strip fill per Panel_label for each dataset
+strip_fill_for <- function(df) {
+  lvls  <- levels(df$Panel_label)
+  wshort <- gsub("^.*\\[(.*)\\]$", "\\1", lvls)
+  setNames(WUE_STRIP_COLS[wshort], lvls)
+}
+
+gsw_strip_cols <- strip_fill_for(gsw_pred_plot)
+tr_strip_cols  <- strip_fill_for(tr_pred_plot)
 
 # Upper panel: gsw per genotype
 p_gsw11 <- ggplot(gsw_pred_plot,
                   aes(x = VPD_label, y = value, fill = VPD_label)) +
   geom_col(width = 0.6, colour = "white", linewidth = 0.4) +
   scale_fill_manual(values = VPD_COLS, name = "VPD") +
-  facet_wrap(~Genotype, ncol = 5, scales = "fixed") +
+  ggh4x::facet_wrap2(~Panel_label, ncol = 5, scales = "fixed",
+                     strip = ggh4x::strip_themed(
+                       background_x = ggh4x::elem_list_rect(
+                         fill = unname(gsw_strip_cols)))) +
   coord_cartesian(ylim = c(0, GSW_YLIM[2])) +
   labs(title = "Stomatal conductance predicted at two VPD levels",
        x = NULL,
        y = expression(g[sw]~(mol~m^{-2}~s^{-1}))) +
   UA_THEME +
-  theme(legend.position = "top",
-        axis.text.x     = element_blank(),
-        axis.ticks.x    = element_blank())
+  theme(legend.position    = "top",
+        axis.text.x        = element_blank(),
+        axis.ticks.x       = element_blank(),
+        strip.text         = element_text(colour = "white", face = "bold",
+                                          size = 6.5, lineheight = 1.1))
 
 # Lower panel: TR per genotype
 p_tr11 <- ggplot(tr_pred_plot,
                  aes(x = VPD_label, y = value, fill = VPD_label)) +
   geom_col(width = 0.6, colour = "white", linewidth = 0.4) +
   scale_fill_manual(values = VPD_COLS, name = "VPD") +
-  facet_wrap(~Genotype, ncol = 5, scales = "fixed") +
+  ggh4x::facet_wrap2(~Panel_label, ncol = 5, scales = "fixed",
+                     strip = ggh4x::strip_themed(
+                       background_x = ggh4x::elem_list_rect(
+                         fill = unname(tr_strip_cols)))) +
   coord_cartesian(ylim = c(0, TR_YLIM[2])) +
   labs(title = "Transpiration rate predicted at two VPD levels",
        x = "VPD treatment",
        y = expression(TR~(mg~m^{-2}~s^{-1}))) +
   UA_THEME +
-  theme(legend.position = "none")
+  theme(legend.position = "none",
+        strip.text      = element_text(colour = "white", face = "bold",
+                                       size = 6.5, lineheight = 1.1))
 
 p11 <- p_gsw11 / p_tr11 +
   plot_layout(heights = c(1, 1.4)) +
