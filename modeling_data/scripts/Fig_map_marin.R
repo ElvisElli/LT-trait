@@ -42,7 +42,7 @@ suppressPackageStartupMessages({
   library(dplyr)     # data wrangling
   library(tidyr)     # pivot_wider / pivot_longer
   library(ggplot2)   # all plotting
-  library(patchwork) # combine and align panels
+  library(cowplot)   # plot_grid + get_legend to combine panels
   library(maps)      # US state boundary polygons
 })
 
@@ -367,26 +367,37 @@ bar_panel <- ggplot() +
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COMBINE — align panels, collect legend at top
+# COMBINE — cowplot::plot_grid
 #
-# plot_layout(guides = 'collect') moves all legends to one shared spot.
-# `& theme(legend.position = 'top')` applies to the combined figure.
+# Step 1: extract shared legend from map_panel (uses its fill scale).
+# Step 2: strip legend from map_panel so it does not appear twice.
+# Step 3: place panels side by side (3:1 width ratio) with "A"/"B" labels.
+# Step 4: stack legend above the two panels in a single column.
 # ══════════════════════════════════════════════════════════════════════════════
 
-combined <- (map_panel | bar_panel) +
-  plot_layout(widths = c(3, 1), guides = "collect") +
-  plot_annotation(
-    tag_levels = "A",
-    theme = theme(
-      plot.tag = element_text(face = "bold", size = 9.5, family = "sans"),
-      legend.position  = "top",
-      legend.direction = "horizontal",
-      legend.text      = element_text(size = 8, family = "sans"),
-      legend.key.size  = unit(0.55, "lines"),
-      legend.spacing.x = unit(0.35, "cm"),
-      legend.margin    = margin(4, 0, 4, 0)
-    )
-  )
+# 1. Extract legend (horizontal, top position already set in theme_nature_map)
+shared_legend <- get_legend(map_panel)
+
+# 2. Remove legend from map_panel for the final layout
+map_no_legend <- map_panel + theme(legend.position = "none")
+
+# 3. Side-by-side panels with bold "A" / "B" labels
+panels <- plot_grid(
+  map_no_legend, bar_panel,
+  ncol        = 2,
+  rel_widths  = c(3, 1),
+  labels      = c("A", "B"),
+  label_size  = 9.5,
+  label_fontface = "bold",
+  label_fontfamily = "sans"
+)
+
+# 4. Stack: legend (small) on top, panels below
+combined <- plot_grid(
+  shared_legend, panels,
+  ncol        = 1,
+  rel_heights = c(0.06, 1)   # legend row is 6 % of total height
+)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
