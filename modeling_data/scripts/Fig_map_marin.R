@@ -1,25 +1,24 @@
 # ==============================================================================
-# Fig_map_marin.R  (v3)
+# Fig_map_marin.R  (v4)
 #
 # Marin et al. (2022)-style yield map — Nature publishing aesthetic.
 #
-# Layout:
-#   [shared legend at top: Water-limited yield | Potential yield]
-#   (A) Map × 2 panels (LT | Non-LT) — pie charts at 6 sites, no text
-#   (B) Bar chart — mean across 6 locations; SE across location averages
+# Layout (panels aligned, shared legend at top):
+#   (A) Map × 2 facets (LT | Non-LT) — pie charts at 6 sites, no map text
+#   (B) Bar chart — mean ± SE across 6 locations; stacked rainfed + gap
 #
-# Colours (shared between map and bar):
-#   Water-limited (rainfed) = #ca0020   (red)
-#   Potential gain  (gap)   = #0571b0   (blue)
+# Colours  (consistent between map and bar):
+#   Water-limited yield  (rainfed)  = #0571b0  blue
+#   Potential yield      (irrigated gap)  = #ca0020  red
 #
 # Data:   modeling_data/data/SoybeanSSM_sims2.xlsx
 # Output: modeling_data/figures/Fig_map_marin.tiff (600 DPI, LZW)
 #         modeling_data/figures/Fig_map_marin.png  (300 DPI, git-tracked)
 #
 # Run from the LT-trait project root.
-# Windows: set project_root below; Linux/Mac: default path used automatically.
+# Windows: set project_root below; Linux/Mac: default used automatically.
 #
-# Packages needed (install if missing):
+# Required packages:
 #   install.packages(c("readxl","dplyr","tidyr","ggplot2","patchwork","maps"))
 #
 # Author: Elvis F. Elli | eelli@uark.edu
@@ -43,37 +42,43 @@ suppressPackageStartupMessages({
   library(dplyr)     # data wrangling
   library(tidyr)     # pivot_wider / pivot_longer
   library(ggplot2)   # all plotting
-  library(patchwork) # combine panels
+  library(patchwork) # combine and align panels
   library(maps)      # US state boundary polygons
 })
 
 
-# ── 2.  Design constants  ─────────────────────────────────────────────────────
+# ── 2.  Design constants — edit these to tune the figure  ─────────────────────
 
-# Two-colour scheme: same in both map and bar panels
-COL_RAIN <- "#ca0020"   # water-limited (rainfed) yield
-COL_GAP  <- "#0571b0"   # yield gap (potential above rainfed)
+# Colours
+COL_RAIN <- "#0571b0"   # water-limited yield   (rainfed)   — blue
+COL_GAP  <- "#ca0020"   # potential yield        (irr gap)   — red
 
-# Named fill for scale_fill_manual — only two levels
 FILL_VALS   <- c("Rainfed" = COL_RAIN, "Gap" = COL_GAP)
 FILL_LABELS <- c("Rainfed" = "Water-limited yield",
                  "Gap"     = "Potential yield")
 FILL_BREAKS <- c("Rainfed", "Gap")
 
-# Strip labels for the two map panels
-GENO_LABELS <- c(
-  "LT"     = "Limited transpiration",
-  "Non-LT" = "Non-limited transpiration"
-)
+# Facet strip labels
+GENO_LABELS <- c("LT" = "Limited transpiration",
+                 "Non-LT" = "Non-limited transpiration")
 
-# Latitude correction so pie circles look visually round.
-# coord_fixed(MAP_RATIO) stretches y by MAP_RATIO relative to x.
-# Compensate by dividing the pie y-radius by MAP_RATIO.
+# Map aspect: cos-corrected for study-area mean latitude (≈ 38.5°N)
+# coord_fixed(MAP_RATIO) stretches y by MAP_RATIO; divide pie y-radius to
+# compensate so circles look visually round.
 MAP_LAT   <- 38.5
 MAP_RATIO <- 1 / cos(MAP_LAT * pi / 180)   # ≈ 1.277
 
-PIE_MAX_R <- 1.55   # max pie x-radius in lon degrees (for highest-yield site)
-PIE_N_PTS <- 90     # polygon points per full circle (controls smoothness)
+# Map extent — zoom in on AR / MO / NE with a small margin around the pies
+MAP_XLIM <- c(-106, -86)    # longitude window
+MAP_YLIM <- c(31.5,  44.5)  # latitude  window
+
+# Pie size — increase PIE_MAX_R to make all pies larger (still proportional)
+PIE_MAX_R <- 2.2    # x-radius (lon degrees) for the site with highest potential yield
+PIE_N_PTS <- 100    # polygon smoothness (points per full circle)
+
+# Border appearance
+BORDER_COL <- "black"
+BORDER_LW  <- 0.7   # linewidth for panel borders, strips, and pie outlines
 
 
 # ── 3.  Site coordinates  ─────────────────────────────────────────────────────
@@ -102,7 +107,7 @@ ssm <- ssm_raw |>
     water_mgmt = if_else(water_mgmt == "Rainfed", "Rainfed", "Irrigated")
   )
 
-# ── 4a. Site-level 30-yr means (for pie charts) ───────────────────────────────
+# ── 4a. 30-yr mean per site × genotype × water management  (for pie charts) ──
 yield_site <- ssm |>
   group_by(Location, Genotype, water_mgmt) |>
   summarise(Yield_mean = mean(Yield_kgha, na.rm = TRUE), .groups = "drop") |>
@@ -112,17 +117,15 @@ yield_wide <- yield_site |>
   pivot_wider(names_from = water_mgmt, values_from = Yield_mean) |>
   mutate(
     Gap   = Irrigated - Rainfed,
-    frac  = Rainfed / Irrigated,              # rainfed fraction of potential
-    r_pie = sqrt(Irrigated) /                 # pie x-radius ∝ √(potential yield)
+    frac  = Rainfed / Irrigated,    # rainfed fraction of potential (= pie blue fraction)
+    r_pie = sqrt(Irrigated) /       # pie x-radius ∝ √(potential yield)
               sqrt(max(Irrigated, na.rm = TRUE)) * PIE_MAX_R
   )
 
-# ── 4b. Location-level means then average + SE across locations (for bar) ─────
+# ── 4b. Location-level means → cross-location mean ± SE  (for bar chart) ──────
 #
-# Step 1: collapse years × planting-dates into one mean per location
-# Step 2: compute mean and SE of those 6 location-level means per genotype
-#
-# SE = SD / sqrt(n), with n = 6 locations per genotype
+# Step 1: average each site over its 30 years × 3 planting dates
+# Step 2: treat each site as one observation; compute mean and SE (n = 6) per genotype
 
 bar_loc <- ssm |>
   group_by(Location, Genotype, water_mgmt) |>
@@ -136,26 +139,24 @@ bar_summary <- bar_loc |>
     Rain_mean = mean(Rainfed,   na.rm = TRUE),
     Gap_mean  = mean(Gap,       na.rm = TRUE),
     Irr_mean  = mean(Irrigated, na.rm = TRUE),
-    Irr_se    = sd(Irrigated,   na.rm = TRUE) / sqrt(n()),   # SE of irrigated
+    Irr_se    = sd(Irrigated,   na.rm = TRUE) / sqrt(n()),
     n_loc     = n(),
     .groups   = "drop"
-  )
+  ) |>
+  mutate(Genotype = factor(Genotype, levels = c("LT", "Non-LT")))
 
 
 # ── 5.  Pie polygon builder  ──────────────────────────────────────────────────
 #
-# Builds two polygon slices per site × genotype:
-#   "Rainfed" slice — angle proportional to rainfed / irrigated
-#   "Gap"     slice — remaining angle
-#
-# Both use the SAME two colours regardless of genotype.
-# y-radius is corrected so circles are visually round with coord_fixed(MAP_RATIO).
+# Slice "Rainfed"  (blue): angle = frac × 2π  (water-limited proportion)
+# Slice "Gap"      (red) : remaining angle    (potential gain from irrigation)
+# y-radius corrected by MAP_RATIO → visually round circles under coord_fixed()
 
 make_pie_polys <- function(row, ratio = MAP_RATIO, n_pts = PIE_N_PTS) {
   x0   <- row[["lon"]]
   y0   <- row[["lat"]]
   r    <- row[["r_pie"]]
-  ry   <- r / ratio          # corrected y-radius → visually round circle
+  ry   <- r / ratio          # corrected y-radius
   frac <- row[["frac"]]
   geno <- as.character(row[["Genotype"]])
   loc  <- row[["Location"]]
@@ -168,19 +169,17 @@ make_pie_polys <- function(row, ratio = MAP_RATIO, n_pts = PIE_N_PTS) {
 
   rbind(
     data.frame(
-      Genotype = geno, Location = loc,
-      slice = "Rainfed",
-      px    = c(x0, x0 + r * cos(t_rain), x0),
-      py    = c(y0, y0 + ry * sin(t_rain), y0),
-      grp   = paste(geno, loc, "rain", sep = "_"),
+      Genotype = geno, Location = loc, slice = "Rainfed",
+      px = c(x0, x0 + r * cos(t_rain), x0),
+      py = c(y0, y0 + ry * sin(t_rain), y0),
+      grp = paste(geno, loc, "rain", sep = "_"),
       stringsAsFactors = FALSE
     ),
     data.frame(
-      Genotype = geno, Location = loc,
-      slice = "Gap",
-      px    = c(x0, x0 + r * cos(t_gap), x0),
-      py    = c(y0, y0 + ry * sin(t_gap), y0),
-      grp   = paste(geno, loc, "gap", sep = "_"),
+      Genotype = geno, Location = loc, slice = "Gap",
+      px = c(x0, x0 + r * cos(t_gap), x0),
+      py = c(y0, y0 + ry * sin(t_gap), y0),
+      grp = paste(geno, loc, "gap", sep = "_"),
       stringsAsFactors = FALSE
     )
   )
@@ -189,17 +188,20 @@ make_pie_polys <- function(row, ratio = MAP_RATIO, n_pts = PIE_N_PTS) {
 pie_polys <- do.call(rbind,
   lapply(seq_len(nrow(yield_wide)), function(i) make_pie_polys(yield_wide[i, ]))
 ) |>
-  mutate(Genotype = factor(Genotype, levels = c("LT", "Non-LT")))
+  mutate(
+    slice    = factor(slice, levels = c("Rainfed", "Gap")),
+    Genotype = factor(Genotype, levels = c("LT", "Non-LT"))
+  )
 
 
-# ── 6.  US base map layers  ───────────────────────────────────────────────────
+# ── 6.  US base-map layers  ───────────────────────────────────────────────────
 
 us_states    <- map_data("state")
 focus_states <- c("arkansas", "missouri", "nebraska")
 state_bg     <- filter(us_states, region %in% focus_states)
 
 
-# ── 7.  Nature-style themes  ──────────────────────────────────────────────────
+# ── 7.  Shared Nature-style themes  ───────────────────────────────────────────
 
 theme_nature_map <- function(base_size = 8) {
   theme_bw(base_size = base_size, base_family = "sans") +
@@ -208,20 +210,22 @@ theme_nature_map <- function(base_size = 8) {
     axis.ticks        = element_blank(),
     axis.title        = element_blank(),
     panel.grid        = element_blank(),
-    panel.border      = element_rect(colour = "grey40", linewidth = 0.35),
-    # White strip with dark text (instead of dark strip)
-    strip.background  = element_rect(fill = "white", colour = "grey40",
-                                     linewidth = 0.35),
+    # Thick black panel border
+    panel.border      = element_rect(colour = BORDER_COL, linewidth = BORDER_LW),
+    # White strip with thick black border and dark text
+    strip.background  = element_rect(fill = "white", colour = BORDER_COL,
+                                     linewidth = BORDER_LW),
     strip.text        = element_text(colour = "grey10", face = "bold",
-                                     size = base_size),
+                                     size = base_size + 0.5),
+    # Legend collected at top by patchwork — suppress here
     legend.position   = "top",
     legend.direction  = "horizontal",
     legend.title      = element_blank(),
     legend.text       = element_text(size = base_size),
     legend.key.size   = unit(0.55, "lines"),
-    legend.key        = element_rect(colour = "grey40", linewidth = 0.3),
-    legend.spacing.x  = unit(0.3, "cm"),
-    legend.margin     = margin(0, 0, 3, 0),
+    legend.key        = element_rect(colour = "grey40", linewidth = 0.35),
+    legend.spacing.x  = unit(0.35, "cm"),
+    legend.margin     = margin(0, 0, 2, 0),
     plot.margin       = margin(1, 2, 1, 2, "mm"),
     panel.spacing     = unit(0.4, "lines")
   )
@@ -230,15 +234,21 @@ theme_nature_map <- function(base_size = 8) {
 theme_nature_bar <- function(base_size = 8) {
   theme_nature_map(base_size) +
   theme(
-    axis.text.x        = element_text(size = base_size, colour = "grey15",
+    axis.text.x        = element_text(size = base_size + 0.5, colour = "grey10",
                                       face = "bold"),
-    axis.text.y        = element_text(size = base_size - 1, colour = "grey20"),
+    axis.text.y        = element_text(size = base_size - 0.5, colour = "grey20"),
     axis.title.y       = element_text(size = base_size, colour = "grey10",
                                       angle = 90, margin = margin(r = 3)),
-    axis.ticks         = element_line(linewidth = 0.3, colour = "grey40"),
+    axis.ticks         = element_line(linewidth = 0.4, colour = "grey30"),
     axis.ticks.length  = unit(1.5, "mm"),
-    panel.grid.major.y = element_line(linewidth = 0.2, colour = "grey88"),
-    legend.position    = "none"    # legend lives on the map panel
+    # Subtle horizontal grid only
+    panel.grid.major.y = element_line(linewidth = 0.2, colour = "grey85"),
+    # Strip sized to match height of map panel strip
+    strip.background   = element_rect(fill = "white", colour = BORDER_COL,
+                                      linewidth = BORDER_LW),
+    strip.text         = element_text(colour = "grey10", face = "bold",
+                                      size = base_size + 0.5),
+    legend.position    = "none"   # legend collected by patchwork into map slot
   )
 }
 
@@ -246,40 +256,36 @@ theme_nature_bar <- function(base_size = 8) {
 # ══════════════════════════════════════════════════════════════════════════════
 # PANEL (A) — MAP
 #
-# Two facets (LT | Non-LT).
-# Surrounding states: light grey background.
-# Study states (AR, MO, NE): slightly darker grey — stands out from surroundings.
-# Pie charts: no text labels, black borders.
+# Study states (AR/MO/NE) darker grey than surrounding states.
+# No map text; pie borders black.
 # ══════════════════════════════════════════════════════════════════════════════
 
 map_panel <- ggplot() +
 
-  # ── Background: all US states (very light grey) ───────────────────────────
+  # All US states — light grey background
   geom_polygon(
     data = us_states,
     aes(x = long, y = lat, group = group),
-    fill = "grey90", colour = "grey72", linewidth = 0.18
+    fill = "grey92", colour = "grey75", linewidth = 0.15
   ) +
 
-  # ── Study states: AR / MO / NE — darker than surroundings ────────────────
+  # Study states: AR / MO / NE — darker to distinguish from surroundings
   geom_polygon(
     data = state_bg,
     aes(x = long, y = lat, group = group),
-    fill = "grey68", colour = "grey25", linewidth = 0.45
+    fill = "grey65", colour = BORDER_COL, linewidth = 0.45
   ) +
 
-  # ── Pie slice polygons (black border, shared 2-colour fill) ───────────────
+  # Pie slice polygons — black border, shared 2-colour fill
   geom_polygon(
     data = pie_polys,
     aes(x = px, y = py, group = grp, fill = slice),
-    colour = "black", linewidth = 0.25
+    colour = BORDER_COL, linewidth = 0.28
   ) +
 
-  # ── Facets ─────────────────────────────────────────────────────────────────
   facet_wrap(~Genotype, ncol = 2,
              labeller = labeller(Genotype = GENO_LABELS)) +
 
-  # ── Shared 2-level fill scale ──────────────────────────────────────────────
   scale_fill_manual(
     values = FILL_VALS,
     labels = FILL_LABELS,
@@ -287,95 +293,112 @@ map_panel <- ggplot() +
     name   = NULL
   ) +
 
-  coord_fixed(MAP_RATIO, xlim = c(-106, -84), ylim = c(31.0, 46.5)) +
+  coord_fixed(MAP_RATIO, xlim = MAP_XLIM, ylim = MAP_YLIM) +
 
   theme_nature_map() +
-  guides(fill = guide_legend(nrow = 1, override.aes = list(colour = "grey30")))
+
+  guides(fill = guide_legend(nrow = 1,
+                             override.aes = list(colour = "grey30",
+                                                 linewidth = 0.3)))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PANEL (B) — BAR CHART
 #
-# Mean yield across 6 locations per genotype.
-# Bars stacked: water-limited (rainfed) + gap.
-# Error bar on the total bar (irrigated mean ± SE across 6 locations).
-# No horizontal cap whiskers (width = 0).
-# Y-axis in kg ha⁻¹.
+# X-axis: LT and Non-LT (mean across 6 locations).
+# Bars stacked: water-limited (blue) on bottom, potential gain (red) on top.
+# Error bar placed at the irrigated total (Irr_mean ± Irr_se).
+# No horizontal cap whiskers; y-axis in kg ha⁻¹.
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Stacked bar data (two rows per genotype: Rainfed and Gap)
+# Long format for stacked geom_col
 bar_long <- bar_summary |>
+  select(Genotype, Rain_mean, Gap_mean) |>
   pivot_longer(
     cols      = c(Rain_mean, Gap_mean),
     names_to  = "slice",
     values_to = "Yield_kgha"
   ) |>
   mutate(
-    slice = recode(slice, Rain_mean = "Rainfed", Gap_mean = "Gap"),
-    slice = factor(slice, levels = c("Rainfed", "Gap"))   # Rainfed on bottom
+    slice    = recode(slice, Rain_mean = "Rainfed", Gap_mean = "Gap"),
+    slice    = factor(slice, levels = c("Rainfed", "Gap")),   # Rainfed on bottom
+    Genotype = factor(Genotype, levels = c("LT", "Non-LT"))
   )
 
 bar_panel <- ggplot() +
 
-  # ── Stacked bars ──────────────────────────────────────────────────────────
+  # Stacked bars (Rainfed bottom = blue, Gap top = red)
   geom_col(
     data  = bar_long,
     aes(x = Genotype, y = Yield_kgha, fill = slice),
-    width = 0.55, colour = NA
+    width   = 0.5,
+    colour  = BORDER_COL,
+    linewidth = 0.4
   ) +
 
-  # ── Error bar at the total bar top (irrigated mean ± SE) ─────────────────
-  # Positioned at Irr_mean so the bar touches the middle of the error bar.
-  # width = 0 removes the horizontal cap whiskers.
+  # Error bar at the top of the irrigated total (Irr_mean ± Irr_se)
+  # width = 0 → no horizontal cap whiskers
+  # The bar top equals Irr_mean, so ymin/ymax straddle the bar top correctly
   geom_errorbar(
     data  = bar_summary,
     aes(x    = Genotype,
         ymin  = Irr_mean - Irr_se,
         ymax  = Irr_mean + Irr_se),
-    width     = 0,          # no horizontal whisker caps
-    linewidth = 0.6,
+    width     = 0,
+    linewidth = 0.7,
     colour    = "grey10"
   ) +
 
   scale_fill_manual(values = FILL_VALS, guide = "none") +
 
   scale_y_continuous(
-    expand = expansion(mult = c(0, 0.1)),
+    expand = expansion(mult = c(0, 0.12)),
     name   = expression(Yield~(kg~ha^{-1})),
-    labels = scales::comma,       # add thousands separator: 1,000 / 4,000 etc.
-    breaks = seq(0, 8000, by = 2000)
+    labels = scales::comma,
+    breaks = seq(0, 10000, by = 2000)
   ) +
 
   labs(x = NULL) +
+
+  # Dummy facet label so strip height matches map panel — keeps alignment
+  facet_wrap(~"All locations", strip.position = "top") +
 
   theme_nature_bar()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COMBINE with patchwork
-# Map (3/4 width) + bar chart (1/4 width); panel tags (A) and (B)
+# COMBINE — align panels, collect legend at top
+#
+# plot_layout(guides = 'collect') moves all legends to one shared spot.
+# `& theme(legend.position = 'top')` applies to the combined figure.
 # ══════════════════════════════════════════════════════════════════════════════
 
 combined <- (map_panel | bar_panel) +
-  plot_layout(widths = c(3, 1)) +
+  plot_layout(widths = c(3, 1), guides = "collect") +
   plot_annotation(
     tag_levels = "A",
-    theme      = theme(
-      plot.tag = element_text(face = "bold", size = 9, family = "sans")
+    theme = theme(
+      plot.tag = element_text(face = "bold", size = 9.5, family = "sans"),
+      legend.position  = "top",
+      legend.direction = "horizontal",
+      legend.text      = element_text(size = 8, family = "sans"),
+      legend.key.size  = unit(0.55, "lines"),
+      legend.spacing.x = unit(0.35, "cm"),
+      legend.margin    = margin(4, 0, 4, 0)
     )
   )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SAVE
-# TIFF at 600 DPI (LZW) — submission quality; *.tiff in .gitignore (not tracked)
-# PNG  at 300 DPI       — git-tracked for sharing
+# TIFF 600 DPI — submission quality; *.tiff in .gitignore (not committed)
+# PNG  300 DPI — git-tracked for record and sharing
 # ══════════════════════════════════════════════════════════════════════════════
 
 tiff_type <- if (.Platform$OS.type == "windows") "windows" else "cairo"
 
 tiff_file <- "modeling_data/figures/Fig_map_marin.tiff"
-tiff(tiff_file, width = 30, height = 14, units = "cm",
+tiff(tiff_file, width = 30, height = 18, units = "cm",
      res = 600, compression = "lzw", type = tiff_type)
 print(combined)
 dev.off()
@@ -383,6 +406,6 @@ message("Saved TIFF: ", tiff_file)
 
 png_file <- "modeling_data/figures/Fig_map_marin.png"
 ggsave(png_file, combined,
-       width = 30, height = 14, units = "cm",
+       width = 30, height = 18, units = "cm",
        dpi = 300, bg = "white")
 message("Saved PNG:  ", png_file)
