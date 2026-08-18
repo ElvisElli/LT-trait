@@ -251,65 +251,53 @@ theme_nature_bar <- function(base_size = 8) {
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PANELS (A) and (B) — MAP  (one ggplot per genotype)
+# PANEL (A) — MAP  (both LT and Non-LT as one figure)
 #
-# Splitting into two separate ggplot objects lets cowplot align their strip
-# titles at exactly the same height as panel (C)'s strip.
+# Two facets side-by-side: LT on left, Non-LT on right.
+# This is treated as a single panel in the combined layout (paired with C).
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Helper — builds one map panel for a single genotype level
-make_map_panel <- function(geno, show_legend = FALSE) {
-  ggplot() +
+map_panel_full <- ggplot() +
 
-    # All US states — light grey background
-    geom_polygon(
-      data = us_states,
-      aes(x = long, y = lat, group = group),
-      fill = "grey92", colour = "grey75", linewidth = 0.15
-    ) +
+  # All US states — light grey background
+  geom_polygon(
+    data = us_states,
+    aes(x = long, y = lat, group = group),
+    fill = "grey92", colour = "grey75", linewidth = 0.15
+  ) +
 
-    # Study states (AR / MO / NE) — darker fill
-    geom_polygon(
-      data = state_bg,
-      aes(x = long, y = lat, group = group),
-      fill = "grey65", colour = BORDER_COL, linewidth = 0.45
-    ) +
+  # Study states (AR / MO / NE) — darker fill
+  geom_polygon(
+    data = state_bg,
+    aes(x = long, y = lat, group = group),
+    fill = "grey65", colour = BORDER_COL, linewidth = 0.45
+  ) +
 
-    # Pie slices for this genotype only
-    geom_polygon(
-      data   = filter(pie_polys, Genotype == geno),
-      aes(x = px, y = py, group = grp, fill = slice),
-      colour = BORDER_COL, linewidth = 0.28
-    ) +
+  # Pie slices for all genotypes
+  geom_polygon(
+    data = pie_polys,
+    aes(x = px, y = py, group = grp, fill = slice),
+    colour = BORDER_COL, linewidth = 0.28
+  ) +
 
-    # Single-level facet → strip title matches bar panel strip height
-    facet_wrap(~Genotype, labeller = labeller(Genotype = GENO_LABELS)) +
+  # Facet: two panels (LT | Non-LT)
+  facet_wrap(~Genotype, ncol = 2,
+             labeller = labeller(Genotype = GENO_LABELS)) +
 
-    scale_fill_manual(
-      values = FILL_VALS,
-      labels = FILL_LABELS,
-      breaks = FILL_BREAKS,
-      name   = NULL
-    ) +
+  scale_fill_manual(
+    values = FILL_VALS,
+    labels = FILL_LABELS,
+    breaks = FILL_BREAKS,
+    name   = NULL
+  ) +
 
-    coord_cartesian(xlim = MAP_XLIM, ylim = MAP_YLIM, expand = FALSE) +
+  coord_cartesian(xlim = MAP_XLIM, ylim = MAP_YLIM, expand = FALSE) +
 
-    theme_nature_map() +
+  theme_nature_map() +
 
-    # Remove aspect.ratio constraint so plot_grid can align all panels
-    # (final figure dimensions 20×8 cm ensure proper scaling)
-    theme(
-      legend.position = if (show_legend) "top" else "none"
-    ) +
-
-    guides(fill = guide_legend(nrow = 1,
-                               override.aes = list(colour = "grey30",
-                                                   linewidth = 0.3)))
-}
-
-# Build one panel per genotype (no legend — legend extracted separately)
-map_lt    <- make_map_panel("LT")
-map_nonlt <- make_map_panel("Non-LT")
+  guides(fill = guide_legend(nrow = 1,
+                             override.aes = list(colour = "grey30",
+                                                 linewidth = 0.3)))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -372,31 +360,27 @@ bar_panel <- ggplot() +
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COMBINE — plot_grid: legend on top, three panels below, aligned
+# COMBINE — plot_grid: legend on top, then A (map) and B (bar) below
 #
-# Step 1: extract shared legend (visible)
-# Step 2: remove legend from all panels
-# Step 3: arrange three panels side-by-side with labels, all at same baseline
-# Step 4: stack legend above panels
+# Step 1: extract shared legend from map
+# Step 2: remove legend from both panels
+# Step 3: arrange map and bar side-by-side with labels A and B
+# Step 4: stack legend above
 # ══════════════════════════════════════════════════════════════════════════════
 
-# 1. Extract legend from one map panel
-shared_legend <- get_legend(
-  make_map_panel("LT", show_legend = TRUE)
-)
+# 1. Extract legend
+shared_legend <- get_legend(map_panel_full)
 
 # 2. Panels with legend removed
-map_lt_no_legend    <- map_lt + theme(legend.position = "none")
-map_nonlt_no_legend <- map_nonlt + theme(legend.position = "none")
-bar_panel_no_legend <- bar_panel + theme(legend.position = "none")
+map_no_legend <- map_panel_full + theme(legend.position = "none")
+bar_no_legend <- bar_panel + theme(legend.position = "none")
 
-# 3. Three panels side-by-side, labels A/B/C
-#    A and B closer: increase relative width of C so A+B take less space
+# 3. Two panels side-by-side: A (map, 2:1) and B (bar, 1:1)
 panels <- plot_grid(
-  map_lt_no_legend, map_nonlt_no_legend, bar_panel_no_legend,
-  ncol        = 3,
-  rel_widths  = c(1, 1, 1.2),
-  labels      = c("A", "B", "C"),
+  map_no_legend, bar_no_legend,
+  ncol        = 2,
+  rel_widths  = c(2, 1),
+  labels      = c("A", "B"),
   label_size  = 9.5,
   label_fontface = "plain",
   label_fontfamily = "sans",
@@ -404,7 +388,7 @@ panels <- plot_grid(
   axis        = "tb"
 )
 
-# 4. Stack: legend (small) on top, panels below
+# 4. Stack: legend on top, panels below
 combined <- plot_grid(
   shared_legend, panels,
   ncol        = 1,
