@@ -25,16 +25,6 @@
 # ==============================================================================
 
 
-# ── 0.  Working directory  ────────────────────────────────────────────────────
-
-if (.Platform$OS.type == "windows") {
-  project_root <- "C:/Users/YourName/LT-trait"   # <-- adjust for your machine
-  setwd(project_root)
-} else {
-  setwd("/home/user/LT-trait")
-}
-
-
 # ── 1.  Packages  ─────────────────────────────────────────────────────────────
 
 suppressPackageStartupMessages({
@@ -394,9 +384,11 @@ panels <- plot_grid(
 
 # 4. Stack: legend (small) on top, panels below
 combined <- plot_grid(
-  shared_legend, panels,
-  ncol        = 1,
-  rel_heights = c(0.06, 1)   # legend row is 6 % of total height
+  map_panel, bar_panel,
+  ncol        = 2,
+  align = "hv",
+  axis = "bl",
+  rel_widths = c(1, 0.5)   # legend row is 6 % of total height
 )
 
 
@@ -406,17 +398,12 @@ combined <- plot_grid(
 # PNG  300 DPI — git-tracked for record and sharing
 # ══════════════════════════════════════════════════════════════════════════════
 
-tiff_type <- if (.Platform$OS.type == "windows") "windows" else "cairo"
-
 tiff_file <- "modeling_data/figures/Fig_map_marin.tiff"
-tiff(tiff_file, width = 30, height = 18, units = "cm",
+
+tiff(tiff_file, width = 20, height = 8, units = "cm",
      res = 600, compression = "lzw", type = tiff_type)
 print(combined)
 dev.off()
 message("Saved TIFF: ", tiff_file)
 
-png_file <- "modeling_data/figures/Fig_map_marin.png"
-ggsave(png_file, combined,
-       width = 30, height = 18, units = "cm",
-       dpi = 300, bg = "white")
-message("Saved PNG:  ", png_file)
+
