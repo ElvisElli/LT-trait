@@ -68,7 +68,7 @@ MAP_YLIM <- c(31.5,  44.5)  # latitude  window
 MAP_ASPECT <- MAP_RATIO * diff(MAP_YLIM) / diff(MAP_XLIM)  # ≈ 0.830
 
 # Pie size — increase PIE_MAX_R to make all pies larger (still proportional)
-PIE_MAX_R <- 1.5    # x-radius (lon degrees) for the site with highest potential yield
+PIE_MAX_R <- 1.05   # x-radius (lon degrees) — 30% smaller than 1.5
 PIE_N_PTS <- 100    # polygon smoothness (points per full circle)
 
 # Border appearance
@@ -212,7 +212,7 @@ theme_nature_map <- function(base_size = 8) {
     # White strip with thick black border and dark text
     strip.background  = element_rect(fill = "white", colour = BORDER_COL,
                                      linewidth = BORDER_LW),
-    strip.text        = element_text(colour = "grey10", face = "bold",
+    strip.text        = element_text(colour = "grey10", face = "plain",
                                      size = base_size + 0.5),
     # Legend collected at top by patchwork — suppress here
     legend.position   = "top",
@@ -387,25 +387,31 @@ bar_panel <- ggplot() +
 # Panels occupy y = 0.07–1.00 (93%), legend y = 0.00–0.07 (7%).
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Shared legend as a grob (horizontal, placed in the bottom strip)
+# Shared legend as a grob (horizontal, at the top)
 legend_grob <- get_legend(
   make_map_panel("LT", show_legend = TRUE) +
-  theme(legend.position  = "bottom",
+  theme(legend.position  = "top",
         legend.direction = "horizontal",
-        legend.margin    = margin(0, 0, 0, 0))
+        legend.margin    = margin(2, 0, 4, 0, "mm"))
 )
 
+# Layout: legend on top (y 0.92–1.00), then three panels below (y 0.00–0.92)
+# All panels at same y/height so strip tops align exactly
 combined <- ggdraw() +
-  draw_plot(map_lt,      x = 0.00, y = 0.07, width = 0.40, height = 0.93) +
-  draw_plot(map_nonlt,   x = 0.40, y = 0.07, width = 0.40, height = 0.93) +
-  draw_plot(bar_panel,   x = 0.80, y = 0.07, width = 0.20, height = 0.93) +
-  draw_grob(legend_grob, x = 0.50, y = 0.035, hjust = 0.5, vjust = 0.5) +
-  draw_label("A", x = 0.005, y = 0.995, hjust = 0, vjust = 1,
-             fontface = "bold", size = 9.5, fontfamily = "sans") +
-  draw_label("B", x = 0.405, y = 0.995, hjust = 0, vjust = 1,
-             fontface = "bold", size = 9.5, fontfamily = "sans") +
-  draw_label("C", x = 0.805, y = 0.995, hjust = 0, vjust = 1,
-             fontface = "bold", size = 9.5, fontfamily = "sans")
+  # Legend at top, centered
+  draw_grob(legend_grob, x = 0.5, y = 0.92, width = 1.0, height = 0.08,
+            hjust = 0.5, vjust = 1.0) +
+  # Three panels below, all at same y and height
+  draw_plot(map_lt,      x = 0.00, y = 0.00, width = 0.40, height = 0.92) +
+  draw_plot(map_nonlt,   x = 0.40, y = 0.00, width = 0.40, height = 0.92) +
+  draw_plot(bar_panel,   x = 0.80, y = 0.00, width = 0.20, height = 0.92) +
+  # Panel labels A, B, C (positioned at top of plot area, below legend)
+  draw_label("A", x = 0.005, y = 0.915, hjust = 0, vjust = 0,
+             fontface = "plain", size = 9.5, fontfamily = "sans") +
+  draw_label("B", x = 0.405, y = 0.915, hjust = 0, vjust = 0,
+             fontface = "plain", size = 9.5, fontfamily = "sans") +
+  draw_label("C", x = 0.805, y = 0.915, hjust = 0, vjust = 0,
+             fontface = "plain", size = 9.5, fontfamily = "sans")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
