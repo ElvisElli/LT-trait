@@ -40,8 +40,8 @@ suppressPackageStartupMessages({
 # ── 2.  Design constants — edit these to tune the figure  ─────────────────────
 
 # Colours
-COL_RAIN <- "#0571b0"   # water-limited yield   (rainfed)   — blue
-COL_GAP  <- "#ca0020"   # potential yield        (irr gap)   — red
+COL_RAIN <- "#31a354"   # water-limited yield   (rainfed)   — green
+COL_GAP  <- "#ffffcc"   # potential yield        (irr gap)   — light yellow
 
 FILL_VALS   <- c("Rainfed" = COL_RAIN, "Gap" = COL_GAP)
 FILL_LABELS <- c("Rainfed" = "Water-limited yield",
@@ -386,7 +386,7 @@ panels <- plot_grid(
   label_fontface = "plain",
   label_fontfamily = "sans",
   label_x     = 0.02,    # slightly right from edge (0 = left edge)
-  label_y     = 0.99,    # near top (1 = absolute top)
+  label_y     = 1.02,    # above panel top
   align       = "hv",
   axis        = "tb"
 )
