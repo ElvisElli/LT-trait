@@ -386,7 +386,7 @@ panels <- plot_grid(
   label_fontface = "plain",
   label_fontfamily = "sans",
   label_x     = 0.02,    # slightly right from edge (0 = left edge)
-  label_y     = 1.02,    # above panel top
+  label_y     = 1.18,    # way way above panel top
   align       = "hv",
   axis        = "tb"
 )
