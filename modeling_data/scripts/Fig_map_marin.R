@@ -53,14 +53,19 @@ GENO_LABELS <- c("LT" = "Limited transpiration",
                  "Non-LT" = "Non-limited transpiration")
 
 # Map aspect: cos-corrected for study-area mean latitude (≈ 38.5°N)
-# coord_fixed(MAP_RATIO) stretches y by MAP_RATIO; divide pie y-radius to
-# compensate so circles look visually round.
-MAP_LAT   <- 38.5
-MAP_RATIO <- 1 / cos(MAP_LAT * pi / 180)   # ≈ 1.277
+# MAP_RATIO: 1 degree latitude takes MAP_RATIO× more pixels than 1 degree longitude.
+# MAP_ASPECT: panel height/width that gives the same visual scale as coord_fixed(MAP_RATIO).
+#   = MAP_RATIO × (y_range / x_range)
+# Using theme(aspect.ratio = MAP_ASPECT) instead of coord_fixed() lets cowplot
+# resize panels for strip alignment while preserving round circles.
+MAP_LAT    <- 38.5
+MAP_RATIO  <- 1 / cos(MAP_LAT * pi / 180)   # ≈ 1.277
 
 # Map extent — zoom in on AR / MO / NE with a small margin around the pies
 MAP_XLIM <- c(-106, -86)    # longitude window
 MAP_YLIM <- c(31.5,  44.5)  # latitude  window
+
+MAP_ASPECT <- MAP_RATIO * diff(MAP_YLIM) / diff(MAP_XLIM)  # ≈ 0.830
 
 # Pie size — increase PIE_MAX_R to make all pies larger (still proportional)
 PIE_MAX_R <- 2.2    # x-radius (lon degrees) for the site with highest potential yield
@@ -285,11 +290,16 @@ make_map_panel <- function(geno, show_legend = FALSE) {
       name   = NULL
     ) +
 
-    coord_fixed(MAP_RATIO, xlim = MAP_XLIM, ylim = MAP_YLIM) +
+    coord_cartesian(xlim = MAP_XLIM, ylim = MAP_YLIM) +
 
     theme_nature_map() +
 
-    theme(legend.position = if (show_legend) "top" else "none") +
+    # aspect.ratio = MAP_ASPECT is mathematically equivalent to coord_fixed(MAP_RATIO)
+    # for this xlim/ylim window, but allows cowplot to align panel tops across plots.
+    theme(
+      aspect.ratio   = MAP_ASPECT,
+      legend.position = if (show_legend) "top" else "none"
+    ) +
 
     guides(fill = guide_legend(nrow = 1,
                                override.aes = list(colour = "grey30",
@@ -379,8 +389,8 @@ shared_legend <- get_legend(make_map_panel("LT", show_legend = TRUE))
 panels <- plot_grid(
   map_lt, map_nonlt, bar_panel,
   ncol             = 3,
-  align            = "hv",   # align both horizontally and vertically
-  axis             = "tb",   # anchor to top and bottom edges
+  align            = "v",    # align tops (and bottoms) of side-by-side panels
+  axis             = "t",    # anchor on the top edge → strips at the same level
   rel_widths       = c(1, 1, 0.5),
   labels           = c("A", "B", "C"),
   label_size       = 9.5,
