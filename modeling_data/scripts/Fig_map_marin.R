@@ -398,12 +398,18 @@ combined <- plot_grid(
 # PNG  300 DPI — git-tracked for record and sharing
 # ══════════════════════════════════════════════════════════════════════════════
 
-tiff_file <- "modeling_data/figures/Fig_map_marin.tiff"
+tiff_type <- if (.Platform$OS.type == "windows") "windows" else "cairo"
 
+tiff_file <- "modeling_data/figures/Fig_map_marin.tiff"
 tiff(tiff_file, width = 20, height = 8, units = "cm",
      res = 600, compression = "lzw", type = tiff_type)
 print(combined)
 dev.off()
 message("Saved TIFF: ", tiff_file)
+
+png_file <- "modeling_data/figures/Fig_map_marin.png"
+ggsave(png_file, combined, width = 20, height = 8, units = "cm",
+       dpi = 300, bg = "white")
+message("Saved PNG:  ", png_file)
 
 
