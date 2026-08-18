@@ -292,14 +292,13 @@ make_map_panel <- function(geno, show_legend = FALSE) {
       name   = NULL
     ) +
 
-    coord_cartesian(xlim = MAP_XLIM, ylim = MAP_YLIM) +
+    coord_cartesian(xlim = MAP_XLIM, ylim = MAP_YLIM, expand = FALSE) +
 
     theme_nature_map() +
 
-    # aspect.ratio = MAP_ASPECT is mathematically equivalent to coord_fixed(MAP_RATIO)
-    # for this xlim/ylim window, but allows cowplot to align panel tops across plots.
+    # Remove aspect.ratio constraint so plot_grid can align all panels
+    # (final figure dimensions 20×8 cm ensure proper scaling)
     theme(
-      aspect.ratio   = MAP_ASPECT,
       legend.position = if (show_legend) "top" else "none"
     ) +
 
