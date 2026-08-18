@@ -45,7 +45,7 @@ COL_GAP  <- "#ca0020"   # potential yield        (irr gap)   — red
 
 FILL_VALS   <- c("Rainfed" = COL_RAIN, "Gap" = COL_GAP)
 FILL_LABELS <- c("Rainfed" = "Water-limited yield",
-                 "Gap"     = "Potential yield")
+                 "Gap"     = "Yield gap by water deficit")
 FILL_BREAKS <- c("Rainfed", "Gap")
 
 # Facet strip labels
@@ -68,7 +68,7 @@ MAP_YLIM <- c(31.5,  44.5)  # latitude  window
 MAP_ASPECT <- MAP_RATIO * diff(MAP_YLIM) / diff(MAP_XLIM)  # ≈ 0.830
 
 # Pie size — increase PIE_MAX_R to make all pies larger (still proportional)
-PIE_MAX_R <- 2.2    # x-radius (lon degrees) for the site with highest potential yield
+PIE_MAX_R <- 1.5    # x-radius (lon degrees) for the site with highest potential yield
 PIE_N_PTS <- 100    # polygon smoothness (points per full circle)
 
 # Border appearance
@@ -376,34 +376,39 @@ bar_panel <- ggplot() +
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COMBINE — 3 independent panels → shared legend above
+# COMBINE — ggdraw with fixed coordinates
 #
-# Three separate ggplot objects means cowplot's align = "hv" can align
-# all strip titles to exactly the same horizontal level.
+# cowplot's align= cannot equalize strips when aspect.ratio is set on some
+# panels: it adjusts plot.margin ABOVE the strip, which shifts strips down.
+# ggdraw places each panel at the same y and height → strip tops are at
+# exactly the same position in all three panels regardless of aspect ratio.
+#
+# Width fractions: rel_widths 1:1:0.5 → total = 2.5
+#   map_lt    0.00–0.40   (40%)
+#   map_nonlt 0.40–0.80   (40%)
+#   bar       0.80–1.00   (20%)
+# Panels occupy y = 0.07–1.00 (93%), legend y = 0.00–0.07 (7%).
 # ══════════════════════════════════════════════════════════════════════════════
 
-# 1. Extract the shared legend from one map panel (with legend shown)
-shared_legend <- get_legend(make_map_panel("LT", show_legend = TRUE))
-
-# 2. Three panels side by side, strip tops aligned
-panels <- plot_grid(
-  map_lt, map_nonlt, bar_panel,
-  ncol             = 3,
-  align            = "v",    # align tops (and bottoms) of side-by-side panels
-  axis             = "t",    # anchor on the top edge → strips at the same level
-  rel_widths       = c(1, 1, 0.5),
-  labels           = c("A", "B", "C"),
-  label_size       = 9.5,
-  label_fontface   = "bold",
-  label_fontfamily = "sans"
+# Shared legend as a grob (horizontal, placed in the bottom strip)
+legend_grob <- get_legend(
+  make_map_panel("LT", show_legend = TRUE) +
+  theme(legend.position  = "bottom",
+        legend.direction = "horizontal",
+        legend.margin    = margin(0, 0, 0, 0))
 )
 
-# 3. Stack: shared legend (small row) on top, three panels below
-combined <- plot_grid(
-  shared_legend, panels,
-  ncol        = 1,
-  rel_heights = c(0.06, 1)
-)
+combined <- ggdraw() +
+  draw_plot(map_lt,      x = 0.00, y = 0.07, width = 0.40, height = 0.93) +
+  draw_plot(map_nonlt,   x = 0.40, y = 0.07, width = 0.40, height = 0.93) +
+  draw_plot(bar_panel,   x = 0.80, y = 0.07, width = 0.20, height = 0.93) +
+  draw_grob(legend_grob, x = 0.50, y = 0.035, hjust = 0.5, vjust = 0.5) +
+  draw_label("A", x = 0.005, y = 0.995, hjust = 0, vjust = 1,
+             fontface = "bold", size = 9.5, fontfamily = "sans") +
+  draw_label("B", x = 0.405, y = 0.995, hjust = 0, vjust = 1,
+             fontface = "bold", size = 9.5, fontfamily = "sans") +
+  draw_label("C", x = 0.805, y = 0.995, hjust = 0, vjust = 1,
+             fontface = "bold", size = 9.5, fontfamily = "sans")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
