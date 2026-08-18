@@ -189,7 +189,7 @@ pie_polys <- do.call(rbind,
 ) |>
   mutate(
     slice    = factor(slice, levels = c("Rainfed", "Gap")),
-    Genotype = factor(Genotype, levels = c("LT", "Non-LT"))
+    Genotype = factor(Genotype, levels = c("Non-LT", "LT"))
   )
 
 
@@ -321,7 +321,7 @@ bar_long <- bar_summary |>
   mutate(
     slice    = recode(slice, Rain_mean = "Rainfed", Gap_mean = "Gap"),
     slice    = factor(slice, levels = c("Gap", "Rainfed")),  # Gap on top, Rainfed (blue) on bottom
-    Genotype = factor(Genotype, levels = c("LT", "Non-LT"))
+    Genotype = factor(Genotype, levels = c("Non-LT", "LT"))
   )
 
 bar_panel <- ggplot() +
