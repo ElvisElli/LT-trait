@@ -376,6 +376,7 @@ map_no_legend <- map_panel_full + theme(legend.position = "none")
 bar_no_legend <- bar_panel + theme(legend.position = "none")
 
 # 3. Two panels side-by-side: A (map, 2:1) and B (bar, 1:1)
+#    label_x and label_y position labels: move right and up
 panels <- plot_grid(
   map_no_legend, bar_no_legend,
   ncol        = 2,
@@ -384,6 +385,8 @@ panels <- plot_grid(
   label_size  = 9.5,
   label_fontface = "plain",
   label_fontfamily = "sans",
+  label_x     = 0.02,    # slightly right from edge (0 = left edge)
+  label_y     = 0.99,    # near top (1 = absolute top)
   align       = "hv",
   axis        = "tb"
 )
