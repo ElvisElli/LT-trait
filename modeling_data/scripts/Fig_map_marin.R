@@ -373,45 +373,43 @@ bar_panel <- ggplot() +
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COMBINE — ggdraw with fixed coordinates
+# COMBINE — plot_grid: legend on top, three panels below, aligned
 #
-# cowplot's align= cannot equalize strips when aspect.ratio is set on some
-# panels: it adjusts plot.margin ABOVE the strip, which shifts strips down.
-# ggdraw places each panel at the same y and height → strip tops are at
-# exactly the same position in all three panels regardless of aspect ratio.
-#
-# Width fractions: rel_widths 1:1:0.5 → total = 2.5
-#   map_lt    0.00–0.40   (40%)
-#   map_nonlt 0.40–0.80   (40%)
-#   bar       0.80–1.00   (20%)
-# Panels occupy y = 0.07–1.00 (93%), legend y = 0.00–0.07 (7%).
+# Step 1: extract shared legend (visible)
+# Step 2: remove legend from all panels
+# Step 3: arrange three panels side-by-side with labels, all at same baseline
+# Step 4: stack legend above panels
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Shared legend as a grob (horizontal, at the top)
-legend_grob <- get_legend(
-  make_map_panel("LT", show_legend = TRUE) +
-  theme(legend.position  = "top",
-        legend.direction = "horizontal",
-        legend.margin    = margin(2, 0, 4, 0, "mm"))
+# 1. Extract legend from one map panel
+shared_legend <- get_legend(
+  make_map_panel("LT", show_legend = TRUE)
 )
 
-# Layout: legend on top (y 0.92–1.00), then three panels below (y 0.00–0.92)
-# All panels at same y/height so strip tops align exactly
-combined <- ggdraw() +
-  # Legend at top, centered
-  draw_grob(legend_grob, x = 0.5, y = 0.92, width = 1.0, height = 0.08,
-            hjust = 0.5, vjust = 1.0) +
-  # Three panels below, all at same y and height
-  draw_plot(map_lt,      x = 0.00, y = 0.00, width = 0.40, height = 0.92) +
-  draw_plot(map_nonlt,   x = 0.40, y = 0.00, width = 0.40, height = 0.92) +
-  draw_plot(bar_panel,   x = 0.80, y = 0.00, width = 0.20, height = 0.92) +
-  # Panel labels A, B, C (positioned at top of plot area, below legend)
-  draw_label("A", x = 0.005, y = 0.915, hjust = 0, vjust = 0,
-             fontface = "plain", size = 9.5, fontfamily = "sans") +
-  draw_label("B", x = 0.405, y = 0.915, hjust = 0, vjust = 0,
-             fontface = "plain", size = 9.5, fontfamily = "sans") +
-  draw_label("C", x = 0.805, y = 0.915, hjust = 0, vjust = 0,
-             fontface = "plain", size = 9.5, fontfamily = "sans")
+# 2. Panels with legend removed
+map_lt_no_legend    <- map_lt + theme(legend.position = "none")
+map_nonlt_no_legend <- map_nonlt + theme(legend.position = "none")
+bar_panel_no_legend <- bar_panel + theme(legend.position = "none")
+
+# 3. Three panels side-by-side, labels A/B/C
+panels <- plot_grid(
+  map_lt_no_legend, map_nonlt_no_legend, bar_panel_no_legend,
+  ncol        = 3,
+  rel_widths  = c(1, 1, 0.5),
+  labels      = c("A", "B", "C"),
+  label_size  = 9.5,
+  label_fontface = "plain",
+  label_fontfamily = "sans",
+  align       = "v",
+  axis        = "t"
+)
+
+# 4. Stack: legend (small) on top, panels below
+combined <- plot_grid(
+  shared_legend, panels,
+  ncol        = 1,
+  rel_heights = c(0.08, 1)
+)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
