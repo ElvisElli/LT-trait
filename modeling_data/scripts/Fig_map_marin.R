@@ -392,6 +392,7 @@ map_nonlt_no_legend <- map_nonlt + theme(legend.position = "none")
 bar_panel_no_legend <- bar_panel + theme(legend.position = "none")
 
 # 3. Three panels side-by-side, labels A/B/C
+#    align="hv" + axis="tb" stretches panels so top and bottom borders line up
 panels <- plot_grid(
   map_lt_no_legend, map_nonlt_no_legend, bar_panel_no_legend,
   ncol        = 3,
@@ -400,8 +401,8 @@ panels <- plot_grid(
   label_size  = 9.5,
   label_fontface = "plain",
   label_fontfamily = "sans",
-  align       = "v",
-  axis        = "t"
+  align       = "hv",
+  axis        = "tb"
 )
 
 # 4. Stack: legend (small) on top, panels below
