@@ -331,7 +331,7 @@ bar_long <- bar_summary |>
   ) |>
   mutate(
     slice    = recode(slice, Rain_mean = "Rainfed", Gap_mean = "Gap"),
-    slice    = factor(slice, levels = c("Rainfed", "Gap")),  # Rainfed bottom
+    slice    = factor(slice, levels = c("Gap", "Rainfed")),  # Gap on top, Rainfed (blue) on bottom
     Genotype = factor(Genotype, levels = c("LT", "Non-LT"))
   )
 
