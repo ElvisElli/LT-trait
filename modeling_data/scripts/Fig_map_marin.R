@@ -49,8 +49,8 @@ FILL_LABELS <- c("Rainfed" = "Water-limited yield",
 FILL_BREAKS <- c("Rainfed", "Gap")
 
 # Facet strip labels
-GENO_LABELS <- c("LT" = "Limited transpiration",
-                 "Non-LT" = "Non-limited transpiration")
+GENO_LABELS <- c("LT" = "Limited transpiration (LT)",
+                 "Non-LT" = "Non-limited transpiration (Non-LT)")
 
 # Map aspect: cos-corrected for study-area mean latitude (≈ 38.5°N)
 # MAP_RATIO: 1 degree latitude takes MAP_RATIO× more pixels than 1 degree longitude.
