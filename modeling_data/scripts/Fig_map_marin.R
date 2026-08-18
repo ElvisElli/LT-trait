@@ -406,17 +406,10 @@ combined <- plot_grid(
 # ══════════════════════════════════════════════════════════════════════════════
 
 tiff_file <- "modeling_data/figures/Fig_map_marin.tiff"
-png_file  <- "modeling_data/figures/Fig_map_marin.png"
 
-# TIFF 600 DPI
 ggsave(tiff_file, combined, width = 20, height = 8, units = "cm",
        dpi = 600, compression = "lzw", bg = "white")
 message("Saved TIFF: ", tiff_file)
-
-# PNG 300 DPI
-ggsave(png_file, combined, width = 20, height = 8, units = "cm",
-       dpi = 300, bg = "white")
-message("Saved PNG:  ", png_file)
 
 
 
