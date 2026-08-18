@@ -159,8 +159,10 @@ make_pie_polys <- function(row, ratio = MAP_RATIO, n_pts = PIE_N_PTS) {
   n1 <- max(3L, ceiling(n_pts * frac))
   n2 <- max(3L, ceiling(n_pts * (1 - frac)))
 
-  t_rain <- seq(-pi / 2, -pi / 2 + frac * 2 * pi,       length.out = n1)
-  t_gap  <- seq(-pi / 2 + frac * 2 * pi, -pi / 2 + 2 * pi, length.out = n2)
+  # Start at top (π/2), sweep counterclockwise:
+  #   blue (water-limited) opens to the LEFT, red (yield gap) to the RIGHT
+  t_rain <- seq(pi / 2, pi / 2 + frac * 2 * pi,       length.out = n1)
+  t_gap  <- seq(pi / 2 + frac * 2 * pi, pi / 2 + 2 * pi, length.out = n2)
 
   rbind(
     data.frame(
@@ -312,12 +314,11 @@ map_nonlt <- make_map_panel("Non-LT")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PANEL (B) — BAR CHART
+# PANEL (C) — BAR CHART  (stacked: water-limited bottom, yield gap top)
 #
 # X-axis: LT and Non-LT (mean across 6 locations).
-# Bars stacked: water-limited (blue) on bottom, potential gain (red) on top.
-# Error bar placed at the irrigated total (Irr_mean ± Irr_se).
-# No horizontal cap whiskers; y-axis in kg ha⁻¹.
+# Stacking order mirrors the pie: blue (water-limited) on bottom,
+# red (yield gap) on top. Error bar at the irrigated total ± SE.
 # ══════════════════════════════════════════════════════════════════════════════
 
 # Long format for stacked geom_col
@@ -330,29 +331,25 @@ bar_long <- bar_summary |>
   ) |>
   mutate(
     slice    = recode(slice, Rain_mean = "Rainfed", Gap_mean = "Gap"),
-    slice    = factor(slice, levels = c("Rainfed", "Gap")),   # Rainfed on bottom
+    slice    = factor(slice, levels = c("Rainfed", "Gap")),  # Rainfed bottom
     Genotype = factor(Genotype, levels = c("LT", "Non-LT"))
   )
 
 bar_panel <- ggplot() +
 
-  # Stacked bars (Rainfed bottom = blue, Gap top = red)
+  # Stacked: blue (water-limited) on bottom, red (yield gap) on top
   geom_col(
     data  = bar_long,
     aes(x = Genotype, y = Yield_kgha, fill = slice),
-    width   = 0.5,
-    colour  = BORDER_COL,
+    width     = 0.5,
+    colour    = BORDER_COL,
     linewidth = 0.4
   ) +
 
-  # Error bar at the top of the irrigated total (Irr_mean ± Irr_se)
-  # width = 0 → no horizontal cap whiskers
-  # The bar top equals Irr_mean, so ymin/ymax straddle the bar top correctly
+  # Error bar at the irrigated total (Irr_mean ± Irr_se); no cap whiskers
   geom_errorbar(
     data  = bar_summary,
-    aes(x    = Genotype,
-        ymin  = Irr_mean - Irr_se,
-        ymax  = Irr_mean + Irr_se),
+    aes(x = Genotype, ymin = Irr_mean - Irr_se, ymax = Irr_mean + Irr_se),
     width     = 0,
     linewidth = 0.7,
     colour    = "grey10"
@@ -369,7 +366,7 @@ bar_panel <- ggplot() +
 
   labs(x = NULL) +
 
-  # Dummy facet label so strip height matches map panel — keeps alignment
+  # Dummy facet strip so height matches map panels
   facet_wrap(~"All locations", strip.position = "top") +
 
   theme_nature_bar()
