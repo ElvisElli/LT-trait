@@ -232,7 +232,7 @@ theme_nature_bar <- function(base_size = 8) {
   theme_nature_map(base_size) +
   theme(
     axis.text.x        = element_text(size = base_size + 0.5, colour = "grey10",
-                                      face = "bold"),
+                                      face = "plain"),
     axis.text.y        = element_text(size = base_size - 0.5, colour = "grey20"),
     axis.title.y       = element_text(size = base_size, colour = "grey10",
                                       angle = 90, margin = margin(r = 3)),
@@ -243,7 +243,7 @@ theme_nature_bar <- function(base_size = 8) {
     # Strip sized to match height of map panel strip
     strip.background   = element_rect(fill = "white", colour = BORDER_COL,
                                       linewidth = BORDER_LW),
-    strip.text         = element_text(colour = "grey10", face = "bold",
+    strip.text         = element_text(colour = "grey10", face = "plain",
                                       size = base_size + 0.5),
     legend.position    = "none"   # legend collected by patchwork into map slot
   )
