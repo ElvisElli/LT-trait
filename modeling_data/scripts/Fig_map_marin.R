@@ -379,14 +379,18 @@ bar_panel <- ggplot() +
 # Step 4: stack legend above
 # ══════════════════════════════════════════════════════════════════════════════
 
-# 1. Extract legend
-shared_legend <- get_legend(map_panel_full)
+# 1. Make a temporary version of map with visible legend (for extraction only)
+map_with_legend_temp <- map_panel_full +
+  theme(legend.position = "top", legend.direction = "horizontal")
 
-# 2. Panels with legend removed
+# 2. Extract legend from the temporary map
+shared_legend <- get_legend(map_with_legend_temp)
+
+# 3. Panels with legend removed
 map_no_legend <- map_panel_full + theme(legend.position = "none")
 bar_no_legend <- bar_panel + theme(legend.position = "none")
 
-# 3. Two panels side-by-side: A (map, 2:1) and B (bar, 1:1)
+# 4. Two panels side-by-side: A (map, 2:1) and B (bar, 1:1)
 #    label_x and label_y position labels: move right and up
 panels <- plot_grid(
   map_no_legend, bar_no_legend,
@@ -402,7 +406,7 @@ panels <- plot_grid(
   axis        = "tb"
 )
 
-# 4. Stack: legend on top, panels below
+# 5. Stack: legend on top, panels below
 combined <- plot_grid(
   shared_legend, panels,
   ncol        = 1,
