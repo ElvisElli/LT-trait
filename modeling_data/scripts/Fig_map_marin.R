@@ -392,11 +392,11 @@ combined <- plot_grid(
   labels      = c("A", "B"),
   label_size  = 9.5,
   label_fontface = "plain",
-  label_fontfamily = "sans",
-  label_x     = 0.02,    # slightly right from edge
-  label_y     = 1.05,    # just above panel top, visible
-  align       = "hv",
-  axis        = "tb"
+  label_fontfamily = "sans"
+  #label_x     = 0.02,    # slightly right from edge
+  #label_y     = 1.05    # just above panel top, visible
+  #align       = "hv",
+  #axis        = "tb"
 )
 
 
@@ -408,7 +408,7 @@ combined <- plot_grid(
 
 tiff_file <- "modeling_data/figures/Fig_map_marin.tiff"
 
-ggsave(tiff_file, combined, width = 20, height = 8, units = "cm",
+ggsave(tiff_file, combined, width = 20, height = 7, units = "cm",
        dpi = 600, compression = "lzw", bg = "white")
 message("Saved TIFF: ", tiff_file)
 
