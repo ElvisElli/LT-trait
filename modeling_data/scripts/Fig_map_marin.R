@@ -371,46 +371,32 @@ bar_panel <- ggplot() +
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COMBINE — plot_grid: legend on top, then A (map) and B (bar) below
+# COMBINE — plot_grid: map with legend on left, bar on right
 #
-# Step 1: extract shared legend from map
-# Step 2: remove legend from both panels
-# Step 3: arrange map and bar side-by-side with labels A and B
-# Step 4: stack legend above
+# Map keeps the legend at top (visible); bar has legend removed.
+# Side-by-side with labels A and B.
 # ══════════════════════════════════════════════════════════════════════════════
 
-# 1. Make a temporary version of map with visible legend (for extraction only)
-map_with_legend_temp <- map_panel_full +
+# Map panel with legend visible at top
+map_with_legend <- map_panel_full +
   theme(legend.position = "top", legend.direction = "horizontal")
 
-# 2. Extract legend from the temporary map
-shared_legend <- get_legend(map_with_legend_temp)
-
-# 3. Panels with legend removed
-map_no_legend <- map_panel_full + theme(legend.position = "none")
+# Bar panel with legend removed
 bar_no_legend <- bar_panel + theme(legend.position = "none")
 
-# 4. Two panels side-by-side: A (map, 2:1) and B (bar, 1:1)
-#    label_x and label_y position labels: move right and up
-panels <- plot_grid(
-  map_no_legend, bar_no_legend,
+# Two panels side-by-side: A (map with legend, 2:1) and B (bar, 1:1)
+combined <- plot_grid(
+  map_with_legend, bar_no_legend,
   ncol        = 2,
   rel_widths  = c(2, 1),
   labels      = c("A", "B"),
   label_size  = 9.5,
   label_fontface = "plain",
   label_fontfamily = "sans",
-  label_x     = 0.02,    # slightly right from edge (0 = left edge)
+  label_x     = 0.02,    # slightly right from edge
   label_y     = 1.05,    # just above panel top, visible
   align       = "hv",
   axis        = "tb"
-)
-
-# 5. Stack: legend on top, panels below
-combined <- plot_grid(
-  shared_legend, panels,
-  ncol        = 1,
-  rel_heights = c(0.08, 1)
 )
 
 
