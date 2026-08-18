@@ -49,8 +49,8 @@ FILL_LABELS <- c("Rainfed" = "Water-limited yield",
 FILL_BREAKS <- c("Rainfed", "Gap")
 
 # Facet strip labels
-GENO_LABELS <- c("LT" = "Limited transpiration (LT)",
-                 "Non-LT" = "Non-limited transpiration (Non-LT)")
+GENO_LABELS <- c("LT" = "Limited transpiration trait (LT)",
+                 "Non-LT" = "Non-limited transpiration trait (Non-LT)")
 
 # Map aspect: cos-corrected for study-area mean latitude (≈ 38.5°N)
 # MAP_RATIO: 1 degree latitude takes MAP_RATIO× more pixels than 1 degree longitude.
@@ -405,18 +405,15 @@ combined <- plot_grid(
 # PNG  300 DPI — git-tracked for record and sharing
 # ══════════════════════════════════════════════════════════════════════════════
 
-tiff_type <- if (.Platform$OS.type == "windows") "windows" else "cairo"
-
 tiff_file <- "modeling_data/figures/Fig_map_marin.tiff"
-tiff(tiff_file, width = 20, height = 8, units = "cm",
-     res = 600, compression = "lzw", type = tiff_type)
+
+ggsave(tiff_file, width = 20, height = 7, units = "cm",
+       dpi = 600, compression = "lzw", bg = "white", limitsize = FALSE)
+
 print(combined)
 dev.off()
 message("Saved TIFF: ", tiff_file)
 
-png_file <- "modeling_data/figures/Fig_map_marin.png"
-ggsave(png_file, combined, width = 20, height = 8, units = "cm",
-       dpi = 300, bg = "white")
-message("Saved PNG:  ", png_file)
+
 
 
