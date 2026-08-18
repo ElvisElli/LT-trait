@@ -391,11 +391,11 @@ map_nonlt_no_legend <- map_nonlt + theme(legend.position = "none")
 bar_panel_no_legend <- bar_panel + theme(legend.position = "none")
 
 # 3. Three panels side-by-side, labels A/B/C
-#    align="hv" + axis="tb" stretches panels so top and bottom borders line up
+#    A and B closer: increase relative width of C so A+B take less space
 panels <- plot_grid(
   map_lt_no_legend, map_nonlt_no_legend, bar_panel_no_legend,
   ncol        = 3,
-  rel_widths  = c(1, 1, 0.5),
+  rel_widths  = c(1, 1, 1.2),
   labels      = c("A", "B", "C"),
   label_size  = 9.5,
   label_fontface = "plain",
