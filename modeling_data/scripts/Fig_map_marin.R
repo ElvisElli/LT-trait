@@ -97,7 +97,7 @@ ssm <- ssm_raw |>
   mutate(
     Genotype   = factor(
       ifelse(Crop %in% c("SOYBEAN-MG4", "SOYBEAN-MG3"), "Non-LT", "LT"),
-      levels = c("LT", "Non-LT")        # LT on left panel
+      levels = c("Non-LT", "LT")        # Non-LT first
     ),
     water_mgmt = if_else(water_mgmt == "Rainfed", "Rainfed", "Irrigated")
   )
@@ -132,13 +132,15 @@ bar_summary <- bar_loc |>
   group_by(Genotype) |>
   summarise(
     Rain_mean = mean(Rainfed,   na.rm = TRUE),
+    Rain_se   = sd(Rainfed,     na.rm = TRUE) / sqrt(n()),
     Gap_mean  = mean(Gap,       na.rm = TRUE),
+    Gap_se    = sd(Gap,         na.rm = TRUE) / sqrt(n()),
     Irr_mean  = mean(Irrigated, na.rm = TRUE),
     Irr_se    = sd(Irrigated,   na.rm = TRUE) / sqrt(n()),
     n_loc     = n(),
     .groups   = "drop"
   ) |>
-  mutate(Genotype = factor(Genotype, levels = c("LT", "Non-LT")))
+  mutate(Genotype = factor(Genotype, levels = c("Non-LT", "LT")))
 
 
 # ── 5.  Pie polygon builder  ──────────────────────────────────────────────────
@@ -331,6 +333,15 @@ bar_panel <- ggplot() +
     width     = 0.5,
     colour    = BORDER_COL,
     linewidth = 0.4
+  ) +
+
+  # Error bar for water-limited yield (Rainfed segment)
+  geom_errorbar(
+    data  = bar_summary,
+    aes(x = Genotype, ymin = Rain_mean - Rain_se, ymax = Rain_mean + Rain_se),
+    width     = 0,
+    linewidth = 0.7,
+    colour    = "grey10"
   ) +
 
   # Error bar at the irrigated total (Irr_mean ± Irr_se); no cap whiskers
