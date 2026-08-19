@@ -324,10 +324,10 @@ local({
               by = "Genotype") |>
     mutate(WUE_class = factor(WUE_class, levels = WUE_ORDER))
 
-  # Panel label: genotype only (model type removed)
+  # Panel label: genotype + WUE class description
   panel_order <- best_params |>
     arrange(match(WUE_class, WUE_ORDER), Genotype) |>
-    mutate(Panel_label = Genotype)
+    mutate(Panel_label = paste0(Genotype, "\n(", WUE_class, ")"))
 
   day1_lab   <- left_join(day1,   panel_order |> select(Genotype, Panel_label), by = "Genotype")
   curves_lab <- left_join(curves, panel_order |> select(Genotype, Panel_label), by = "Genotype")
