@@ -267,8 +267,6 @@ local({
       WUE_class = factor(WUE_class, levels = WUE_ORDER)
     )
   day1      <- filter(df, Day_label == "Day 1")
-  # Filter out: AG43XF2, PI471938, PI442012A, PI603171, PI603418D
-  day1      <- filter(day1, !(Genotype %in% c("AG43XF2", "PI471938", "PI442012A", "PI603171", "PI603418D")))
   genotypes <- levels(droplevels(day1$Genotype))
   VPD_SEQ   <- seq(min(day1$VPD, na.rm = TRUE) * 0.95,
                    max(day1$VPD, na.rm = TRUE) * 1.05, length.out = 300)
@@ -345,7 +343,7 @@ local({
               aes(x = VPD, y = y_hat, colour = WUE_class),
               linewidth = 1.0, inherit.aes = FALSE) +
     scale_colour_manual(values = WUE_COLS, name = NULL) +
-    facet_wrap(~Panel_label, ncol = 3, scales = "fixed") +
+    facet_wrap(~Panel_label, ncol = 7, scales = "fixed") +
     coord_cartesian(ylim = c(0, 120)) +
     labs(x = "VPD (kPa)",
          y = expression(TR~(mg~m^{-2}~s^{-1}))) +
@@ -354,7 +352,7 @@ local({
     guides(colour = "none")
 
   ggsave(file.path(OUTDIR, "Figure1_TR_response_VPD.tiff"), p,
-         width = 10, height = 10, dpi = DPI, device = tiff_cairo)
+         width = 16, height = 6, dpi = DPI, device = tiff_cairo)
   cat("\n  Saved: Figure1_TR_response_VPD.tiff\n\n")
 })
 
