@@ -60,6 +60,15 @@ UA_DARK  <- "#1A1A1A"
 WUE_ORDER <- c("slow_wilting", "high_wilting",
                 "Plastic, High WUE", "Nonplastic, Low WUE", "MAGIC parent")
 
+# WUE class display labels (for figures)
+WUE_LABELS <- c(
+  "slow_wilting"        = "Expected slow wilting",
+  "high_wilting"        = "Expected high wilting",
+  "Plastic, High WUE"   = "Expected WUE Plasticity",
+  "Nonplastic, Low WUE" = "Expected Low WUE",
+  "MAGIC parent"        = NA  # Remove MAGIC parent
+)
+
 # Nature style: all dark green for consistency
 WUE_COLS <- c(
   "slow_wilting"        = "#31a354",
@@ -326,10 +335,15 @@ local({
               by = "Genotype") |>
     mutate(WUE_class = factor(WUE_class, levels = WUE_ORDER))
 
-  # Panel label: genotype + WUE class description
+  # Panel label: genotype + WUE class description (using updated labels)
   panel_order <- best_params |>
     arrange(match(WUE_class, WUE_ORDER), Genotype) |>
-    mutate(Panel_label = paste0(Genotype, "\n(", WUE_class, ")"))
+    mutate(
+      WUE_display = WUE_LABELS[WUE_class],
+      Panel_label = if_else(is.na(WUE_display),
+                            Genotype,
+                            paste0(Genotype, "\n(", WUE_display, ")"))
+    )
 
   day1_lab   <- left_join(day1,   panel_order |> select(Genotype, Panel_label), by = "Genotype")
   curves_lab <- left_join(curves, panel_order |> select(Genotype, Panel_label), by = "Genotype")
