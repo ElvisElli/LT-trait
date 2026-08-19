@@ -353,7 +353,12 @@ local({
 
   ggsave(file.path(OUTDIR, "Figure1_TR_response_VPD.tiff"), p,
          width = 16, height = 6, dpi = DPI, device = tiff_cairo)
-  cat("\n  Saved: Figure1_TR_response_VPD.tiff\n\n")
+  cat("\n  Saved: Figure1_TR_response_VPD.tiff\n")
+
+  # Also save as PNG for preview
+  ggsave(file.path(OUTDIR, "Figure1_TR_response_VPD.png"), p,
+         width = 16, height = 6, dpi = 150, device = "png")
+  cat("  Saved: Figure1_TR_response_VPD.png (preview)\n\n")
 })
 
 
