@@ -336,9 +336,9 @@ local({
     mutate(WUE_class = factor(WUE_class, levels = WUE_ORDER))
 
   # Panel label: genotype + WUE class description (using updated labels)
-  # Custom genotype order: move A5959, PI377574 to position before PI39 genotypes
-  custom_order <- c("PI398198", "PI398492", "PI398617", "PI424231",
-                    "A5959", "PI377574", "PI471938", "PI603171", "PI603418D")
+  # Custom genotype order: High Plasticity → Low Plasticity → Wilting → PI39
+  custom_order <- c("PI398492", "PI398617", "PI424231", "PI603418D",
+                    "PI377574", "PI603171", "A5959", "PI471938", "PI398198")
 
   panel_order <- best_params |>
     mutate(
