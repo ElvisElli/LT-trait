@@ -1003,12 +1003,12 @@ p7 <- ggplot() +
   geom_point(data = day1_filtered |>
                mutate(Genotype = factor(Genotype, levels = genotypes_fig7)),
              aes(x = VPD, y = TR),
-             colour = "black", fill = "#d95f02", size = 2.5, shape = 21, stroke = 0.9) +
+             colour = "black", fill = "#d95f02", size = 3.2, shape = 21, stroke = 0.9) +
   geom_line(data = curves_best_tr_only,
             aes(x = VPD, y = y_hat),
             colour = "#d95f02", linewidth = 0.9) +
   facet_wrap(~Genotype, ncol = 5, scales = "fixed") +
-  coord_cartesian(ylim = TR_YLIM) +
+  coord_cartesian(ylim = c(0, 110)) +
   scale_x_continuous(breaks = seq(0, 5, by = 1)) +
   labs(x = "VPD (kPa)", y = expression(TR~(mg~m^{-2}~s^{-1}))) +
   theme_nature_fig7()
