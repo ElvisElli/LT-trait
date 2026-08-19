@@ -963,44 +963,58 @@ cat("Saved Fig6\n")
 # ---- FIG 7: TR all raw points + best model only, one panel per genotype -----
 cat("Building Fig7 ...\n")
 
+# Remove genotypes with only 1 observation
+day1_filtered <- day1 |>
+  group_by(Genotype) |>
+  filter(n() > 1) |>
+  ungroup()
+
+genotypes_fig7 <- unique(day1_filtered$Genotype)
+
 # Best-model curve only (one curve per genotype)
-curves_best_tr_only <- bind_rows(lapply(genotypes, function(g) {
+curves_best_tr_only <- bind_rows(lapply(genotypes_fig7, function(g) {
   fit <- tr_fits[[g]]
   if (is.null(fit)) return(NULL)
   tryCatch(pred_curve(fit, fit$best, VPD_SEQ) |>
-             mutate(Genotype  = factor(g, levels = genotypes),
-                    WUE_class = as.character(wue_lookup[g])),
+             mutate(Genotype = factor(g, levels = genotypes_fig7)),
            error = function(e) NULL)
 }))
 
+# Nature publishing theme
+theme_nature_fig7 <- function() {
+  theme_bw(base_size = 8) +
+  theme(
+    panel.grid.minor    = element_blank(),
+    panel.grid.major    = element_line(linewidth = 0.2, colour = "grey85"),
+    panel.border        = element_rect(colour = "black", linewidth = 0.7),
+    strip.background    = element_rect(fill = "white", colour = "black", linewidth = 0.7),
+    strip.text          = element_text(colour = "grey10", face = "plain", size = 8),
+    axis.title          = element_text(size = 8, colour = "grey10"),
+    axis.text           = element_text(size = 7.5, colour = "grey20"),
+    plot.title          = element_blank(),
+    legend.position     = "bottom",
+    legend.text         = element_text(size = 7.5),
+    legend.title        = element_blank(),
+    legend.key.size     = unit(0.5, "lines")
+  )
+}
+
 p7 <- ggplot() +
-  geom_point(data = day1 |>
-               mutate(Genotype = factor(Genotype, levels = genotypes)),
-             aes(x = VPD, y = TR, fill = WUE_class, shape = WUE_class),
-             colour = "white", size = 2.0, alpha = 0.75, stroke = 0.3) +
-  scale_fill_manual(values  = WUE_COLS,   name = "WUE class") +
-  scale_shape_manual(values = WUE_SHAPES, name = "WUE class") +
+  geom_point(data = day1_filtered |>
+               mutate(Genotype = factor(Genotype, levels = genotypes_fig7)),
+             aes(x = VPD, y = TR),
+             colour = "black", fill = "#d95f02", size = 2.5, shape = 21, stroke = 0.9) +
   geom_line(data = curves_best_tr_only,
-            aes(x = VPD, y = y_hat, colour = WUE_class),
-            linewidth = 1.4) +
-  scale_colour_manual(values = WUE_COLS, name = "WUE class") +
+            aes(x = VPD, y = y_hat),
+            colour = "#d95f02", linewidth = 0.9) +
   facet_wrap(~Genotype, ncol = 5, scales = "fixed") +
   coord_cartesian(ylim = TR_YLIM) +
-  labs(
-    title = "Fig 7  Transpiration rate vs VPD — Day 1  (best model only)",
-    x = "VPD (kPa)",
-    y = expression(TR~(mg~m^{-2}~s^{-1}))
-  ) +
-  UA_THEME +
-  theme(legend.position = "bottom") +
-  guides(
-    fill   = guide_legend(nrow = 2, override.aes = list(size = 3, stroke = 0)),
-    shape  = guide_legend(nrow = 2),
-    colour = guide_legend(nrow = 2, override.aes = list(linewidth = 1.2))
-  )
+  scale_x_continuous(breaks = seq(0, 5, by = 1)) +
+  labs(x = "VPD (kPa)", y = expression(TR~(mg~m^{-2}~s^{-1}))) +
+  theme_nature_fig7()
 
 ggsave("figures/Fig7_TR_best_model.png", p7,
-       width = 14, height = 8, dpi = 300)
+       width = 16, height = 9, dpi = 300, bg = "white")
 cat("Saved Fig7\n")
 
 
