@@ -62,10 +62,10 @@ WUE_ORDER <- c("slow_wilting", "high_wilting",
 
 # WUE class display labels (for figures)
 WUE_LABELS <- c(
-  "slow_wilting"        = "Expected slow wilting",
-  "high_wilting"        = "Expected high wilting",
-  "Plastic, High WUE"   = "Expected WUE Plasticity",
-  "Nonplastic, Low WUE" = "Expected Low WUE",
+  "slow_wilting"        = "slow wilting",
+  "high_wilting"        = "high wilting",
+  "Plastic, High WUE"   = "High WUE Plasticity",
+  "Nonplastic, Low WUE" = "Low WUE Plasticity",
   "MAGIC parent"        = NA  # Remove MAGIC parent
 )
 
