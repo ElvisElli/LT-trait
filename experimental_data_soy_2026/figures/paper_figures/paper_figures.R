@@ -62,8 +62,8 @@ WUE_ORDER <- c("slow_wilting", "high_wilting",
 
 # WUE class display labels (for figures)
 WUE_LABELS <- c(
-  "slow_wilting"        = "slow wilting",
-  "high_wilting"        = "high wilting",
+  "slow_wilting"        = "Slow Wilting",
+  "high_wilting"        = "High Wilting",
   "Plastic, High WUE"   = "High WUE Plasticity",
   "Nonplastic, Low WUE" = "Low WUE Plasticity",
   "MAGIC parent"        = NA  # Remove MAGIC parent
@@ -336,14 +336,19 @@ local({
     mutate(WUE_class = factor(WUE_class, levels = WUE_ORDER))
 
   # Panel label: genotype + WUE class description (using updated labels)
+  # Custom genotype order: move A5959, PI377574 to position before PI39 genotypes
+  custom_order <- c("PI398198", "PI398492", "PI398617", "PI424231",
+                    "A5959", "PI377574", "PI471938", "PI603171", "PI603418D")
+
   panel_order <- best_params |>
-    arrange(match(WUE_class, WUE_ORDER), Genotype) |>
     mutate(
+      sort_order = match(Genotype, custom_order),
       WUE_display = WUE_LABELS[WUE_class],
       Panel_label = if_else(is.na(WUE_display),
                             Genotype,
                             paste0(Genotype, "\n(", WUE_display, ")"))
-    )
+    ) |>
+    arrange(sort_order)
 
   day1_lab   <- left_join(day1,   panel_order |> select(Genotype, Panel_label), by = "Genotype")
   curves_lab <- left_join(curves, panel_order |> select(Genotype, Panel_label), by = "Genotype")
