@@ -60,23 +60,29 @@ UA_DARK  <- "#1A1A1A"
 WUE_ORDER <- c("slow_wilting", "high_wilting",
                 "Plastic, High WUE", "Nonplastic, Low WUE", "MAGIC parent")
 
+# Nature style: all dark green for consistency
 WUE_COLS <- c(
-  "slow_wilting"        = UA_WINE,
-  "high_wilting"        = "#C8102E",
-  "Plastic, High WUE"   = UA_BLUE,
-  "Nonplastic, Low WUE" = "#d4824a",
-  "MAGIC parent"        = "#333333"
+  "slow_wilting"        = "#31a354",
+  "high_wilting"        = "#31a354",
+  "Plastic, High WUE"   = "#31a354",
+  "Nonplastic, Low WUE" = "#31a354",
+  "MAGIC parent"        = "#31a354"
 )
 
 UA_THEME <- theme_bw(base_size = 10) +
   theme(
     panel.grid.minor = element_blank(),
-    panel.grid.major = element_line(linewidth = 0.3, colour = "grey90"),
-    strip.background = element_rect(fill = UA_RED, colour = NA),
-    strip.text       = element_text(colour = "white", face = "bold", size = 7),
-    axis.title       = element_text(size = 9),
+    panel.grid.major = element_blank(),
+    panel.border = element_rect(colour = "black", linewidth = 0.7, fill = NA),
+    strip.background = element_rect(fill = "white", colour = "black", linewidth = 0.7),
+    strip.text       = element_text(colour = "black", face = "plain", size = 8),
+    axis.title       = element_text(size = 9, face = "plain"),
+    axis.text        = element_text(size = 8, face = "plain", colour = "black"),
+    plot.background  = element_rect(fill = "white", colour = NA),
+    panel.background = element_rect(fill = "white", colour = NA),
     legend.key.size  = unit(0.45, "cm"),
-    legend.text      = element_text(size = 8)
+    legend.text      = element_text(size = 8, face = "plain"),
+    legend.background = element_rect(fill = "white", colour = "black", linewidth = 0.5)
   )
 
 # --------------------------------------------------------------------------- #
@@ -334,21 +340,18 @@ local({
 
   # ── 5. Plot ─────────────────────────────────────────────────────────────────
   p <- ggplot(day1_lab, aes(x = VPD, y = TR, colour = WUE_class)) +
-    geom_point(size = 1.5, alpha = 0.65) +
+    geom_point(size = 2.5, shape = 21, colour = "black", fill = "#31a354", stroke = 0.8, alpha = 0.9) +
     geom_line(data = curves_lab,
               aes(x = VPD, y = y_hat, colour = WUE_class),
-              linewidth = 0.9, inherit.aes = FALSE) +
-    scale_colour_manual(values = WUE_COLS, name = "WUE class") +
+              linewidth = 1.0, inherit.aes = FALSE) +
+    scale_colour_manual(values = WUE_COLS, name = NULL) +
     facet_wrap(~Panel_label, ncol = 3, scales = "fixed") +
     coord_cartesian(ylim = c(0, 120)) +
     labs(x = "VPD (kPa)",
          y = expression(TR~(mg~m^{-2}~s^{-1}))) +
     UA_THEME +
-    theme(strip.text      = element_text(colour = "white", face = "bold",
-                                         size = 6.5, lineheight = 1.0),
-          legend.position = "bottom") +
-    guides(colour = guide_legend(nrow = 2,
-                                 override.aes = list(size = 2.5, linewidth = 0.8)))
+    theme(legend.position = "none") +
+    guides(colour = "none")
 
   ggsave(file.path(OUTDIR, "Figure1_TR_response_VPD.tiff"), p,
          width = 10, height = 10, dpi = DPI, device = tiff_cairo)
@@ -529,20 +532,20 @@ local({
   cat("\n  Full parameter table:\n")
   print(fig_df |> select(Genotype, WUE_class, Best_model, AIC_best, Intercept, Slope1))
 
-  # Colour mapping for the three WUE groups
+  # Colour mapping for the three WUE groups (Nature style: all dark green)
   WUE_COLS_Q <- c(
-    "Plastic, High WUE"   = UA_BLUE,
-    "Nonplastic, Low WUE" = "#d4824a",
-    "Other"               = "#AAAAAA"
+    "Plastic, High WUE"   = "#31a354",
+    "Nonplastic, Low WUE" = "#31a354",
+    "Other"               = "#31a354"
   )
 
-  # Shaded quadrant backgrounds
+  # Shaded quadrant backgrounds (minimal, light)
   quad_shade <- data.frame(
     xmin = c(-Inf,  x_mid, -Inf,  x_mid),
     xmax = c(x_mid,  Inf,  x_mid,  Inf),
     ymin = c(slope_mid, slope_mid, -Inf,       -Inf),
     ymax = c(Inf,       Inf,       slope_mid,  slope_mid),
-    fill = c("#e8f0fb", "#fde8e8", "#eafaea",  "#fef6e0")
+    fill = c("#f5f5f5", "#f5f5f5", "#ffffff",  "#ffffff")
   )
 
   # ── 4. Plot ─────────────────────────────────────────────────────────────────
@@ -574,18 +577,20 @@ local({
              label = "High intercept\nLow sensitivity",
              hjust = 1, vjust = -1.0, size = 2.6,
              colour = "#555555", fontface = "italic", lineheight = 0.9) +
-    # Points and labels
-    geom_point(aes(shape = Best_model), size = 4, alpha = 0.92) +
+    # Points and labels (Nature style: dark green with black borders)
+    geom_point(aes(shape = Best_model), size = 3.5, colour = "black", fill = "#31a354",
+               stroke = 1.0, alpha = 0.9) +
     geom_label_repel(
       aes(label = Genotype),
-      size = 2.7, box.padding = 0.5, point.padding = 0.3,
-      max.overlaps = 20, label.size = 0.2, alpha = 0.92,
-      show.legend = FALSE, seed = 42
+      size = 2.5, box.padding = 0.4, point.padding = 0.25,
+      max.overlaps = 20, label.size = 0.3, alpha = 0.85,
+      show.legend = FALSE, seed = 42,
+      fill = "white", colour = "black"
     ) +
     scale_colour_manual(values = WUE_COLS_Q, name = NULL,
                         breaks = c("Plastic, High WUE", "Nonplastic, Low WUE")) +
     scale_shape_manual(
-      values = c("Linear" = 16, "Bilinear" = 17, "Lin. plateau" = 15),
+      values = c("Linear" = 21, "Bilinear" = 22, "Lin. plateau" = 24),
       name = NULL
     ) +
     labs(
@@ -593,7 +598,7 @@ local({
       y = expression(Slope~~(mg~m^{-2}~s^{-1}~kPa^{-1}))
     ) +
     UA_THEME +
-    theme(legend.position = "right")
+    theme(legend.position = "none")
 
   ggsave(file.path(OUTDIR, "Figure3_intercept_slope_quadrants.tiff"), p,
          width = 9, height = 6.5, dpi = DPI, device = tiff_cairo)
