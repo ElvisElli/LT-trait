@@ -75,7 +75,7 @@ UA_THEME <- theme_bw(base_size = 10) +
     panel.grid.major = element_blank(),
     panel.border = element_rect(colour = "black", linewidth = 0.7, fill = NA),
     strip.background = element_rect(fill = "white", colour = "black", linewidth = 0.7),
-    strip.text       = element_text(colour = "black", face = "plain", size = 8),
+    strip.text       = element_text(colour = "black", face = "plain", size = 10),
     axis.title       = element_text(size = 9, face = "plain"),
     axis.text        = element_text(size = 8, face = "plain", colour = "black"),
     plot.background  = element_rect(fill = "white", colour = NA),
@@ -326,10 +326,10 @@ local({
               by = "Genotype") |>
     mutate(WUE_class = factor(WUE_class, levels = WUE_ORDER))
 
-  # Panel label: genotype + winning model type (shown in strip)
+  # Panel label: genotype only (model type removed)
   panel_order <- best_params |>
     arrange(match(WUE_class, WUE_ORDER), Genotype) |>
-    mutate(Panel_label = paste0(Genotype, "\n[", Best_model, "]"))
+    mutate(Panel_label = Genotype)
 
   day1_lab   <- left_join(day1,   panel_order |> select(Genotype, Panel_label), by = "Genotype")
   curves_lab <- left_join(curves, panel_order |> select(Genotype, Panel_label), by = "Genotype")
@@ -562,21 +562,21 @@ local({
                colour = UA_GRAY, linewidth = 0.65) +
     # Quadrant text labels (corners)
     annotate("text", x = x_mid - diff(x_rng) * 0.03, y = Inf,
-             label = "Low intercept\nHigh sensitivity",
+             label = "Low water use\nunder high VPD",
              hjust = 1, vjust = 2.0, size = 2.6,
-             colour = "#555555", fontface = "italic", lineheight = 0.9) +
+             colour = "black", fontface = "plain", lineheight = 0.9) +
     annotate("text", x = x_rng[2] - diff(x_rng) * 0.05, y = Inf,
-             label = "High intercept\nHigh sensitivity",
+             label = "High water use\nunder high VPD",
              hjust = 1, vjust = 2.0, size = 2.6,
-             colour = "#555555", fontface = "italic", lineheight = 0.9) +
+             colour = "black", fontface = "plain", lineheight = 0.9) +
     annotate("text", x = x_rng[1] + diff(x_rng) * 0.05, y = -Inf,
-             label = "Low intercept\nLow sensitivity",
+             label = "Low water use\nunder low VPD",
              hjust = 0, vjust = -1.0, size = 2.6,
-             colour = "#555555", fontface = "italic", lineheight = 0.9) +
+             colour = "black", fontface = "plain", lineheight = 0.9) +
     annotate("text", x = x_rng[2] - diff(x_rng) * 0.05, y = -Inf,
-             label = "High intercept\nLow sensitivity",
+             label = "High water use\nunder low VPD",
              hjust = 1, vjust = -1.0, size = 2.6,
-             colour = "#555555", fontface = "italic", lineheight = 0.9) +
+             colour = "black", fontface = "plain", lineheight = 0.9) +
     # Points and labels (Nature style: dark green with black borders)
     geom_point(aes(shape = Best_model), size = 3.5, colour = "black", fill = "#31a354",
                stroke = 1.0, alpha = 0.9) +
@@ -598,7 +598,8 @@ local({
       y = expression(Slope~~(mg~m^{-2}~s^{-1}~kPa^{-1}))
     ) +
     UA_THEME +
-    theme(legend.position = "none")
+    theme(legend.position = "bottom",
+          legend.box = "horizontal")
 
   ggsave(file.path(OUTDIR, "Figure3_intercept_slope_quadrants.tiff"), p,
          width = 9, height = 6.5, dpi = DPI, device = tiff_cairo)
