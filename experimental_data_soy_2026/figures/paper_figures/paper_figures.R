@@ -253,7 +253,7 @@ cat("=== paper_figures.R loaded — building", DPI, "DPI TIFFs ===\n\n")
 
 # ==============================================================================
 # FIGURE 1
-# TR response to VPD per genotype — best-fit model curve + raw Day 1 data
+# Transpiration response to Vapor Pressure Deficit per genotype — best-fit model curve + raw Day 1 data
 #
 # For each genotype we fit three models and pick the winner by AIC.
 # The panel strip shows the genotype name and the winning model type.
@@ -366,8 +366,8 @@ local({
     scale_colour_manual(values = WUE_COLS, name = NULL) +
     facet_wrap(~Panel_label, ncol = 3, scales = "fixed") +
     coord_cartesian(ylim = c(0, 120)) +
-    labs(x = "VPD (kPa)",
-         y = expression(TR~(mg~m^{-2}~s^{-1}))) +
+    labs(x = "Vapor Pressure Deficit (kPa)",
+         y = expression(Transpiration~(mg~m^{-2}~s^{-1}))) +
     UA_THEME +
     theme(legend.position = "none") +
     guides(colour = "none")
