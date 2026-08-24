@@ -320,6 +320,12 @@ local({
     )
   }))
 
+  # Reclassify PI398198 from MAGIC parent to Low WUE Plasticity
+  best_params <- best_params |>
+    mutate(
+      WUE_class = if_else(Genotype == "PI398198", "Nonplastic, Low WUE", WUE_class)
+    )
+
   cat("\n  Best-model parameter summary:\n")
   print(best_params, n = Inf)
 
@@ -336,9 +342,9 @@ local({
     mutate(WUE_class = factor(WUE_class, levels = WUE_ORDER))
 
   # Panel label: genotype + WUE class description (using updated labels)
-  # Custom genotype order: High Plasticity → Low Plasticity → Wilting → PI39
+  # Custom genotype order: High Plasticity → Low Plasticity → Wilting
   custom_order <- c("PI398492", "PI398617", "PI424231", "PI603418D",
-                    "PI377574", "PI603171", "A5959", "PI471938", "PI398198")
+                    "PI377574", "PI603171", "PI398198", "A5959", "PI471938")
 
   panel_order <- best_params |>
     mutate(
