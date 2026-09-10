@@ -293,6 +293,7 @@ local({
       d   <- filter(day1, Genotype == g) |> select(TR, VPD, Rep)
       fit <- fit_all_models(d, response = "TR")
       if (!is.null(fit)) {
+        best_mark <- if (fit$best == "Linear") "***" else if (fit$best == "Bilinear") "***" else "***"
         cat(sprintf("  %-14s  %7.1f  %8.1f  %12.1f  %s\n",
                     g,
                     fit$AIC["Linear"], fit$AIC["Bilinear"],
@@ -302,6 +303,34 @@ local({
     }),
     genotypes
   )
+
+  # ── Create AIC comparison table (Figure 1) ──────────────────────────────────
+  aic_table_fig1 <- bind_rows(lapply(genotypes, function(g) {
+    fit <- tr_fits[[g]]
+    if (is.null(fit)) return(NULL)
+    tibble(
+      Genotype = g,
+      Linear = round(fit$AIC["Linear"], 1),
+      Bilinear = if (!is.na(fit$AIC["Bilinear"])) round(fit$AIC["Bilinear"], 1) else NA_real_,
+      "Lin. plateau" = round(fit$AIC["Lin. plateau"], 1),
+      Best = fit$best
+    )
+  }))
+
+  cat("\n\n  FIGURE 1 — Goodness of Fit (AIC) Comparison Table\n")
+  cat("  ================================================================================\n")
+  cat("  Genotype         Linear   Bilinear   Lin.plateau   Best Model (★)\n")
+  cat("  ────────────────────────────────────────────────────────────────────────────────\n")
+  for (i in 1:nrow(aic_table_fig1)) {
+    row <- aic_table_fig1[i, ]
+    lin_str <- sprintf("%7.1f", row$Linear)
+    bil_str <- if (!is.na(row$Bilinear)) sprintf("%8.1f", row$Bilinear) else "       NA"
+    lp_str <- sprintf("%11.1f", row$`Lin. plateau`)
+    best_name <- row$Best
+    cat(sprintf("  %-15s %s %s %s   %-15s ★\n",
+                row$Genotype, lin_str, bil_str, lp_str, best_name))
+  }
+  cat("  ════════════════════════════════════════════════════════════════════════════════\n\n")
 
   # ── 3. Build parameter summary (best model per genotype) ────────────────────
   best_params <- bind_rows(lapply(genotypes, function(g) {
@@ -802,6 +831,7 @@ local({
     rename(Rep = RepNo, Day = day, VPD = avg_vpd) |>
     mutate(
       Rep       = factor(Rep),
+      IsNewRep  = (Rep == 5),  # Mark Rep 5 as new
       Day_label = factor(ifelse(Day == 1, "Day 1", "Day 2"),
                          levels = c("Day 1", "Day 2")),
       Genotype  = factor(Genotype),
@@ -813,14 +843,19 @@ local({
   df$gsw[all_na] <- NA
 
   day1     <- filter(df, Day_label == "Day 1")
-  day1_gsw <- filter(day1, !is.na(gsw))
+  day1_gsw <- filter(day1, !is.na(gsw)) |>
+    # Remove gsw outliers (>10 mol m⁻² s⁻¹, typically A5959 high value)
+    filter(gsw <= 10)
   geno_gsw <- levels(droplevels(day1_gsw$Genotype))
+
+  cat("\n  Note: Removed", sum(day1[!is.na(day1$gsw), ]$gsw > 10), "gsw outlier observations (gsw > 10)\n")
 
   # Long format: each plant contributes 3 individual LICOR readings
   day1_long <- day1_gsw |>
     pivot_longer(cols = c(gsw1, gsw2, gsw3),
                  names_to = "licor_rep", values_to = "gsw_reading") |>
-    filter(!is.na(gsw_reading))
+    filter(!is.na(gsw_reading)) |>
+    mutate(IsNewRep = (Rep == 5))
 
   VPD_SEQ <- seq(min(day1_gsw$VPD, na.rm = TRUE) * 0.95,
                  max(day1_gsw$VPD, na.rm = TRUE) * 1.05, length.out = 300)
@@ -896,7 +931,13 @@ local({
 
   # ── 5. Plot ─────────────────────────────────────────────────────────────────
   p <- ggplot(day1_long_lab, aes(x = VPD, y = gsw_reading, colour = WUE_class)) +
-    geom_point(size = 1.5, alpha = 0.65,
+    # Previous reps (1-4) in green
+    geom_point(data = filter(day1_long_lab, IsNewRep == FALSE),
+               size = 1.5, alpha = 0.65, colour = "#31a354",
+               position = position_jitter(width = 0.02, seed = 1)) +
+    # New Rep 5 in red
+    geom_point(data = filter(day1_long_lab, IsNewRep == TRUE),
+               size = 1.5, alpha = 0.65, colour = "#e41a1c",
                position = position_jitter(width = 0.02, seed = 1)) +
     geom_line(data    = curves_lab,
               aes(x = VPD, y = y_hat, colour = WUE_class),
@@ -904,7 +945,7 @@ local({
     scale_colour_manual(values = WUE_COLS, name = "WUE class") +
     facet_wrap(~Panel_label, ncol = 5, scales = "fixed") +
     coord_cartesian(ylim = GSW_YLIM) +
-    labs(x = "VPD (kPa)",
+    labs(x = "Vapor Pressure Deficit (kPa)",
          y = expression(g[sw]~(mol~m^{-2}~s^{-1}))) +
     UA_THEME +
     theme(strip.text      = element_text(colour = "white", face = "bold",
