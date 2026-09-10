@@ -44,7 +44,7 @@ suppressPackageStartupMessages({
   library(nlme)
   library(patchwork)
   library(ggrepel)
-  library(ggh4x)
+  # ggh4x loaded only in FIGURE 5 section if available
 })
 
 # --------------------------------------------------------------------------- #
@@ -264,7 +264,7 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
+  raw <- read_excel("../../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
@@ -407,7 +407,7 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data (all genotypes) ────────────────────────────────
-  raw <- read_excel("../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
+  raw <- read_excel("../../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
@@ -548,7 +548,7 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
+  raw <- read_excel("../../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
@@ -639,7 +639,7 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
+  raw <- read_excel("../../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
@@ -796,7 +796,7 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
+  raw <- read_excel("../../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, VPD = avg_vpd) |>
@@ -927,6 +927,11 @@ local({
 # Predictions extracted from best-fit model at each target VPD.
 # ==============================================================================
 local({
+  # Try to load ggh4x (only used in this section)
+  if (!require(ggh4x, quietly = TRUE)) {
+    cat("⚠ ggh4x not available; skipping FIGURE 5\n")
+    return(invisible(NULL))
+  }
   cat("──────────────────────────────────────────────────\n")
   cat("FIGURE 5  Predicted TR and gsw at 1.5 and 3.5 kPa\n")
   cat("──────────────────────────────────────────────────\n")
@@ -951,7 +956,7 @@ local({
   )
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
+  raw <- read_excel("../../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
