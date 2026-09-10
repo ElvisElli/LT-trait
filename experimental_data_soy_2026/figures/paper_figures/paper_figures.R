@@ -20,7 +20,7 @@
 # DPI   : set below — 600 for submission, 150 for a quick screen preview
 # ==============================================================================
 
-DPI    <- 600     # change to 150 for fast preview
+DPI    <- 150     # change to 600 for publication, 150 for fast preview
 OUTDIR <- "."     # TIFFs land next to this script
 
 # Headless-safe TIFF device (Linux without X11)
@@ -264,12 +264,13 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("data_all.xlsx", sheet = "dataAll")
+  raw <- read_excel("../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
     mutate(
       Rep       = factor(Rep),
+      IsNewRep  = (Rep == 5),  # Mark Rep 5 as new (red)
       Day_label = factor(ifelse(Day == 1, "Day 1", "Day 2"),
                          levels = c("Day 1", "Day 2")),
       Genotype  = factor(Genotype),
@@ -363,9 +364,14 @@ local({
   day1_lab   <- mutate(day1_lab,   Panel_label = factor(Panel_label, levels = lvls))
   curves_lab <- mutate(curves_lab, Panel_label = factor(Panel_label, levels = lvls))
 
-  # ── 5. Plot ─────────────────────────────────────────────────────────────────
+  # ── 5. Plot — 9 panel version with new Rep 5 marked in red ─────────────────
   p <- ggplot(day1_lab, aes(x = VPD, y = TR, colour = WUE_class)) +
-    geom_point(size = 2.5, shape = 21, colour = "black", fill = "#31a354", stroke = 0.8, alpha = 0.9) +
+    # Previous reps (1-4) in green
+    geom_point(data = filter(day1_lab, IsNewRep == FALSE),
+               size = 2.5, shape = 21, colour = "black", fill = "#31a354", stroke = 0.8, alpha = 0.9) +
+    # New Rep 5 in red
+    geom_point(data = filter(day1_lab, IsNewRep == TRUE),
+               size = 2.5, shape = 21, colour = "black", fill = "#e41a1c", stroke = 0.8, alpha = 0.9) +
     geom_line(data = curves_lab,
               aes(x = VPD, y = y_hat, colour = WUE_class),
               linewidth = 1.0, inherit.aes = FALSE) +
@@ -378,14 +384,154 @@ local({
     theme(legend.position = "none") +
     guides(colour = "none")
 
-  ggsave(file.path(OUTDIR, "Figure1_TR_response_VPD.tiff"), p,
+  ggsave(file.path(OUTDIR, "Figure1_9panel_FITTED_NEW_REP_RED.tiff"), p,
          width = 10, height = 10, dpi = DPI, device = tiff_cairo)
-  cat("\n  Saved: Figure1_TR_response_VPD.tiff\n")
+  cat("\n  Saved: Figure1_9panel_FITTED_NEW_REP_RED.tiff\n")
 
   # Also save as PNG for preview
-  ggsave(file.path(OUTDIR, "Figure1_TR_response_VPD.png"), p,
+  ggsave(file.path(OUTDIR, "Figure1_9panel_FITTED_NEW_REP_RED.png"), p,
          width = 10, height = 10, dpi = 150, device = "png")
-  cat("  Saved: Figure1_TR_response_VPD.png (preview)\n\n")
+  cat("  Saved: Figure1_9panel_FITTED_NEW_REP_RED.png (preview)\n\n")
+})
+
+
+# ==============================================================================
+# FIGURE 1B
+# All genotypes (14-panel version) — TR response to VPD with new Rep 5 in red
+#
+# Same as Figure 1 but with all genotypes (except ≤2 reps) in a 7x2 layout
+# ==============================================================================
+local({
+  cat("──────────────────────────────────────────────────\n")
+  cat("FIGURE 1B  TR response to VPD — 14 genotypes (all data)\n")
+  cat("──────────────────────────────────────────────────\n")
+
+  # ── 1. Load and prepare data (all genotypes) ────────────────────────────────
+  raw <- read_excel("../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
+  df  <- raw |>
+    select(where(~ !all(is.na(.)))) |>
+    rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
+    mutate(
+      Rep       = factor(Rep),
+      IsNewRep  = (Rep == 5),
+      Day_label = factor(ifelse(Day == 1, "Day 1", "Day 2"),
+                         levels = c("Day 1", "Day 2")),
+      Genotype  = factor(Genotype),
+      WUE_class = factor(WUE_class, levels = WUE_ORDER)
+    )
+  day1      <- filter(df, Day_label == "Day 1")
+  # Filter: remove ≤2 reps only (PI398272, PI404191, PI442012A)
+  day1      <- filter(day1, !(Genotype %in% c("PI398272", "PI404191", "PI442012A")))
+  genotypes <- levels(droplevels(day1$Genotype))
+  VPD_SEQ   <- seq(min(day1$VPD, na.rm = TRUE) * 0.95,
+                   max(day1$VPD, na.rm = TRUE) * 1.05, length.out = 300)
+
+  # ── 2. Fit models ────────────────────────────────────────────────────────────
+  cat(sprintf("\n  %-14s  %7s  %8s  %12s  %s\n",
+              "Genotype", "Linear", "Bilinear", "Lin.plateau", "Best (AIC)"))
+  cat("  ", strrep("-", 60), "\n", sep = "")
+
+  tr_fits <- setNames(
+    lapply(genotypes, function(g) {
+      d   <- filter(day1, Genotype == g) |> select(TR, VPD, Rep)
+      fit <- fit_all_models(d, response = "TR")
+      if (!is.null(fit)) {
+        cat(sprintf("  %-14s  %7.1f  %8.1f  %12.1f  %s\n",
+                    g,
+                    fit$AIC["Linear"], fit$AIC["Bilinear"],
+                    fit$AIC["Lin. plateau"], fit$best))
+      }
+      fit
+    }),
+    genotypes
+  )
+
+  # ── 3. Build parameter summary ───────────────────────────────────────────────
+  best_params <- bind_rows(lapply(genotypes, function(g) {
+    fit <- tr_fits[[g]]
+    if (is.null(fit)) return(NULL)
+    pars  <- extract_params(fit, fit$best)
+    wue   <- as.character(day1 |> filter(Genotype == g) |> pull(WUE_class) |> unique())
+    tibble(
+      Genotype   = g,
+      WUE_class  = wue,
+      Best_model = fit$best,
+      Intercept  = round(pars[["a"]] %||% pars[["(Intercept)"]], 2),
+      Slope1     = round(pars[["VPD"]] %||% pars[["b1"]] %||% pars[["b"]], 3),
+      BP_kPa     = if (!is.null(pars[["bp"]])) round(pars[["bp"]], 2) else NA_real_,
+      AIC_best   = round(fit$AIC[fit$best], 1)
+    )
+  }))
+
+  # Reclassify PI398198 from MAGIC parent to Low WUE Plasticity
+  best_params <- best_params |>
+    mutate(
+      WUE_class = if_else(Genotype == "PI398198", "Nonplastic, Low WUE", WUE_class)
+    )
+
+  cat("\n  Best-model parameter summary (14 genotypes):\n")
+  print(best_params, n = Inf)
+
+  # ── 4. Build prediction curves ───────────────────────────────────────────────
+  curves <- bind_rows(lapply(genotypes, function(g) {
+    fit <- tr_fits[[g]]
+    if (is.null(fit)) return(NULL)
+    d <- predict_curve(fit, fit$best, VPD_SEQ)
+    if (is.null(d)) return(NULL)
+    d |> mutate(Genotype = g)
+  })) |>
+    left_join(best_params |> select(Genotype, WUE_class, Best_model),
+              by = "Genotype") |>
+    mutate(WUE_class = factor(WUE_class, levels = WUE_ORDER))
+
+  # Panel labels sorted by genotype name (for simplicity in 14-panel view)
+  panel_order <- best_params |>
+    arrange(Genotype) |>
+    mutate(
+      WUE_display = WUE_LABELS[WUE_class],
+      Panel_label = if_else(is.na(WUE_display),
+                            Genotype,
+                            paste0(Genotype, "\n(", WUE_display, ")"))
+    )
+
+  day1_lab   <- left_join(day1,   panel_order |> select(Genotype, Panel_label), by = "Genotype")
+  curves_lab <- left_join(curves, panel_order |> select(Genotype, Panel_label), by = "Genotype")
+
+  lvls       <- panel_order$Panel_label
+  day1_lab   <- mutate(day1_lab,   Panel_label = factor(Panel_label, levels = lvls))
+  curves_lab <- mutate(curves_lab, Panel_label = factor(Panel_label, levels = lvls))
+
+  # ── 5. Plot — 14 panel version (7x2 layout) ─────────────────────────────────
+  p <- ggplot(day1_lab, aes(x = VPD, y = TR, colour = WUE_class)) +
+    # Previous reps (1-4) in green
+    geom_point(data = filter(day1_lab, IsNewRep == FALSE),
+               size = 2.5, shape = 21, colour = "black", fill = "#31a354", stroke = 0.8, alpha = 0.9) +
+    # New Rep 5 in red
+    geom_point(data = filter(day1_lab, IsNewRep == TRUE),
+               size = 2.5, shape = 21, colour = "black", fill = "#e41a1c", stroke = 0.8, alpha = 0.9) +
+    geom_line(data = curves_lab,
+              aes(x = VPD, y = y_hat, colour = WUE_class),
+              linewidth = 1.0, inherit.aes = FALSE) +
+    scale_colour_manual(values = WUE_COLS, name = NULL) +
+    facet_wrap(~Panel_label, ncol = 7, scales = "fixed") +
+    coord_cartesian(ylim = c(0, 120)) +
+    labs(x = "Vapor Pressure Deficit (kPa)",
+         y = expression(Transpiration~(mg~m^{-2}~s^{-1}))) +
+    UA_THEME +
+    theme(
+      legend.position = "none",
+      strip.text = element_text(size = 10)
+    ) +
+    guides(colour = "none")
+
+  ggsave(file.path(OUTDIR, "Figure1B_14genotypes_FITTED_NEW_REP_RED.tiff"), p,
+         width = 14, height = 6, dpi = DPI, device = tiff_cairo)
+  cat("\n  Saved: Figure1B_14genotypes_FITTED_NEW_REP_RED.tiff\n")
+
+  # Also save as PNG for preview
+  ggsave(file.path(OUTDIR, "Figure1B_14genotypes_FITTED_NEW_REP_RED.png"), p,
+         width = 14, height = 6, dpi = 150, device = "png")
+  cat("  Saved: Figure1B_14genotypes_FITTED_NEW_REP_RED.png (preview)\n\n")
 })
 
 
@@ -402,7 +548,7 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("data_all.xlsx", sheet = "dataAll")
+  raw <- read_excel("../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
@@ -493,7 +639,7 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("data_all.xlsx", sheet = "dataAll")
+  raw <- read_excel("../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
@@ -650,7 +796,7 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("data_all.xlsx", sheet = "dataAll")
+  raw <- read_excel("../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, VPD = avg_vpd) |>
@@ -805,7 +951,7 @@ local({
   )
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("data_all.xlsx", sheet = "dataAll")
+  raw <- read_excel("../data/data_all_9_10_2026.xlsx", sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
