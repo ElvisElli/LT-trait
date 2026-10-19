@@ -67,7 +67,9 @@ DAY_COLS = {"Day 1": "#9D2235", "Day 2": "#4393c3"}
 # 1. LOAD DATA
 # --------------------------------------------------------------------------- #
 print("Loading data …")
-raw = pd.read_excel(os.path.join(DATA, "data_all.xlsx"), sheet_name="dataAll")
+INPUT = os.environ.get("GC_INPUT", "data_all.xlsx")   # override with GC_INPUT=data_all_9_10_2026.xlsx
+raw = pd.read_excel(os.path.join(DATA, INPUT), sheet_name="dataAll")
+print(f"  Input file: {INPUT}")
 print(f"  Raw shape: {raw.shape}")
 
 # Drop trailing unnamed column(s)

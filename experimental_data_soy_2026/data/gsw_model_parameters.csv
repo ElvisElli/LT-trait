@@ -1,10 +1,15 @@
 Genotype,WUE_class,Model,Best_model,a,Slope1,Slope2,BP_kPa,AIC,Delta_AIC
-AG43XF2,high_wilting,Linear,yes,0.862,-0.2376,NA,NA,-6.4,0
-PI398198,MAGIC parent,Linear,yes,0.84,-0.1975,NA,NA,-4.1,0
-PI398492,"Plastic, High WUE",Linear,yes,0.406,-0.0959,NA,NA,-15.5,0
-PI398617,"Plastic, High WUE",Linear,yes,0.951,-0.2564,NA,NA,-9.4,0
-PI416937,slow_wilting,Linear,yes,0.52,-0.1351,NA,NA,-10.8,0
-PI424231,"Plastic, High WUE",Linear,yes,0.688,-0.188,NA,NA,-5,0
-PI471938,slow_wilting,Linear,yes,0.56,-0.1464,NA,NA,-8.8,0
-PI603171,"Nonplastic, Low WUE",Linear,yes,1.222,-0.3398,NA,NA,-2.7,0
-PI603418D,"Plastic, High WUE",Linear,yes,0.681,-0.1593,NA,NA,-12.3,0
+A5959,high_wilting,Linear,yes,0.695,-0.1212,,,-6.3,0.0
+AG43XF2,high_wilting,Linear,yes,0.664,-0.1748,,,-16.4,0.0
+PI377574,"Nonplastic, Low WUE",Linear,yes,0.961,-0.2864,,,2.5,0.0
+PI398198,MAGIC parent,Linear,yes,1.139,-0.2723,,,-3.9,0.0
+PI398198,MAGIC parent,Bilinear,,0.72,0.0,-0.315,1.766,2.4,6.3
+PI398492,"Plastic, High WUE",Linear,yes,0.816,-0.2262,,,0.2,0.0
+PI398617,"Plastic, High WUE",Linear,yes,0.773,-0.1893,,,-19.8,0.0
+PI404191,"Nonplastic, Low WUE",Linear,yes,0.947,-0.2613,,,-4.5,0.0
+PI416937,slow_wilting,Linear,yes,0.549,-0.1478,,,-17.1,0.0
+PI424231,"Plastic, High WUE",Linear,yes,0.948,-0.2464,,,-8.4,0.0
+PI442012A,"Plastic, High WUE",Linear,yes,1.325,-0.2908,,,-9.7,0.0
+PI471938,slow_wilting,Linear,yes,0.558,-0.1456,,,-20.0,0.0
+PI603171,"Nonplastic, Low WUE",Linear,yes,1.251,-0.3381,,,-16.1,0.0
+PI603418D,"Plastic, High WUE",Linear,yes,0.779,-0.1926,,,-21.2,0.0
