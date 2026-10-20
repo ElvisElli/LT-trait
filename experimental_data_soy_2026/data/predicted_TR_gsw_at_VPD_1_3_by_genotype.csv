@@ -1,0 +1,55 @@
+variable,Genotype,Best_model,n,VPD,predicted,Group,VPD_label
+TR,A5959,Linear,28,1,43.11172875098586,Wilting checks,1 kPa
+TR,A5959,Linear,28,3,58.78249832490153,Wilting checks,3 kPa
+TR,AG43XF2,Lin. plateau,28,1,43.51076887617849,Wilting checks,1 kPa
+TR,AG43XF2,Lin. plateau,28,3,59.779434888119646,Wilting checks,3 kPa
+TR,PI377574,Lin. plateau,23,1,36.644592397724374,Nonplastic / low WUE,1 kPa
+TR,PI377574,Lin. plateau,23,3,70.18613610625626,Nonplastic / low WUE,3 kPa
+TR,PI398198,Linear,23,1,34.34955918390176,Nonplastic / low WUE,1 kPa
+TR,PI398198,Linear,23,3,48.8122632423338,Nonplastic / low WUE,3 kPa
+TR,PI398272,Linear,11,1,35.02738794431402,Nonplastic / low WUE,1 kPa
+TR,PI398272,Linear,11,3,43.79472072683666,Nonplastic / low WUE,3 kPa
+TR,PI398492,Lin. plateau,28,1,36.876918417722614,Plastic / high WUE,1 kPa
+TR,PI398492,Lin. plateau,28,3,58.41082030452756,Plastic / high WUE,3 kPa
+TR,PI398617,Bilinear,28,1,31.16934773839436,Plastic / high WUE,1 kPa
+TR,PI398617,Bilinear,28,3,59.78719916613517,Plastic / high WUE,3 kPa
+TR,PI404191,Lin. plateau,12,1,43.452674521369985,Nonplastic / low WUE,1 kPa
+TR,PI404191,Lin. plateau,12,3,66.36510808098383,Nonplastic / low WUE,3 kPa
+TR,PI416937,Linear,28,1,41.09860204507878,Wilting checks,1 kPa
+TR,PI416937,Linear,28,3,58.64152033511361,Wilting checks,3 kPa
+TR,PI424231,Lin. plateau,22,1,36.6577519786172,Plastic / high WUE,1 kPa
+TR,PI424231,Lin. plateau,22,3,55.304167566034565,Plastic / high WUE,3 kPa
+TR,PI442012A,Linear,11,1,46.387021440727544,Plastic / high WUE,1 kPa
+TR,PI442012A,Linear,11,3,72.62019181535561,Plastic / high WUE,3 kPa
+TR,PI471938,Lin. plateau,28,1,39.08872917150214,Wilting checks,1 kPa
+TR,PI471938,Lin. plateau,28,3,67.55416139490248,Wilting checks,3 kPa
+TR,PI603171,Linear,28,1,48.76268971538055,Nonplastic / low WUE,1 kPa
+TR,PI603171,Linear,28,3,69.34418622084617,Nonplastic / low WUE,3 kPa
+TR,PI603418D,Bilinear,28,1,42.275965009679965,Plastic / high WUE,1 kPa
+TR,PI603418D,Bilinear,28,3,68.83324446974837,Plastic / high WUE,3 kPa
+gsw,A5959,Linear,5,1,0.5740278951768368,Wilting checks,1 kPa
+gsw,A5959,Linear,5,3,0.3315683942021348,Wilting checks,3 kPa
+gsw,AG43XF2,Linear,9,1,0.4893238084012205,Wilting checks,1 kPa
+gsw,AG43XF2,Linear,9,3,0.13969698668150865,Wilting checks,3 kPa
+gsw,PI377574,Linear,5,1,0.6744466317782916,Nonplastic / low WUE,1 kPa
+gsw,PI377574,Linear,5,3,0.10155134343102135,Nonplastic / low WUE,3 kPa
+gsw,PI398198,Linear,9,1,0.8664609744375359,Nonplastic / low WUE,1 kPa
+gsw,PI398198,Linear,9,3,0.32194415680093036,Nonplastic / low WUE,3 kPa
+gsw,PI398492,Linear,9,1,0.5899141496472637,Plastic / high WUE,1 kPa
+gsw,PI398492,Linear,9,3,0.13745123710443474,Plastic / high WUE,3 kPa
+gsw,PI398617,Linear,9,1,0.5832129341780803,Plastic / high WUE,1 kPa
+gsw,PI398617,Linear,9,3,0.20453028958606545,Plastic / high WUE,3 kPa
+gsw,PI404191,Linear,5,1,0.6860702110670363,Nonplastic / low WUE,1 kPa
+gsw,PI404191,Linear,5,3,0.1635051218935255,Nonplastic / low WUE,3 kPa
+gsw,PI416937,Linear,8,1,0.4011875951495638,Wilting checks,1 kPa
+gsw,PI416937,Linear,8,3,0.10562125818103552,Wilting checks,3 kPa
+gsw,PI424231,Linear,9,1,0.7018563826176066,Plastic / high WUE,1 kPa
+gsw,PI424231,Linear,9,3,0.20913679017783982,Plastic / high WUE,3 kPa
+gsw,PI442012A,Linear,5,1,1.0343583780808105,Plastic / high WUE,1 kPa
+gsw,PI442012A,Linear,5,3,0.4528579761888776,Plastic / high WUE,3 kPa
+gsw,PI471938,Linear,9,1,0.4127742460116651,Wilting checks,1 kPa
+gsw,PI471938,Linear,9,3,0.12162490403222881,Wilting checks,3 kPa
+gsw,PI603171,Linear,9,1,0.9130452484712355,Nonplastic / low WUE,1 kPa
+gsw,PI603171,Linear,9,3,0.23697639049293806,Nonplastic / low WUE,3 kPa
+gsw,PI603418D,Linear,9,1,0.5860035638243798,Plastic / high WUE,1 kPa
+gsw,PI603418D,Linear,9,3,0.2008297594505195,Plastic / high WUE,3 kPa
