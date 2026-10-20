@@ -1,15 +1,15 @@
-Genotype,WUE_class,Expected_behavior,Best_model,Intercept,Slope1,BP_kPa,Slope2,AIC_best,n
-A5959,high_wilting,High wilting / non-LT,Linear,35.276,7.8354,,,207.8,28
-AG43XF2,high_wilting,High wilting / non-LT,Bilinear,35.01,8.3365,3.464,-24.5254,179.3,28
-PI377574,"Nonplastic, Low WUE",Nonplastic - Low WUE,Lin. plateau,11.53,25.1143,2.339,,190.0,23
-PI398198,MAGIC parent,MAGIC parent,Linear,27.118,7.2314,,,180.7,23
-PI398272,"Nonplastic, Low WUE",Nonplastic - Low WUE,Linear,30.644,4.3837,,,85.1,11
-PI398492,"Plastic, High WUE",Plastic - High WUE,Lin. plateau,26.11,10.767,3.146,,188.2,28
-PI398617,"Plastic, High WUE",Plastic - High WUE,Bilinear,4.933,26.2364,1.692,8.0306,176.0,28
-PI404191,"Nonplastic, Low WUE",Nonplastic - Low WUE,Linear,36.53,9.5719,,,76.9,12
-PI416937,slow_wilting,Slow wilting / LT,Bilinear,4.312,28.7202,1.578,6.1838,198.6,28
-PI424231,"Plastic, High WUE",Plastic - High WUE,Bilinear,26.135,9.9922,3.464,-41.7918,159.3,22
-PI442012A,"Plastic, High WUE",Plastic - High WUE,Linear,33.271,13.1165,,,80.3,11
-PI471938,slow_wilting,Slow wilting / LT,Lin. plateau,21.296,17.7932,2.616,,218.2,28
-PI603171,"Nonplastic, Low WUE",Nonplastic - Low WUE,Linear,38.472,10.2908,,,209.5,28
-PI603418D,"Plastic, High WUE",Plastic - High WUE,Lin. plateau,27.434,14.2329,2.836,,185.5,28
+Genotype,WUE_class,Expected_behavior,Best_model,Intercept,Slope1,BP_kPa,Slope2,AIC_best
+A5959,high_wilting,High wilting / non-LT,Linear,35.276,7.8354,NA,NA,207.8
+AG43XF2,high_wilting,High wilting / non-LT,Lin. plateau,35.376,8.1343,3.129,NA,179.8
+PI377574,"Nonplastic, Low WUE",Nonplastic <e2><80><93> Low WUE,Lin. plateau,11.53,25.1144,2.336,NA,190
+PI398198,MAGIC parent,MAGIC parent,Linear,27.118,7.2314,NA,NA,180.7
+PI398272,"Nonplastic, Low WUE",Nonplastic <e2><80><93> Low WUE,Linear,30.644,4.3837,NA,NA,85.1
+PI398492,"Plastic, High WUE",Plastic <e2><80><93> High WUE,Lin. plateau,26.11,10.767,3.143,NA,188.2
+PI398617,"Plastic, High WUE",Plastic <e2><80><93> High WUE,Bilinear,4.933,26.2363,1.69,8.0306,176
+PI404191,"Nonplastic, Low WUE",Nonplastic <e2><80><93> Low WUE,Lin. plateau,29.806,13.6468,2.679,NA,76.7
+PI416937,slow_wilting,Slow wilting / LT,Linear,32.327,8.7715,NA,NA,200.6
+PI424231,"Plastic, High WUE",Plastic <e2><80><93> High WUE,Lin. plateau,27.335,9.3232,3.057,NA,162.5
+PI442012A,"Plastic, High WUE",Plastic <e2><80><93> High WUE,Linear,33.27,13.1166,NA,NA,80.3
+PI471938,slow_wilting,Slow wilting / LT,Lin. plateau,21.296,17.7932,2.6,NA,218.2
+PI603171,"Nonplastic, Low WUE",Nonplastic <e2><80><93> Low WUE,Linear,38.472,10.2907,NA,NA,209.5
+PI603418D,"Plastic, High WUE",Plastic <e2><80><93> High WUE,Bilinear,28.997,13.2786,3.417,-33.5682,184.1

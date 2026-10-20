@@ -1,10 +1,14 @@
 Genotype,WUE_class,Best_model,TR_Intercept,TR_Slope1,gsw_Intercept,gsw_Slope1
-AG43XF2,high_wilting,Lin. plateau,34.876,7.9696,0.862,-0.2376
-PI398198,MAGIC parent,Linear,26.029,6.9172,0.84,-0.1975
-PI398492,"Plastic, High WUE",Lin. plateau,27.175,9.5569,0.406,-0.0959
-PI398617,"Plastic, High WUE",Bilinear,5.728,26.1812,0.951,-0.2564
-PI416937,slow_wilting,Linear,32.146,7.6965,0.52,-0.1351
-PI424231,"Plastic, High WUE",Linear,32.177,3.8812,0.688,-0.188
-PI471938,slow_wilting,Linear,30.073,11.8467,0.56,-0.1464
-PI603171,"Nonplastic, Low WUE",Linear,44.456,7.8262,1.222,-0.3398
-PI603418D,"Plastic, High WUE",Lin. plateau,27.265,13.7432,0.681,-0.1593
+A5959,high_wilting,Linear,35.276,7.8354,0.695,-0.1212
+AG43XF2,high_wilting,Lin. plateau,35.376,8.1343,0.664,-0.1748
+PI377574,"Nonplastic, Low WUE",Lin. plateau,11.53,25.1144,0.961,-0.2864
+PI398198,MAGIC parent,Linear,27.118,7.2314,1.139,-0.2723
+PI398492,"Plastic, High WUE",Lin. plateau,26.11,10.767,0.816,-0.2262
+PI398617,"Plastic, High WUE",Bilinear,4.933,26.2363,0.773,-0.1893
+PI404191,"Nonplastic, Low WUE",Lin. plateau,29.806,13.6468,0.947,-0.2613
+PI416937,slow_wilting,Linear,32.327,8.7715,0.549,-0.1478
+PI424231,"Plastic, High WUE",Lin. plateau,27.335,9.3232,0.948,-0.2464
+PI442012A,"Plastic, High WUE",Linear,33.27,13.1166,1.325,-0.2908
+PI471938,slow_wilting,Lin. plateau,21.296,17.7932,0.558,-0.1456
+PI603171,"Nonplastic, Low WUE",Linear,38.472,10.2907,1.251,-0.338
+PI603418D,"Plastic, High WUE",Bilinear,28.997,13.2786,0.779,-0.1926

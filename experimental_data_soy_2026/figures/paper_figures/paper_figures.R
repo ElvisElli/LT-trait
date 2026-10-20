@@ -22,6 +22,15 @@
 
 DPI    <- 600     # change to 150 for fast preview
 OUTDIR <- "."     # TIFFs land next to this script
+# Input workbook: default is the copy next to this script; override with
+#   GC_INPUT=../../data/data_all_9_10_2026.xlsx Rscript paper_figures.R
+DATA_FILE <- Sys.getenv("GC_INPUT", "data_all.xlsx")
+# GC_ALL=1 keeps every genotype in Figures 1 and 3 (default: paper subsets)
+ALL_GENO  <- Sys.getenv("GC_ALL", "0") == "1"
+# Replicate(s) added after the first analysis; drawn in red in Figures 1 and 4
+NEW_REPS  <- strsplit(Sys.getenv("GC_NEW_REPS", "5"), ",")[[1]]
+REP_COLS  <- c("Replications 1-4" = "#31a354", "Replication 5 (new)" = "#9D2235")
+cat("Input:", DATA_FILE, "| all genotypes:", ALL_GENO, "| new reps:", NEW_REPS, "\n")
 
 # Headless-safe TIFF device (Linux without X11)
 options(bitmapType = "cairo")
@@ -152,16 +161,44 @@ fit_all_models <- function(data, response = "TR") {
   )
 
   # ── (B) BILINEAR — nls starting values → nlme with random intercept ───────
-  nls_bil <- tryCatch(
+  # Multi-start nls: try several breakpoint starting values across the VPD
+  # range and keep the converged fit with the lowest residual sum of squares
+  # (a single midpoint start fails to converge for some genotypes).
+  bp_starts <- unique(c(bp0, unname(quantile(vpd, c(0.25, 0.5, 0.75), na.rm = TRUE)), 1.5, 2.0, 2.5, 3.0))
+  bp_starts <- bp_starts[bp_starts > vmin & bp_starts < vmax]
+  best_nls  <- function(fits) {
+    fits <- Filter(Negate(is.null), fits)
+    if (!length(fits)) return(NULL)
+    fits[[which.min(sapply(fits, deviance))]]
+  }
+  nls_bil <- best_nls(lapply(bp_starts, function(b0) tryCatch(
     nls(y ~ bilinear_fn(VPD, a, b1, b2, bp),
         data      = df_fit,
-        start     = list(a = a0, b1 = sl0, b2 = sl0 * 0.1, bp = bp0),
+        start     = list(a = a0, b1 = sl0, b2 = sl0 * 0.1, bp = b0),
         lower     = c(a = -Inf, b1 = 0,   b2 = -Inf, bp = vmin),
         upper     = c(a =  Inf, b1 = Inf, b2 =  Inf, bp = vmax),
         algorithm = "port",
         control   = nls.control(maxiter = 300, tol = 1e-5)),
-    error = function(e) NULL
-  )
+    error = function(e) NULL)))
+  # Extra bilinear start taken from a linear-plateau fit (second slope = 0):
+  # the bilinear surface is flat near the plateau solution, which is where the
+  # port algorithm otherwise fails to converge for some genotypes.
+  nls_lp0 <- best_nls(lapply(bp_starts, function(b0) tryCatch(
+    nls(y ~ lin_plateau_fn(VPD, a, b, bp), data = df_fit,
+        start = list(a = a0, b = sl0, bp = b0),
+        lower = c(a = -Inf, b = 0, bp = vmin), upper = c(a = Inf, b = Inf, bp = vmax),
+        algorithm = "port", control = nls.control(maxiter = 300, tol = 1e-5)),
+    error = function(e) NULL)))
+  if (!is.null(nls_lp0)) {
+    sv0 <- as.list(coef(nls_lp0))
+    nls_bil <- best_nls(list(nls_bil, tryCatch(
+      nls(y ~ bilinear_fn(VPD, a, b1, b2, bp), data = df_fit,
+          start = list(a = sv0$a, b1 = sv0$b, b2 = 0, bp = sv0$bp),
+          lower = c(a = -Inf, b1 = 0, b2 = -Inf, bp = vmin),
+          upper = c(a = Inf, b1 = Inf, b2 = Inf, bp = vmax),
+          algorithm = "port", control = nls.control(maxiter = 300, tol = 1e-5)),
+      error = function(e) NULL)))
+  }
   if (!is.null(nls_bil)) {
     sv <- as.list(coef(nls_bil))
     out[["Bilinear"]] <- tryCatch(
@@ -176,16 +213,15 @@ fit_all_models <- function(data, response = "TR") {
   }
 
   # ── (C) LINEAR PLATEAU — nls starting values → nlme ─────────────────────
-  nls_lp <- tryCatch(
+  nls_lp <- best_nls(lapply(bp_starts, function(b0) tryCatch(
     nls(y ~ lin_plateau_fn(VPD, a, b, bp),
         data      = df_fit,
-        start     = list(a = a0, b = sl0, bp = bp0),
+        start     = list(a = a0, b = sl0, bp = b0),
         lower     = c(a = -Inf, b = 0,   bp = vmin),
         upper     = c(a =  Inf, b = Inf, bp = vmax),
         algorithm = "port",
         control   = nls.control(maxiter = 300, tol = 1e-5)),
-    error = function(e) NULL
-  )
+    error = function(e) NULL)))
   if (!is.null(nls_lp)) {
     sv_lp <- as.list(coef(nls_lp))
     out[["Lin. plateau"]] <- tryCatch(
@@ -264,7 +300,7 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("data_all.xlsx", sheet = "dataAll")
+  raw <- read_excel(DATA_FILE, sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
@@ -277,7 +313,10 @@ local({
     )
   day1      <- filter(df, Day_label == "Day 1")
   # Filter: remove ≤2 reps (PI398272, PI404191, PI442012A) + PI416937 + AG43XF2
-  day1      <- filter(day1, !(Genotype %in% c("PI398272", "PI404191", "PI442012A", "PI416937", "AG43XF2")))
+  if (!ALL_GENO)
+    day1    <- filter(day1, !(Genotype %in% c("PI398272", "PI404191", "PI442012A", "PI416937", "AG43XF2")))
+  day1      <- mutate(day1, Rep_group = factor(ifelse(Rep %in% NEW_REPS, "Replication 5 (new)", "Replications 1-4"),
+                                               levels = names(REP_COLS)))
   genotypes <- levels(droplevels(day1$Genotype))
   VPD_SEQ   <- seq(min(day1$VPD, na.rm = TRUE) * 0.95,
                    max(day1$VPD, na.rm = TRUE) * 1.05, length.out = 300)
@@ -343,8 +382,9 @@ local({
 
   # Panel label: genotype + WUE class description (using updated labels)
   # Custom genotype order: High Plasticity → Low Plasticity → Wilting
-  custom_order <- c("PI398492", "PI398617", "PI424231", "PI603418D",
-                    "PI377574", "PI603171", "PI398198", "A5959", "PI471938")
+  custom_order <- c("PI398492", "PI398617", "PI424231", "PI442012A", "PI603418D",
+                    "PI377574", "PI398272", "PI404191", "PI603171", "PI398198",
+                    "A5959", "AG43XF2", "PI416937", "PI471938")
 
   panel_order <- best_params |>
     mutate(
@@ -365,26 +405,29 @@ local({
 
   # ── 5. Plot ─────────────────────────────────────────────────────────────────
   p <- ggplot(day1_lab, aes(x = VPD, y = TR, colour = WUE_class)) +
-    geom_point(size = 2.5, shape = 21, colour = "black", fill = "#31a354", stroke = 0.8, alpha = 0.9) +
+    geom_point(aes(fill = Rep_group), size = 2.5, shape = 21, colour = "black", stroke = 0.8, alpha = 0.9) +
     geom_line(data = curves_lab,
               aes(x = VPD, y = y_hat, colour = WUE_class),
               linewidth = 1.0, inherit.aes = FALSE) +
     scale_colour_manual(values = WUE_COLS, name = NULL) +
-    facet_wrap(~Panel_label, ncol = 3, scales = "fixed") +
+    scale_fill_manual(values = REP_COLS, name = NULL, drop = FALSE) +
+    facet_wrap(~Panel_label, ncol = if (ALL_GENO) 5 else 3, scales = "fixed") +
     coord_cartesian(ylim = c(0, 120)) +
     labs(x = "Vapor Pressure Deficit (kPa)",
          y = expression(Transpiration~(mg~m^{-2}~s^{-1}))) +
     UA_THEME +
-    theme(legend.position = "none") +
-    guides(colour = "none")
+    theme(legend.position = "bottom", legend.text = element_text(size = 12)) +
+    guides(colour = "none", fill = guide_legend(override.aes = list(size = 3.5)))
 
+  fig1_w <- if (ALL_GENO) 15 else 10
+  fig1_h <- if (ALL_GENO) 10 else 10
   ggsave(file.path(OUTDIR, "Figure1_TR_response_VPD.tiff"), p,
-         width = 10, height = 10, dpi = DPI, device = tiff_cairo)
+         width = fig1_w, height = fig1_h, dpi = DPI, device = tiff_cairo)
   cat("\n  Saved: Figure1_TR_response_VPD.tiff\n")
 
   # Also save as PNG for preview
   ggsave(file.path(OUTDIR, "Figure1_TR_response_VPD.png"), p,
-         width = 10, height = 10, dpi = 150, device = "png")
+         width = fig1_w, height = fig1_h, dpi = 150, device = "png")
   cat("  Saved: Figure1_TR_response_VPD.png (preview)\n\n")
 })
 
@@ -402,7 +445,7 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("data_all.xlsx", sheet = "dataAll")
+  raw <- read_excel(DATA_FILE, sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
@@ -475,6 +518,8 @@ local({
 
   ggsave(file.path(OUTDIR, "Figure2_TR_breakpoints.tiff"), p,
          width = 6, height = 4.5, dpi = DPI, device = tiff_cairo)
+  ggsave(file.path(OUTDIR, "Figure2_TR_breakpoints.png"), p,
+         width = 6, height = 4.5, dpi = 300, device = "png", bg = "white")
   cat("\n  Saved: Figure2_TR_breakpoints.tiff\n\n")
 })
 
@@ -493,7 +538,7 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("data_all.xlsx", sheet = "dataAll")
+  raw <- read_excel(DATA_FILE, sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
@@ -506,7 +551,8 @@ local({
     )
   day1      <- filter(df, Day_label == "Day 1")
   # Filter out: AG43XF2, PI471938, PI442012A, PI603171, PI603418D
-  day1      <- filter(day1, !(Genotype %in% c("AG43XF2", "PI471938", "PI442012A", "PI603171", "PI603418D")))
+  if (!ALL_GENO)
+    day1    <- filter(day1, !(Genotype %in% c("AG43XF2", "PI471938", "PI442012A", "PI603171", "PI603418D")))
   genotypes <- levels(droplevels(day1$Genotype))
 
   # ── 2. Fit models ────────────────────────────────────────────────────────────
@@ -633,6 +679,8 @@ local({
 
   ggsave(file.path(OUTDIR, "Figure3_intercept_slope_quadrants.tiff"), p,
          width = 9, height = 6.5, dpi = DPI, device = tiff_cairo)
+  ggsave(file.path(OUTDIR, "Figure3_intercept_slope_quadrants.png"), p,
+         width = 9, height = 6.5, dpi = 300, device = "png", bg = "white")
   cat("\n  Saved: Figure3_intercept_slope_quadrants.tiff\n\n")
 })
 
@@ -650,7 +698,7 @@ local({
   cat("──────────────────────────────────────────────────\n")
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("data_all.xlsx", sheet = "dataAll")
+  raw <- read_excel(DATA_FILE, sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, VPD = avg_vpd) |>
@@ -665,6 +713,9 @@ local({
   # Only rows where all three LICOR readings exist
   all_na <- is.na(df$gsw1) & is.na(df$gsw2) & is.na(df$gsw3)
   df$gsw[all_na] <- NA
+  df$gsw[!is.na(df$gsw) & df$gsw > 3] <- NA   # impossible value (entry error)
+  df <- df |> mutate(across(c(gsw1, gsw2, gsw3), ~ ifelse(!is.na(.) & . > 3, NA, .)))
+  df$gsw[!is.na(df$gsw) & df$gsw > 3] <- NA   # impossible value (entry error)
 
   day1     <- filter(df, Day_label == "Day 1")
   day1_gsw <- filter(day1, !is.na(gsw))
@@ -674,7 +725,9 @@ local({
   day1_long <- day1_gsw |>
     pivot_longer(cols = c(gsw1, gsw2, gsw3),
                  names_to = "licor_rep", values_to = "gsw_reading") |>
-    filter(!is.na(gsw_reading))
+    filter(!is.na(gsw_reading)) |>
+    mutate(Rep_group = factor(ifelse(Rep %in% NEW_REPS, "Replication 5 (new)", "Replications 1-4"),
+                              levels = names(REP_COLS)))
 
   VPD_SEQ <- seq(min(day1_gsw$VPD, na.rm = TRUE) * 0.95,
                  max(day1_gsw$VPD, na.rm = TRUE) * 1.05, length.out = 300)
@@ -750,8 +803,9 @@ local({
 
   # ── 5. Plot ─────────────────────────────────────────────────────────────────
   p <- ggplot(day1_long_lab, aes(x = VPD, y = gsw_reading, colour = WUE_class)) +
-    geom_point(size = 1.5, alpha = 0.65,
+    geom_point(aes(fill = Rep_group), size = 1.8, shape = 21, colour = "black", stroke = 0.4, alpha = 0.8,
                position = position_jitter(width = 0.02, seed = 1)) +
+    scale_fill_manual(values = REP_COLS, name = NULL, drop = FALSE) +
     geom_line(data    = curves_lab,
               aes(x = VPD, y = y_hat, colour = WUE_class),
               linewidth = 0.9, inherit.aes = FALSE) +
@@ -761,14 +815,15 @@ local({
     labs(x = "VPD (kPa)",
          y = expression(g[sw]~(mol~m^{-2}~s^{-1}))) +
     UA_THEME +
-    theme(strip.text      = element_text(colour = "white", face = "bold",
-                                         size = 6.5, lineheight = 1.0),
+    theme(strip.text      = element_text(colour = "black", face = "bold",
+                                         size = 8, lineheight = 1.0),
           legend.position = "bottom") +
-    guides(colour = guide_legend(nrow = 2,
-                                 override.aes = list(size = 2.5, linewidth = 0.8)))
+    guides(colour = "none", fill = guide_legend(override.aes = list(size = 3)))
 
   ggsave(file.path(OUTDIR, "Figure4_gsw_response_VPD.tiff"), p,
          width = 12, height = 6.5, dpi = DPI, device = tiff_cairo)
+  ggsave(file.path(OUTDIR, "Figure4_gsw_response_VPD.png"), p,
+         width = 12, height = 6.5, dpi = 300, device = "png", bg = "white")
   cat("\n  Saved: Figure4_gsw_response_VPD.tiff\n\n")
 })
 
@@ -805,7 +860,7 @@ local({
   )
 
   # ── 1. Load and prepare data ────────────────────────────────────────────────
-  raw <- read_excel("data_all.xlsx", sheet = "dataAll")
+  raw <- read_excel(DATA_FILE, sheet = "dataAll")
   df  <- raw |>
     select(where(~ !all(is.na(.)))) |>
     rename(Rep = RepNo, Day = day, TR = TR_mg_sqm_seg, VPD = avg_vpd) |>
@@ -819,6 +874,7 @@ local({
     )
   all_na <- is.na(df$gsw1) & is.na(df$gsw2) & is.na(df$gsw3)
   df$gsw[all_na] <- NA
+  df$gsw[!is.na(df$gsw) & df$gsw > 3] <- NA   # impossible value (entry error)
 
   day1      <- filter(df, Day_label == "Day 1")
   day1_gsw  <- filter(day1, !is.na(gsw))
@@ -945,6 +1001,10 @@ local({
 
   ggsave(file.path(OUTDIR, "Figure5_predicted_TR_gsw.tiff"), p5,
          width = 13, height = 9, dpi = DPI, device = tiff_cairo)
+  ggsave(file.path(OUTDIR, "Figure5_predicted_TR_gsw.png"), p5,
+         width = 13, height = 9, dpi = 300, device = "png", bg = "white")
+  ggsave(file.path(OUTDIR, "Figure5_gsw_predicted.png"), p_gsw,
+         width = 13, height = 4.2, dpi = 300, device = "png", bg = "white")
   cat("\n  Saved: Figure5_predicted_TR_gsw.tiff\n\n")
 })
 

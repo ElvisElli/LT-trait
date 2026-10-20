@@ -203,16 +203,44 @@ fit_one <- function(data, response_col = "TR", geno_label = "?") {
   )
 
   # ---- (B) BILINEAR — nls starting values, then nlme ----------------------
-  nls_bil <- tryCatch(
+  # Multi-start nls: try several breakpoint starting values across the VPD
+  # range and keep the converged fit with the lowest residual sum of squares
+  # (a single midpoint start fails to converge for some genotypes).
+  bp_starts <- unique(c(bp0, unname(quantile(vpd, c(0.25, 0.5, 0.75), na.rm = TRUE)), 1.5, 2.0, 2.5, 3.0))
+  bp_starts <- bp_starts[bp_starts > vmin & bp_starts < vmax]
+  best_nls  <- function(fits) {
+    fits <- Filter(Negate(is.null), fits)
+    if (!length(fits)) return(NULL)
+    fits[[which.min(sapply(fits, deviance))]]
+  }
+  nls_bil <- best_nls(lapply(bp_starts, function(b0) tryCatch(
     nls(y ~ bilinear_fn(VPD, a, b1, b2, bp),
-        data    = df_fit,
-        start   = list(a = a0, b1 = sl0, b2 = sl0 * 0.1, bp = bp0),
-        lower   = c(a = -Inf, b1 = 0,  b2 = -Inf, bp = vmin),
-        upper   = c(a =  Inf, b1 = Inf, b2 =  Inf, bp = vmax),
+        data      = df_fit,
+        start     = list(a = a0, b1 = sl0, b2 = sl0 * 0.1, bp = b0),
+        lower     = c(a = -Inf, b1 = 0,   b2 = -Inf, bp = vmin),
+        upper     = c(a =  Inf, b1 = Inf, b2 =  Inf, bp = vmax),
         algorithm = "port",
-        control = nls.control(maxiter = 300, tol = 1e-5)),
-    error = function(e) NULL
-  )
+        control   = nls.control(maxiter = 300, tol = 1e-5)),
+    error = function(e) NULL)))
+  # Extra bilinear start taken from a linear-plateau fit (second slope = 0):
+  # the bilinear surface is flat near the plateau solution, which is where the
+  # port algorithm otherwise fails to converge for some genotypes.
+  nls_lp0 <- best_nls(lapply(bp_starts, function(b0) tryCatch(
+    nls(y ~ lin_plateau_fn(VPD, a, b, bp), data = df_fit,
+        start = list(a = a0, b = sl0, bp = b0),
+        lower = c(a = -Inf, b = 0, bp = vmin), upper = c(a = Inf, b = Inf, bp = vmax),
+        algorithm = "port", control = nls.control(maxiter = 300, tol = 1e-5)),
+    error = function(e) NULL)))
+  if (!is.null(nls_lp0)) {
+    sv0 <- as.list(coef(nls_lp0))
+    nls_bil <- best_nls(list(nls_bil, tryCatch(
+      nls(y ~ bilinear_fn(VPD, a, b1, b2, bp), data = df_fit,
+          start = list(a = sv0$a, b1 = sv0$b, b2 = 0, bp = sv0$bp),
+          lower = c(a = -Inf, b1 = 0, b2 = -Inf, bp = vmin),
+          upper = c(a = Inf, b1 = Inf, b2 = Inf, bp = vmax),
+          algorithm = "port", control = nls.control(maxiter = 300, tol = 1e-5)),
+      error = function(e) NULL)))
+  }
 
   if (!is.null(nls_bil)) {
     sv <- as.list(coef(nls_bil))
@@ -228,16 +256,15 @@ fit_one <- function(data, response_col = "TR", geno_label = "?") {
   }
 
   # ---- (C) LINEAR PLATEAU ---------------------------------------------------
-  nls_lp <- tryCatch(
+  nls_lp <- best_nls(lapply(bp_starts, function(b0) tryCatch(
     nls(y ~ lin_plateau_fn(VPD, a, b, bp),
-        data    = df_fit,
-        start   = list(a = a0, b = sl0, bp = bp0),
-        lower   = c(a = -Inf, b = 0,   bp = vmin),
-        upper   = c(a =  Inf, b = Inf, bp = vmax),
+        data      = df_fit,
+        start     = list(a = a0, b = sl0, bp = b0),
+        lower     = c(a = -Inf, b = 0,   bp = vmin),
+        upper     = c(a =  Inf, b = Inf, bp = vmax),
         algorithm = "port",
-        control = nls.control(maxiter = 300, tol = 1e-5)),
-    error = function(e) NULL
-  )
+        control   = nls.control(maxiter = 300, tol = 1e-5)),
+    error = function(e) NULL)))
 
   if (!is.null(nls_lp)) {
     sv_lp <- as.list(coef(nls_lp))

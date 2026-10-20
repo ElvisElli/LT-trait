@@ -59,7 +59,9 @@ UA_THEME <- theme_bw(base_size = 10) +
 # 1. LOAD DATA
 # --------------------------------------------------------------------------- #
 cat("Loading data ...\n")
-raw <- read_excel("data/data_all.xlsx", sheet = "dataAll")
+INPUT_FILE <- Sys.getenv("GC_INPUT", "data_all.xlsx")   # e.g. GC_INPUT=data_all_9_10_2026.xlsx
+cat("  Input file:", INPUT_FILE, "\n")
+raw <- read_excel(file.path("data", INPUT_FILE), sheet = "dataAll")
 cat("  Raw dimensions:", nrow(raw), "rows x", ncol(raw), "cols\n\n")
 
 
@@ -97,6 +99,15 @@ df <- raw |>
 # Where ALL three gsw readings are NA, set gsw to NA explicitly
 all_gsw_na <- is.na(df$gsw1) & is.na(df$gsw2) & is.na(df$gsw3)
 df$gsw[all_gsw_na] <- NA
+# Sanity filter: leaf-level gsw above 3 mol m-2 s-1 is physically impossible
+# (one Rep 5 entry for A5959 reads 29.3, an entry/unit error) -> set to NA
+bad_gsw <- !is.na(df$gsw) & df$gsw > 3
+if (any(bad_gsw)) {
+  cat("\n--- Impossible gsw values set to NA ---\n")
+  print(df[bad_gsw, c("Rep", "Day", "Genotype", "Treatment", "gsw1", "gsw2", "gsw3")])
+  df$gsw[bad_gsw] <- NA
+  df$gsw1[bad_gsw] <- NA; df$gsw2[bad_gsw] <- NA; df$gsw3[bad_gsw] <- NA
+}
 
 cat("Columns after renaming:\n")
 print(names(df))
