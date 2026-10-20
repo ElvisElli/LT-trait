@@ -1,0 +1,40 @@
+Genotype,WUE class,n,Model,Intercept,Slope 1,Slope 2,Breakpoint (kPa),AIC,ΔAIC,Selected
+PI398492,Plastic / high WUE,9,Linear,0.816,-0.2262,–,–,0.2,0.0,✓
+PI398492,Plastic / high WUE,9,Bilinear,not converged,,–,–,,,
+PI398492,Plastic / high WUE,9,Linear-plateau,not converged,,–,–,,,
+PI398617,Plastic / high WUE,9,Linear,0.773,-0.1893,–,–,-19.8,0.0,✓
+PI398617,Plastic / high WUE,9,Bilinear,not converged,,–,–,,,
+PI398617,Plastic / high WUE,9,Linear-plateau,not converged,,–,–,,,
+PI424231,Plastic / high WUE,9,Linear,0.948,-0.2464,–,–,-8.4,0.0,✓
+PI424231,Plastic / high WUE,9,Bilinear,not converged,,–,–,,,
+PI424231,Plastic / high WUE,9,Linear-plateau,not converged,,–,–,,,
+PI442012A,Plastic / high WUE,5,Linear,1.325,-0.2908,–,–,-9.7,0.0,✓
+PI442012A,Plastic / high WUE,5,Bilinear,not converged,,–,–,,,
+PI442012A,Plastic / high WUE,5,Linear-plateau,not converged,,–,–,,,
+PI603418D,Plastic / high WUE,9,Linear,0.779,-0.1926,–,–,-21.2,0.0,✓
+PI603418D,Plastic / high WUE,9,Bilinear,not converged,,–,–,,,
+PI603418D,Plastic / high WUE,9,Linear-plateau,not converged,,–,–,,,
+PI377574,Nonplastic / low WUE,5,Linear,0.961,-0.2864,–,–,2.5,0.0,✓
+PI377574,Nonplastic / low WUE,5,Bilinear,not converged,,–,–,,,
+PI377574,Nonplastic / low WUE,5,Linear-plateau,not converged,,–,–,,,
+PI404191,Nonplastic / low WUE,5,Linear,0.947,-0.2613,–,–,-4.5,0.0,✓
+PI404191,Nonplastic / low WUE,5,Bilinear,not converged,,–,–,,,
+PI404191,Nonplastic / low WUE,5,Linear-plateau,not converged,,–,–,,,
+PI603171,Nonplastic / low WUE,9,Linear,1.251,-0.3380,–,–,-16.1,0.0,✓
+PI603171,Nonplastic / low WUE,9,Bilinear,not converged,,–,–,,,
+PI603171,Nonplastic / low WUE,9,Linear-plateau,not converged,,–,–,,,
+PI398198,MAGIC parent,9,Linear,1.139,-0.2723,–,–,-3.9,0.0,✓
+PI398198,MAGIC parent,9,Bilinear,not converged,,–,–,,,
+PI398198,MAGIC parent,9,Linear-plateau,not converged,,–,–,,,
+PI416937,Slow-wilting check,8,Linear,0.549,-0.1478,–,–,-17.1,0.0,✓
+PI416937,Slow-wilting check,8,Bilinear,not converged,,–,–,,,
+PI416937,Slow-wilting check,8,Linear-plateau,not converged,,–,–,,,
+PI471938,Slow-wilting check,9,Linear,0.558,-0.1456,–,–,-20.0,0.0,✓
+PI471938,Slow-wilting check,9,Bilinear,not converged,,–,–,,,
+PI471938,Slow-wilting check,9,Linear-plateau,not converged,,–,–,,,
+A5959,High-wilting check,5,Linear,0.695,-0.1212,–,–,-6.3,0.0,✓
+A5959,High-wilting check,5,Bilinear,not converged,,–,–,,,
+A5959,High-wilting check,5,Linear-plateau,not converged,,–,–,,,
+AG43XF2,High-wilting check,9,Linear,0.664,-0.1748,–,–,-16.4,0.0,✓
+AG43XF2,High-wilting check,9,Bilinear,not converged,,–,–,,,
+AG43XF2,High-wilting check,9,Linear-plateau,not converged,,–,–,,,
