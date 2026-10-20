@@ -1,43 +1,43 @@
-Genotype,WUE class,n,Model,Intercept,Slope 1,Slope 2,Breakpoint (kPa),AIC,ΔAIC,Selected
-PI398492,Plastic / high WUE,28,Linear,29.3,9.07,–,–,189.9,1.7,
-PI398492,Plastic / high WUE,28,Bilinear,not converged,,–,–,,,
-PI398492,Plastic / high WUE,28,Linear-plateau,26.1,10.77,–,3.14,188.2,0.0,✓
-PI398617,Plastic / high WUE,28,Linear,26.8,11.05,–,–,181.4,5.5,
-PI398617,Plastic / high WUE,28,Bilinear,4.9,26.24,8.03,1.69,176.0,0.0,✓
-PI398617,Plastic / high WUE,28,Linear-plateau,23.7,12.75,–,3.20,180.1,4.2,
-PI424231,Plastic / high WUE,22,Linear,31.0,7.42,–,–,163.1,0.6,
-PI424231,Plastic / high WUE,22,Bilinear,28.0,9.90,-82.34,3.49,187.4,24.9,
-PI424231,Plastic / high WUE,22,Linear-plateau,27.3,9.32,–,3.06,162.5,0.0,✓
-PI442012A,Plastic / high WUE,11,Linear,33.3,13.12,–,–,80.3,0.0,✓
-PI442012A,Plastic / high WUE,11,Bilinear,25.4,17.55,7.92,2.52,82.2,1.9,
-PI442012A,Plastic / high WUE,11,Linear-plateau,25.6,17.51,–,2.86,81.8,1.4,
-PI603418D,Plastic / high WUE,28,Linear,34.6,10.24,–,–,191.5,7.4,
-PI603418D,Plastic / high WUE,28,Bilinear,29.0,13.28,-33.57,3.42,184.1,0.0,✓
-PI603418D,Plastic / high WUE,28,Linear-plateau,27.4,14.23,–,2.83,185.5,1.4,
-PI377574,Nonplastic / low WUE,23,Linear,31.2,12.76,–,–,192.0,2.0,
-PI377574,Nonplastic / low WUE,23,Bilinear,11.5,25.13,3.92,2.21,191.5,1.6,
-PI377574,Nonplastic / low WUE,23,Linear-plateau,11.5,25.11,–,2.34,190.0,0.0,✓
-PI398272,Nonplastic / low WUE,11,Linear,30.6,4.38,–,–,85.1,0.0,✓
-PI398272,Nonplastic / low WUE,11,Bilinear,not converged,,–,–,,,
-PI398272,Nonplastic / low WUE,11,Linear-plateau,23.2,9.22,–,2.21,87.0,1.9,
-PI404191,Nonplastic / low WUE,12,Linear,36.5,9.57,–,–,76.9,0.2,
-PI404191,Nonplastic / low WUE,12,Bilinear,33.6,11.24,-33.22,3.44,77.7,1.0,
-PI404191,Nonplastic / low WUE,12,Linear-plateau,29.8,13.65,–,2.68,76.7,0.0,✓
-PI603171,Nonplastic / low WUE,28,Linear,38.5,10.29,–,–,209.5,0.0,✓
-PI603171,Nonplastic / low WUE,28,Bilinear,not converged,,–,–,,,
-PI603171,Nonplastic / low WUE,28,Linear-plateau,36.1,11.57,–,3.27,210.8,1.2,
-PI398198,MAGIC parent,23,Linear,27.1,7.23,–,–,180.7,0.0,✓
-PI398198,MAGIC parent,23,Bilinear,12.9,17.34,5.62,1.61,184.1,3.4,
-PI398198,MAGIC parent,23,Linear-plateau,19.4,12.44,–,2.30,183.7,3.0,
-PI416937,Slow-wilting check,28,Linear,32.3,8.77,–,–,200.6,0.0,✓
-PI416937,Slow-wilting check,28,Bilinear,not converged,,–,–,,,
-PI416937,Slow-wilting check,28,Linear-plateau,30.5,9.75,–,3.29,202.3,1.6,
-PI471938,Slow-wilting check,28,Linear,33.1,11.05,–,–,220.9,2.6,
-PI471938,Slow-wilting check,28,Bilinear,16.9,20.83,3.28,2.28,219.9,1.7,
-PI471938,Slow-wilting check,28,Linear-plateau,21.3,17.79,–,2.60,218.2,0.0,✓
-A5959,High-wilting check,28,Linear,35.3,7.84,–,–,207.8,0.0,✓
-A5959,High-wilting check,28,Bilinear,30.1,10.72,0.88,2.81,210.0,2.2,
-A5959,High-wilting check,28,Linear-plateau,30.1,10.72,–,2.84,208.0,0.2,
-AG43XF2,High-wilting check,28,Linear,38.0,6.75,–,–,180.5,0.7,
-AG43XF2,High-wilting check,28,Bilinear,35.6,8.06,-16.23,3.44,182.3,2.4,
-AG43XF2,High-wilting check,28,Linear-plateau,35.4,8.13,–,3.13,179.8,0.0,✓
+Genotype,WUE class,n,Model,Fit,Intercept,Slope 1,Slope 2,Breakpoint (kPa),AIC,ΔAIC,Selected
+PI398492,Plastic / high WUE,28,Linear,lme,29.3,9.07,–,–,189.9,1.7,
+PI398492,Plastic / high WUE,28,Bilinear,,not converged,,–,–,,,
+PI398492,Plastic / high WUE,28,Linear-plateau,nlme,26.1,10.77,–,3.14,188.2,0.0,✓
+PI398617,Plastic / high WUE,28,Linear,lme,26.8,11.05,–,–,181.4,5.5,
+PI398617,Plastic / high WUE,28,Bilinear,nlme,4.9,26.24,8.03,1.69,176.0,0.0,✓
+PI398617,Plastic / high WUE,28,Linear-plateau,nlme,23.7,12.75,–,3.20,180.1,4.2,
+PI424231,Plastic / high WUE,22,Linear,lme,31.0,7.42,–,–,163.1,0.6,
+PI424231,Plastic / high WUE,22,Bilinear,nls*,28.0,9.90,-82.34,3.49,187.4,24.9,
+PI424231,Plastic / high WUE,22,Linear-plateau,nlme,27.3,9.32,–,3.06,162.5,0.0,✓
+PI442012A,Plastic / high WUE,11,Linear,lme,33.3,13.12,–,–,80.3,0.0,✓
+PI442012A,Plastic / high WUE,11,Bilinear,nlme,25.4,17.55,7.92,2.52,82.2,1.9,
+PI442012A,Plastic / high WUE,11,Linear-plateau,nlme,25.6,17.51,–,2.86,81.8,1.4,
+PI603418D,Plastic / high WUE,28,Linear,lme,34.6,10.24,–,–,191.5,7.4,
+PI603418D,Plastic / high WUE,28,Bilinear,nlme,29.0,13.28,-33.57,3.42,184.1,0.0,✓
+PI603418D,Plastic / high WUE,28,Linear-plateau,nlme,27.4,14.23,–,2.83,185.5,1.4,
+PI377574,Nonplastic / low WUE,23,Linear,lme,31.2,12.76,–,–,192.0,2.0,
+PI377574,Nonplastic / low WUE,23,Bilinear,nlme,11.5,25.13,3.92,2.21,191.5,1.6,
+PI377574,Nonplastic / low WUE,23,Linear-plateau,nlme,11.5,25.11,–,2.34,190.0,0.0,✓
+PI398272,Nonplastic / low WUE,11,Linear,lme,30.6,4.38,–,–,85.1,0.0,✓
+PI398272,Nonplastic / low WUE,11,Bilinear,,not converged,,–,–,,,
+PI398272,Nonplastic / low WUE,11,Linear-plateau,nlme,23.2,9.22,–,2.21,87.0,1.9,
+PI404191,Nonplastic / low WUE,12,Linear,lme,36.5,9.57,–,–,76.9,0.2,
+PI404191,Nonplastic / low WUE,12,Bilinear,nlme,33.6,11.24,-33.22,3.44,77.7,1.0,
+PI404191,Nonplastic / low WUE,12,Linear-plateau,nlme,29.8,13.65,–,2.68,76.7,0.0,✓
+PI603171,Nonplastic / low WUE,28,Linear,lme,38.5,10.29,–,–,209.5,0.0,✓
+PI603171,Nonplastic / low WUE,28,Bilinear,,not converged,,–,–,,,
+PI603171,Nonplastic / low WUE,28,Linear-plateau,nlme,36.1,11.57,–,3.27,210.8,1.2,
+PI398198,MAGIC parent,23,Linear,lme,27.1,7.23,–,–,180.7,0.0,✓
+PI398198,MAGIC parent,23,Bilinear,nlme,12.9,17.34,5.62,1.61,184.1,3.4,
+PI398198,MAGIC parent,23,Linear-plateau,nlme,19.4,12.44,–,2.30,183.7,3.0,
+PI416937,Slow-wilting check,28,Linear,lme,32.3,8.77,–,–,200.6,0.0,✓
+PI416937,Slow-wilting check,28,Bilinear,,not converged,,–,–,,,
+PI416937,Slow-wilting check,28,Linear-plateau,nlme,30.5,9.75,–,3.29,202.3,1.6,
+PI471938,Slow-wilting check,28,Linear,lme,33.1,11.05,–,–,220.9,2.6,
+PI471938,Slow-wilting check,28,Bilinear,nlme,16.9,20.83,3.28,2.28,219.9,1.7,
+PI471938,Slow-wilting check,28,Linear-plateau,nlme,21.3,17.79,–,2.60,218.2,0.0,✓
+A5959,High-wilting check,28,Linear,lme,35.3,7.84,–,–,207.8,0.0,✓
+A5959,High-wilting check,28,Bilinear,nlme,30.1,10.72,0.88,2.81,210.0,2.2,
+A5959,High-wilting check,28,Linear-plateau,nlme,30.1,10.72,–,2.84,208.0,0.2,
+AG43XF2,High-wilting check,28,Linear,lme,38.0,6.75,–,–,180.5,0.7,
+AG43XF2,High-wilting check,28,Bilinear,nls*,35.6,8.06,-16.23,3.44,182.3,2.4,
+AG43XF2,High-wilting check,28,Linear-plateau,nlme,35.4,8.13,–,3.13,179.8,0.0,✓

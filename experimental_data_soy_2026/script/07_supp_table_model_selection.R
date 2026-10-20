@@ -38,13 +38,15 @@ build <- function(params, n_col, digits = 2) {
            Selected  = ifelse(!is.na(Best_model) & Best_model == "yes", "✓", ""),
            `WUE class` = unname(WUE_LABELS[as.character(WUE_class)]),
            Model = unname(MODEL_LABELS[as.character(Model)]),
+           Fit = case_when(!converged ~ "", Fit == "lme" ~ "lme", Fit == "nlme" ~ "nlme",
+                           Fit == "nls" ~ "nls*", Fit == "lm" ~ "lm*", TRUE ~ Fit),
            Intercept = ifelse(converged, formatC(a, format = "f", digits = digits), "not converged"),
            `Slope 1` = ifelse(converged, formatC(Slope1, format = "f", digits = digits + 1), ""),
            `Slope 2` = ifelse(!is.na(Slope2), formatC(Slope2, format = "f", digits = digits + 1), "–"),
            `Breakpoint (kPa)` = ifelse(!is.na(BP_kPa), formatC(BP_kPa, format = "f", digits = 2), "–"),
            AIC = ifelse(converged, formatC(AIC, format = "f", digits = 1), ""),
            `ΔAIC` = ifelse(converged, formatC(Delta_AIC, format = "f", digits = 1), "")) |>
-    select(Genotype, `WUE class`, n, Model, Intercept, `Slope 1`, `Slope 2`, `Breakpoint (kPa)`, AIC, `ΔAIC`, Selected)
+    select(Genotype, `WUE class`, n, Model, Fit, Intercept, `Slope 1`, `Slope 2`, `Breakpoint (kPa)`, AIC, `ΔAIC`, Selected)
   tab
 }
 
@@ -61,7 +63,7 @@ make_ft <- function(tab) {
                        `WUE class` = ifelse(first, `WUE class`, ""))
   ft <- flextable(tab) |>
     bold(i = sel_rows, j = c("Model", "AIC", "Selected")) |>
-    align(j = 3:11, align = "center", part = "all") |>
+    align(j = 3:12, align = "center", part = "all") |>
     align(j = 1:2, align = "left", part = "all") |>
     fontsize(size = 8, part = "all") |>
     font(fontname = "Calibri", part = "all") |>
@@ -83,7 +85,9 @@ cap1 <- paste0(
   "to the breakpoint and b₂ above it; linear-plateau: slope b₁ up to the breakpoint, constant above it. ",
   "Models were fitted by maximum likelihood with replicate as a random intercept (nlme) to Day 1 measurements and ",
   "compared by AIC; the model with the lowest AIC (ΔAIC = 0, ✓) was selected. n = number of plant-level ",
-  "observations. “Not converged”: the non-linear fit did not converge from any starting value. WUE class ",
+  "observations. Fit: lme and nlme are mixed models with the replicate random intercept; nls* (no random ",
+  "effect) is the fallback used when the mixed-model fit did not converge from the nls starting values. ",
+  "“Not converged”: the non-linear fit did not converge from any starting value. WUE class ",
   "follows Chamarthi et al. (2022); PI398198 is a MAGIC parent.")
 cap2 <- paste0(
   "Table S2. Candidate models fitted to stomatal conductance (gsw, mol m⁻² s⁻¹) as a function ",

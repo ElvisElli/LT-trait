@@ -365,6 +365,9 @@ full_param_table <- function(g, fit_list) {
       WUE_class  = wc,
       Model      = mn,
       Best_model = if (!is.null(best) && mn == best) "yes" else "",
+      # how the model was fitted: lme/nlme = mixed model with Rep random
+      # intercept; nls/lm = fallback without random effect (nlme did not converge)
+      Fit        = class(fit_list[[mn]])[1],
       a          = round(pars[["a"]] %||% pars[["(Intercept)"]] %||% NA_real_, 3),
       Slope1     = round(switch(mn,
         "Linear"       = pars[["VPD"]],
