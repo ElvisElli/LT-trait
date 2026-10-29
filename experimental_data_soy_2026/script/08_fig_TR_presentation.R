@@ -76,4 +76,6 @@ p <- ggplot(d, aes(VPD, TR)) +
         axis.title = element_text(size = 15),
         plot.background = element_rect(fill = "white", colour = NA))
 ggsave("figures/presentation/Fig_TR_response_VPD_presentation.png", p, width = 12, height = 10.5, dpi = 300, bg = "white")
+ggsave("figures/presentation/Fig_TR_response_VPD_presentation.tiff", p, width = 12, height = 10.5, dpi = 600, bg = "white",
+       device = "tiff", compression = "lzw", type = "cairo")
 cat("Saved figures/presentation/Fig_TR_response_VPD_presentation.png\n")

@@ -74,8 +74,12 @@ make_plot <- function(var, ylab) {
 
 pA <- make_plot("ATSWRZ", "Root-zone transpirable soil water (mm)")
 ggsave("modeling_data/figures/Fig_soil_water_season_ATSW.png", pA, width = 14, height = 6.5, dpi = 300, bg = "white")
+ggsave("modeling_data/figures/Fig_soil_water_season_ATSW.tiff", pA, width = 14, height = 6.5, dpi = 600, bg = "white",
+       device = "tiff", compression = "lzw", type = "cairo")
 pF <- make_plot("FTSWRZ", "Fraction of transpirable soil water")
 ggsave("modeling_data/figures/Fig_soil_water_season_FTSW.png", pF, width = 14, height = 6.5, dpi = 300, bg = "white")
+ggsave("modeling_data/figures/Fig_soil_water_season_FTSW.tiff", pF, width = 14, height = 6.5, dpi = 600, bg = "white",
+       device = "tiff", compression = "lzw", type = "cairo")
 cat("Saved Fig_soil_water_season_ATSW.png and Fig_soil_water_season_FTSW.png\n")
 
 ## headline numbers: mean difference LT - Non-LT over the season, per location

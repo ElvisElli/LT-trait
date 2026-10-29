@@ -114,4 +114,6 @@ p <- (panel_group("gsw", expression(g[sw]~(mol~m^{-2}~s^{-1})), "A  Predicted gs
       panel_geno("TR", "D  Predicted transpiration per genotype")) +
   plot_layout(guides = "collect") & theme(legend.position = "top")
 ggsave("figures/predicted_gsw_TR_by_group.png", p, width = 11, height = 10, dpi = 200, bg = "white")
+ggsave("figures/predicted_gsw_TR_by_group.tiff", p, width = 11, height = 10, dpi = 600, bg = "white",
+       device = "tiff", compression = "lzw", type = "cairo")
 cat("\nSaved figures/predicted_gsw_TR_by_group.png\n")

@@ -70,4 +70,6 @@ pB <- ggplot(geno, aes(VPD_level, mean, group = Genotype, colour = Group)) +
 
 p <- pA + pB + plot_layout(widths = c(1.1, 1))
 ggsave("figures/gsw_plastic_vs_nonplastic_check.png", p, width = 11, height = 5.5, dpi = 200, bg = "white")
+ggsave("figures/gsw_plastic_vs_nonplastic_check.tiff", p, width = 11, height = 5.5, dpi = 600, bg = "white",
+       device = "tiff", compression = "lzw", type = "cairo")
 cat("\nSaved figures/gsw_plastic_vs_nonplastic_check.png\n")

@@ -73,7 +73,7 @@ cat(sprintf("Non-LT potential yield vs LT:     %+.1f%%\n", 100 * (nl$Irrigated_m
 us_states <- map_data("state")
 focus     <- filter(us_states, region %in% c("arkansas", "missouri", "nebraska"))
 counties  <- filter(map_data("county"), region %in% c("arkansas", "missouri", "nebraska"))
-state_lab <- tibble(label = c("Arkansas", "Missouri", "Nebraska"),
+state_lab <- tibble(label = c("AR", "MO", "NE"),
                     lon = c(-92.9, -92.4, -98.4), lat = c(35.0, 38.4, 41.7))
 
 ## pie geometry: constant radius (potential yield is shown in panel B),
@@ -100,7 +100,7 @@ pA <- ggplot() +
   geom_polygon(data = focus, aes(long, lat, group = group),
                fill = NA, colour = "black", linewidth = 0.5) +
   geom_text(data = state_lab, aes(lon, lat, label = label),
-            colour = "#3c3c3c", size = 3.6, fontface = "italic") +
+            colour = "#3c3c3c", size = 4.2) +
   ## leader line from the site to its pie, and the site itself
   geom_segment(data = pies, aes(x = lon, y = lat, xend = pie_lon, yend = pie_lat),
                colour = "#444444", linewidth = 0.4) +
@@ -110,11 +110,11 @@ pA <- ggplot() +
                colour = "black", linewidth = 0.3) +
   ## site name above and water-limited share below each pie
   geom_text(data = pies, aes(pie_lon, pie_lat + r + 0.5, label = Location), size = 3.3) +
-  geom_text(data = pies, aes(pie_lon, pie_lat - r - 0.5, label = pct), size = 3.3, fontface = "bold") +
+  geom_text(data = pies, aes(pie_lon, pie_lat - r - 0.5, label = pct), size = 3.3) +
   scale_fill_manual(values = c("Water-limited yield" = GREEN,
                                "Yield gap by water deficit" = YELLOW), name = NULL) +
   facet_wrap(~Genotype, ncol = 2) +
-  coord_fixed(1, xlim = c(-104.6, -85.0), ylim = c(29.4, 45.8), expand = FALSE) +
+  coord_fixed(1, xlim = c(-104.6, -85.0), ylim = c(28.7, 45.8), expand = FALSE) +
   theme_bw(base_size = 12) +
   theme(axis.text = element_blank(), axis.ticks = element_blank(),
         axis.title = element_blank(), panel.grid = element_blank(),
@@ -156,7 +156,15 @@ pB <- ggplot() +
         plot.background = element_rect(fill = "white", colour = NA))
 
 ggsave("modeling_data/figures/Fig_map_yields_10loc_A.png", pA, width = 12.5, height = 6.2, dpi = 300, bg = "white")
+
+ggsave("modeling_data/figures/Fig_map_yields_10loc_A.tiff", pA, width = 12.5, height = 6.2, dpi = 600, bg = "white",
+
+       device = "tiff", compression = "lzw", type = "cairo")
 ggsave("modeling_data/figures/Fig_map_yields_10loc_B.png", pB, width = 4.2, height = 6.2, dpi = 300, bg = "white")
+ggsave("modeling_data/figures/Fig_map_yields_10loc_B.tiff", pB, width = 4.2, height = 6.2, dpi = 600, bg = "white",
+       device = "tiff", compression = "lzw", type = "cairo")
 p <- (pA + pB) + plot_layout(widths = c(2.4, 0.55)) + plot_annotation(tag_levels = "A")
 ggsave("modeling_data/figures/Fig_map_yields_10loc.png", p, width = 17, height = 6.2, dpi = 300, bg = "white")
+ggsave("modeling_data/figures/Fig_map_yields_10loc.tiff", p, width = 17, height = 6.2, dpi = 600, bg = "white",
+       device = "tiff", compression = "lzw", type = "cairo")
 cat("Saved Fig_map_yields_10loc*.png\n")
