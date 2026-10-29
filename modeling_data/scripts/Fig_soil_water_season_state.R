@@ -102,14 +102,14 @@ thm <- theme_bw(base_size = 14) +
         plot.caption = element_text(size = 11, colour = "#444444", hjust = 0),
         plot.background = element_rect(fill = "white", colour = NA))
 
-plot_state <- function(var, ylab, ymax) {
+plot_state <- function(var, ylab, ymax, band = TRUE) {
   d <- st |> mutate(m = .data[[var]], s = .data[[paste0(var, "_sd")]],
                     lo = pmax(m - s, 0), hi = pmin(m + s, ymax))
   ## arrows sit in a strip just under the data, pointing at the x axis
   a_tail <- -0.11 * ymax; a_head <- -0.025 * ymax; lab_y <- -0.15 * ymax
   ggplot(d, aes(GDD_bin, m, colour = Genotype, fill = Genotype)) +
     geom_hline(yintercept = 0, colour = "#9a9a9a", linewidth = 0.4) +
-    geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.12, colour = NA) +
+    { if (band) geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.12, colour = NA) } +
     geom_line(linewidth = 1.3) +
     geom_segment(data = stages, aes(x = GDD, xend = GDD, y = a_tail, yend = a_head),
                  inherit.aes = FALSE, colour = "black", linewidth = 0.6,
@@ -142,7 +142,8 @@ ggsave("modeling_data/figures/Fig_cropET_season_state_daily.png", pE, width = 13
 ggsave("modeling_data/figures/Fig_cropET_season_state_daily.tiff", pE, width = 13, height = 5.2, dpi = 600, bg = "white",
        device = "tiff", compression = "lzw", type = "cairo")
 ymax_cet <- ceiling(max(st$cumET + st$cumET_sd, na.rm = TRUE) / 100) * 100
-pC <- plot_state("cumET", "Cumulative crop ET (mm)", ymax = ymax_cet)
+ymax_cet <- ceiling(max(st$cumET, na.rm = TRUE) / 100) * 100
+pC <- plot_state("cumET", "Cumulative crop ET (mm)", ymax = ymax_cet, band = FALSE)
 ggsave("modeling_data/figures/Fig_cropET_season_state_cumulative.png", pC, width = 13, height = 5.2, dpi = 300, bg = "white")
 ggsave("modeling_data/figures/Fig_cropET_season_state_cumulative.tiff", pC, width = 13, height = 5.2, dpi = 600, bg = "white",
        device = "tiff", compression = "lzw", type = "cairo")
