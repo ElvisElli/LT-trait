@@ -50,17 +50,18 @@ slide text and layout live in that script (`build_slides()`), static images in
 
 ## Blocked: needs environment settings (user action)
 
-- **County soybean acreage (USDA NASS)** for `Fig_map_study_sites.R`. Hosts
-  `quickstats.nass.usda.gov` and `www.nass.usda.gov` are blocked by the cloud
-  environment's network policy, and the API needs a key stored as `NASS_API_KEY`.
-  Alternatively upload a Quick Stats CSV export to
-  `modeling_data/data/nass_soybean_acres_harvested_county.csv` (query in the
-  script header) and rerun the script.
 - Other weather sources blocked as of 2026-10-29: `daymet.ornl.gov`,
   `thredds.northwestknowledge.net` (gridMET), `services.nacse.org` (PRISM),
   `www.ncei.noaa.gov`, `mesonet.agron.iastate.edu`. `power.larc.nasa.gov` works.
 
 ## Data notes
+
+- **Study-sites map complete** (`modeling_data/figures/Fig_map_study_sites.png`; TIFF is gitignored).
+  County acreage: `modeling_data/data/nass_soybean_acres_harvested_county.csv`, USDA NASS
+  Quick Stats API (SURVEY, "SOYBEANS - ACRES HARVESTED", TOTAL, COUNTY level; AR, KS, MO,
+  NE, OK; 2020-2024; downloaded 2026-10-29). The map shows the 2020-2024 mean for 333 counties.
+  "OTHER COUNTIES" rows (no County ANSI) are kept in the CSV and filtered out by the script.
+  `NASS_API_KEY` is set in the environment, and `quickstats.nass.usda.gov` is now reachable.
 
 - Growth chamber: the analysis uses `experimental_data_soy_2026/data/data_all_9_10_2026.xlsx`
   (5 replications). Run QC with `GC_INPUT=data_all_9_10_2026.xlsx Rscript script/01_data_inspection_QC.R`
