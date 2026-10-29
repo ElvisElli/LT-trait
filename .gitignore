@@ -10,6 +10,7 @@
 
 # Large intermediate data — keep CSVs and figures, exclude raw downloads
 nasapower_ETo_daily.csv
+modeling_data/data/nasapower_hourly_T2M_RH2M_10loc.csv
 modeling_data/data/updated-outputs/all_daily.csv
 
 # TIFF figures — use PNG only

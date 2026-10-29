@@ -56,6 +56,12 @@ slide text and layout live in that script (`build_slides()`), static images in
 
 ## Data notes
 
+- **VPD heatmap** (slides 5 and 8, `presentation/img/vpd_heatmap.png`) is now reproducible:
+  `Rscript modeling_data/scripts/Fig_vpd_hours_heatmap.R`. NASA POWER hourly T2M/RH2M at the
+  10 SSM sites, hours/day with VPD > 2 kPa averaged over 2016-2025 per calendar day (`YEARS`
+  in the script). The hourly cache (`nasapower_hourly_T2M_RH2M_10loc.csv`, 32 MB) is gitignored
+  and re-downloads in about 40 s. The old image had no script, and its legend had a 2-3 h gap ("3 to 4 h").
+
 - **Study-sites map complete** (`modeling_data/figures/Fig_map_study_sites.png`; TIFF is gitignored).
   County acreage: `modeling_data/data/nass_soybean_acres_harvested_county.csv`, USDA NASS
   Quick Stats API (SURVEY, "SOYBEANS - ACRES HARVESTED", TOTAL, COUNTY level; AR, KS, MO,
