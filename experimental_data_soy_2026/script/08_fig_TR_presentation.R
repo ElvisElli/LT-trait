@@ -54,7 +54,9 @@ curves <- bind_rows(lapply(ORDER, function(g) {
 }))
 wue <- d |> distinct(Genotype, WUE_class)
 labels <- tibble(Genotype = ORDER) |> left_join(wue, by = "Genotype") |>
-  mutate(Panel = paste0(Genotype, "\n(", WUE_LABELS[WUE_class], ")"))
+  ## strip label: accession name; the class is kept only for the wilting checks
+  mutate(Panel = ifelse(WUE_class %in% c("slow_wilting", "high_wilting"),
+                        paste0(Genotype, "\n(", WUE_LABELS[WUE_class], ")"), Genotype))
 d      <- d      |> left_join(labels |> select(Genotype, Panel), by = "Genotype")
 curves <- curves |> left_join(labels |> select(Genotype, Panel), by = "Genotype")
 d$Panel      <- factor(d$Panel, levels = labels$Panel)
