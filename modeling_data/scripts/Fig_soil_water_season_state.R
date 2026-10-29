@@ -113,8 +113,7 @@ plot_state <- function(var, ylab, ymax) {
     facet_wrap(~State, ncol = 3) +
     scale_y_continuous(limits = c(-0.19 * ymax, ymax), breaks = pretty(c(0, ymax), 4),
                        expand = expansion(mult = c(0, 0.02))) +
-    labs(x = "Cumulative growing degree days (\u00b0C d)", y = ylab,
-         caption = "Arrows: R1 flowering, R5 beginning seed filling, R7 physiological maturity (mean thermal time in each state).") +
+    labs(x = "Cumulative growing degree days (\u00b0C d)", y = ylab) +
     thm
 }
 
