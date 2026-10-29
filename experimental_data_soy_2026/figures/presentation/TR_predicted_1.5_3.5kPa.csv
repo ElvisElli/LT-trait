@@ -1,0 +1,10 @@
+Genotype,Group,Best_model,Fit,TR_low,TR_high,lo_low,lo_high,hi_low,hi_high,increase_pct
+PI424231,High WUE plasticity,Linear,lme,38,45.76,32.66,40.32,43.34,51.21,20.43
+PI398198,Low WUE plasticity,Linear,lme,37.97,52.43,30.28,43.86,45.65,60.99,38.09
+PI398492,High WUE plasticity,Lin. plateau,nlme,42.26,59.96,32.92,50.19,51.6,69.72,41.87
+A5959,High wilting,Linear,lme,47.03,62.7,39.49,54.83,54.56,70.57,33.32
+PI416937,Slow wilting,Linear,lme,45.48,63.03,38.07,55.36,52.9,70.69,38.57
+PI398617,High WUE plasticity,Bilinear,nlme,44.29,63.8,39.56,59.42,49.01,68.19,44.06
+PI471938,Slow wilting,Lin. plateau,nlme,47.99,67.55,37,56.41,58.97,78.7,40.78
+PI603418D,High WUE plasticity,Bilinear,nlme,48.92,71.58,44.82,65.45,53.01,77.71,46.33
+PI603171,Low WUE plasticity,Linear,lme,53.91,74.49,45.93,66.18,61.88,82.79,38.18
