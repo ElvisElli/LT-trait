@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Current work (read first)
+
+See **HANDOFF.md** for the state of the ASA 2026 presentation, figures made but
+not yet in the deck, open decisions, blocked downloads, and R setup for a fresh
+cloud session. The deck is rebuilt with `python3 presentation/build_deck.py`.
+
 ## What this repo does
 
 Agronomic analysis for **limited-transpiration (LT) soybean** trait evaluation, targeting a manuscript for *Agricultural Water Management*. Core argument: the LT trait produces a genotype-dependent crop coefficient (Kc) that challenges the FAO-56 assumption of a fixed, species-level Kc. The Marin et al. (2016, 2019) empirical finding — Kc decreases as ETo increases for coupled crops including soybean — is mechanistically explained by the LT trait, which genetically encodes this atmospheric-coupling-driven Kc reduction.
