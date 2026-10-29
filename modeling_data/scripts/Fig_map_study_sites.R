@@ -85,7 +85,9 @@ p <- ggplot() +
   theme(panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", linewidth = 0.7),
         axis.text = element_text(colour = "black"),
-        legend.position = if (have_acres) c(0.88, 0.80) else "none",
+        legend.position = if (have_acres) c(0.995, 0.995) else "none",
+        legend.justification = c(1, 1), legend.key.height = unit(0.32, "cm"),
+        legend.margin = margin(3, 4, 3, 4),
         legend.background = element_rect(fill = "white", colour = NA),
         legend.title = element_text(size = 10), legend.text = element_text(size = 9),
         plot.background = element_rect(fill = "white", colour = NA))
