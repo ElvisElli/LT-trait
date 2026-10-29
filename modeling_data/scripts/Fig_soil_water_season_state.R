@@ -1,22 +1,25 @@
 ## Fig_soil_water_season_state.R
 ## Seasonal course of root-zone soil water under rainfed conditions, limited
 ## transpiration (LT1.5) vs non-limited transpiration (Non-LT), one panel per
-## state (Arkansas, Missouri, Nebraska).
+## state (Arkansas, Missouri, Nebraska), on a thermal-time axis.
 ##
-##   x axis : days after sowing (DAS)
+##   x axis : cumulative growing degree days from planting, the running sum of
+##            the SSM daily thermal units (DTU, deg C d)
 ##   lines  : mean across all seasons (30 weather-years x 3 sowing dates) of all
-##            locations in the state, per day after sowing
+##            locations in the state; each season is averaged within 25 deg C d
+##            bins first, then across seasons
 ##   band   : mean +/- 1 SD across those seasons (light)
-##   arrows : mean day of R1 (flowering), R5 (beginning seed filling) and R7
-##            (physiological maturity) in that state, from the yearly output;
-##            each season is cut at R7
-##   (GDD is still computed below and the stage thermal times are written to
-##    the stages CSV, for reference)
+##   arrows : mean thermal time of R1 (flowering), R5 (beginning seed filling)
+##            and R7 (physiological maturity) in that state, from the yearly
+##            output; each season is cut at R7
 ##
 ## Input : modeling_data/data/updated-outputs/<Location>_output.xlsx
 ##         (sheets DailyO and YearlyO)
 ## Output: modeling_data/figures/Fig_soil_water_season_state_FTSW.png/.tiff
 ##         modeling_data/figures/Fig_soil_water_season_state_ATSW.png/.tiff
+##         modeling_data/figures/Fig_cropET_season_state_daily.png/.tiff       (crop ET, mm d-1)
+##         modeling_data/figures/Fig_cropET_season_state_cumulative.png/.tiff  (crop ET, mm)
+##         crop ET = soil evaporation + transpiration (SEVP + TR daily; CE + CTR cumulative)
 ##         modeling_data/data/soil_water_season_state_summary.csv
 ##         modeling_data/data/soil_water_season_state_stages.csv
 ## Run from the repo root:  Rscript modeling_data/scripts/Fig_soil_water_season_state.R
@@ -38,10 +41,12 @@ read_one <- function(f) {
     select(sName, Pyear, R1 = R1.SEL.SIL, R5 = R5.BSG, R7 = R7.PM) |>
     mutate(across(c(R1, R5, R7), as.numeric))
   read_excel(f, sheet = "DailyO", guess_max = 5000) |>
-    select(sName, Location, Manag, Crop, Pyear, DAP, DTU, ATSWRZ, FTSWRZ) |>
+    select(sName, Location, Manag, Crop, Pyear, DAP, DTU, ATSWRZ, FTSWRZ, SEVP, TR, CE, CTR) |>
     filter(grepl("RFD", Manag), Crop %in% CROPS) |>
     left_join(yearly, by = c("sName", "Pyear")) |>
-    mutate(across(c(DAP, DTU, ATSWRZ, FTSWRZ), as.numeric))
+    mutate(across(c(DAP, DTU, ATSWRZ, FTSWRZ, SEVP, TR, CE, CTR), as.numeric),
+           ET    = SEVP + TR,      # daily crop ET = soil evaporation + transpiration (mm d-1)
+           cumET = CE + CTR)       # cumulative crop ET since sowing (mm)
 }
 daily <- bind_rows(lapply(files, read_one)) |>
   mutate(Location = trimws(gsub("­", "", Location)),
@@ -59,30 +64,28 @@ stage_gdd <- daily |>
   group_by(State, Genotype, season) |>
   summarise(R1 = GDD[match(first(R1), DAP)], R5 = GDD[match(first(R5), DAP)],
             R7 = GDD[match(first(R7), DAP)], .groups = "drop")
-stage_das <- daily |> distinct(State, Genotype, season, R1, R5, R7)
-cat("\nMean day after sowing of each stage, per state and genotype:\n")
-print(stage_das |> group_by(State, Genotype) |>
-        summarise(across(c(R1, R5, R7), \(v) round(mean(v, na.rm = TRUE))), .groups = "drop"))
-stages <- stage_das |>
-  pivot_longer(c(R1, R5, R7), names_to = "Stage", values_to = "DAS") |>
-  group_by(State, Stage) |> summarise(DAS = mean(DAS, na.rm = TRUE), .groups = "drop") |>
-  left_join(stage_gdd |> pivot_longer(c(R1, R5, R7), names_to = "Stage", values_to = "GDD") |>
-              group_by(State, Stage) |> summarise(GDD = mean(GDD, na.rm = TRUE), .groups = "drop"),
-            by = c("State", "Stage"))
+stages <- stage_gdd |>
+  pivot_longer(c(R1, R5, R7), names_to = "Stage", values_to = "GDD") |>
+  group_by(State, Stage) |> summarise(GDD = mean(GDD, na.rm = TRUE), .groups = "drop")
 cat("\nMean thermal time of each stage (deg C d), per state and genotype:\n")
 print(stage_gdd |> group_by(State, Genotype) |>
         summarise(across(c(R1, R5, R7), \(v) round(mean(v, na.rm = TRUE))), .groups = "drop"))
 write_csv(stages, "modeling_data/data/soil_water_season_state_stages.csv")
 
-## ── Average across seasons for each day after sowing (up to R7) ───────────────
+## ── Bin each season by thermal time (up to R7), then average across seasons ───
 st <- daily |>
   filter(DAP >= 1, DAP <= R7) |>
+  mutate(GDD_bin = (floor(GDD / BIN) + 0.5) * BIN) |>
+  group_by(State, Genotype, season, GDD_bin) |>
+  summarise(across(c(ATSWRZ, FTSWRZ, ET, cumET), \(v) mean(v, na.rm = TRUE)), .groups = "drop") |>
   group_by(State, Genotype) |> mutate(n_seasons = n_distinct(season)) |> ungroup() |>
-  group_by(State, Genotype, DAP, n_seasons) |>
+  group_by(State, Genotype, GDD_bin, n_seasons) |>
   summarise(n = n(),
-            ATSWRZ_sd = sd(ATSWRZ, na.rm = TRUE), ATSWRZ = mean(ATSWRZ, na.rm = TRUE),
-            FTSWRZ_sd = sd(FTSWRZ, na.rm = TRUE), FTSWRZ = mean(FTSWRZ, na.rm = TRUE), .groups = "drop") |>
-  filter(n >= 0.5 * n_seasons) |>                     # days reached by at least half the seasons
+            ATSWRZ_sd = sd(ATSWRZ), ATSWRZ = mean(ATSWRZ),
+            FTSWRZ_sd = sd(FTSWRZ), FTSWRZ = mean(FTSWRZ),
+            ET_sd     = sd(ET),     ET     = mean(ET),
+            cumET_sd  = sd(cumET),  cumET  = mean(cumET), .groups = "drop") |>
+  filter(n >= 0.5 * n_seasons) |>                     # bins reached by at least half the seasons
   mutate(State = factor(State, levels = c("Arkansas", "Missouri", "Nebraska")),
          Genotype = factor(Genotype, levels = names(COLS)))
 write_csv(st, "modeling_data/data/soil_water_season_state_summary.csv")
@@ -104,20 +107,20 @@ plot_state <- function(var, ylab, ymax) {
                     lo = pmax(m - s, 0), hi = pmin(m + s, ymax))
   ## arrows sit in a strip just under the data, pointing at the x axis
   a_tail <- -0.11 * ymax; a_head <- -0.025 * ymax; lab_y <- -0.15 * ymax
-  ggplot(d, aes(DAP, m, colour = Genotype, fill = Genotype)) +
+  ggplot(d, aes(GDD_bin, m, colour = Genotype, fill = Genotype)) +
     geom_hline(yintercept = 0, colour = "#9a9a9a", linewidth = 0.4) +
     geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.12, colour = NA) +
     geom_line(linewidth = 1.3) +
-    geom_segment(data = stages, aes(x = DAS, xend = DAS, y = a_tail, yend = a_head),
+    geom_segment(data = stages, aes(x = GDD, xend = GDD, y = a_tail, yend = a_head),
                  inherit.aes = FALSE, colour = "black", linewidth = 0.6,
                  arrow = arrow(length = unit(0.16, "cm"), type = "closed")) +
-    geom_text(data = stages, aes(x = DAS, y = lab_y, label = Stage),
+    geom_text(data = stages, aes(x = GDD, y = lab_y, label = Stage),
               inherit.aes = FALSE, size = 3.8, colour = "black") +
     scale_colour_manual(values = COLS) + scale_fill_manual(values = COLS) +
     facet_wrap(~State, ncol = 3) +
     scale_y_continuous(limits = c(-0.19 * ymax, ymax), breaks = pretty(c(0, ymax), 4),
                        expand = expansion(mult = c(0, 0.02))) +
-    labs(x = "Days after sowing", y = ylab) +
+    labs(x = "Cumulative growing degree days (\u00b0C d)", y = ylab) +
     thm
 }
 
@@ -132,8 +135,29 @@ ggsave("modeling_data/figures/Fig_soil_water_season_state_ATSW.tiff", pA, width 
        device = "tiff", compression = "lzw", type = "cairo")
 cat("Saved Fig_soil_water_season_state_FTSW and _ATSW (.png, .tiff)\n")
 
+## ── Crop ET (rainfed): daily rate and cumulative ──────────────────────────────
+ymax_et <- ceiling(max(st$ET + st$ET_sd, na.rm = TRUE))
+pE <- plot_state("ET", expression(Crop~ET~(mm~d^{-1})), ymax = ymax_et)
+ggsave("modeling_data/figures/Fig_cropET_season_state_daily.png", pE, width = 13, height = 5.2, dpi = 300, bg = "white")
+ggsave("modeling_data/figures/Fig_cropET_season_state_daily.tiff", pE, width = 13, height = 5.2, dpi = 600, bg = "white",
+       device = "tiff", compression = "lzw", type = "cairo")
+ymax_cet <- ceiling(max(st$cumET + st$cumET_sd, na.rm = TRUE) / 100) * 100
+pC <- plot_state("cumET", "Cumulative crop ET (mm)", ymax = ymax_cet)
+ggsave("modeling_data/figures/Fig_cropET_season_state_cumulative.png", pC, width = 13, height = 5.2, dpi = 300, bg = "white")
+ggsave("modeling_data/figures/Fig_cropET_season_state_cumulative.tiff", pC, width = 13, height = 5.2, dpi = 600, bg = "white",
+       device = "tiff", compression = "lzw", type = "cairo")
+cat("Saved Fig_cropET_season_state_daily and _cumulative (.png, .tiff)\n")
+
+## seasonal crop ET to R7 per state (season totals, mean across seasons)
+cat("\nSeasonal crop ET to R7 (mm), rainfed:\n")
+daily |> filter(DAP <= R7) |> group_by(State, Genotype, season) |>
+  summarise(ET_season = last(cumET), .groups = "drop") |>
+  group_by(State, Genotype) |> summarise(ET_mm = round(mean(ET_season, na.rm = TRUE)), .groups = "drop") |>
+  pivot_wider(names_from = Genotype, values_from = ET_mm) |>
+  mutate(diff_mm = `Limited transpiration` - `Non-limited transpiration`) |> print()
+
 ## headline numbers per state
-st |> select(State, Genotype, DAP, ATSWRZ, FTSWRZ) |>
+st |> select(State, Genotype, GDD_bin, ATSWRZ, FTSWRZ) |>
   pivot_wider(names_from = Genotype, values_from = c(ATSWRZ, FTSWRZ)) |>
   group_by(State) |>
   summarise(ATSW_diff_mm = mean(`ATSWRZ_Limited transpiration` - `ATSWRZ_Non-limited transpiration`, na.rm = TRUE),
