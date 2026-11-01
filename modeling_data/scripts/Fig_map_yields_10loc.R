@@ -163,6 +163,25 @@ ggsave("modeling_data/figures/Fig_map_yields_10loc_A.tiff", pA, width = 12.5, he
 ggsave("modeling_data/figures/Fig_map_yields_10loc_B.png", pB, width = 4.2, height = 6.2, dpi = 300, bg = "white")
 ggsave("modeling_data/figures/Fig_map_yields_10loc_B.tiff", pB, width = 4.2, height = 6.2, dpi = 600, bg = "white",
        device = "tiff", compression = "lzw", type = "cairo")
+## Presentation version of panel B (slide 11): no error bars, no gap labels
+## (the legend is a separate image on the slide)
+pB_slide <- ggplot(bars_long, aes(G, value, fill = slice)) +
+  geom_col(width = 0.6, colour = "black", linewidth = 0.5) +
+  scale_fill_manual(values = c("Water-limited yield" = GREEN,
+                               "Yield gap by water deficit" = YELLOW), guide = "none") +
+  scale_y_continuous(labels = scales::comma, breaks = c(0, 2000, 4000, 6000),
+                     expand = expansion(mult = c(0, 0.08))) +
+  facet_wrap(~"All locations") +
+  labs(x = NULL, y = expression(Yield~(kg~ha^{-1}))) +
+  theme_bw(base_size = 21) +
+  theme(panel.grid.minor = element_blank(), panel.grid.major.x = element_blank(),
+        panel.border = element_rect(colour = "black", linewidth = 0.8),
+        strip.background = element_rect(fill = "white", colour = "black", linewidth = 0.8),
+        axis.text = element_text(colour = "black"),
+        plot.background = element_rect(fill = "white", colour = NA))
+ggsave("modeling_data/figures/Fig_map_yields_10loc_B_slide.png", pB_slide,
+       width = 5.28, height = 5.51, dpi = 300, bg = "white")
+
 p <- (pA + pB) + plot_layout(widths = c(2.4, 0.55)) + plot_annotation(tag_levels = "A")
 ggsave("modeling_data/figures/Fig_map_yields_10loc.png", p, width = 17, height = 6.2, dpi = 300, bg = "white")
 ggsave("modeling_data/figures/Fig_map_yields_10loc.tiff", p, width = 17, height = 6.2, dpi = 600, bg = "white",
