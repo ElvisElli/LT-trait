@@ -11,7 +11,11 @@
 ##     (A5959: 5 values from 2 plants; the rep intercepts absorb the VPD effect)
 ##
 ## Input : data/data_clean.csv (01_data_inspection_QC.R)
+## Also a raw-data version: every individual porometer reading (gsw1-gsw3 per
+## plant and step), Day 1 and Day 2, no fits.
+##
 ## Output: figures/presentation/Fig_gsw_response_VPD_presentation.png / .tiff
+##         figures/presentation/Fig_gsw_raw_VPD_presentation.png / .tiff
 ##         figures/presentation/gsw_best_model_presentation.csv
 ## Run from experimental_data_soy_2026/:  Rscript script/10_fig_gsw_presentation.R
 suppressPackageStartupMessages({ library(dplyr); library(tidyr); library(ggplot2); library(readr) })
@@ -79,3 +83,35 @@ ggsave("figures/presentation/Fig_gsw_response_VPD_presentation.png", p, width = 
 ggsave("figures/presentation/Fig_gsw_response_VPD_presentation.tiff", p, width = 9, height = 8.2, dpi = 600, bg = "white",
        device = "tiff", compression = "lzw", type = "cairo")
 cat("Saved figures/presentation/Fig_gsw_response_VPD_presentation.png\n")
+
+## ── Raw data: all individual readings, both days ─────────────────────────────
+DAY_COL <- c("Day 1" = BLUE, "Day 2" = "#fdae61")
+raw <- read_csv("data/data_clean.csv", show_col_types = FALSE) |>
+  filter(Genotype %in% ORDER, !is.na(VPD)) |>
+  pivot_longer(c(gsw1, gsw2, gsw3), names_to = "reading", values_to = "gsw_raw") |>
+  filter(!is.na(gsw_raw)) |>
+  mutate(Genotype = factor(Genotype, levels = ORDER), Day_label = factor(Day_label, levels = names(DAY_COL)))
+n_raw <- raw |> count(Genotype, Day_label) |> pivot_wider(names_from = Day_label, values_from = n, values_fill = 0) |>
+  mutate(lab = sprintf("n = %d + %d", `Day 1`, `Day 2`))
+cat("Raw gsw readings:", nrow(raw), "\n"); print(count(raw, Day_label))
+p_raw <- ggplot(raw, aes(VPD, gsw_raw, fill = Day_label)) +
+  geom_point(size = 2.2, shape = 21, colour = "black", stroke = 0.4, alpha = 0.75) +
+  geom_text(data = n_raw, aes(x = 4.05, y = 1.43, label = lab), inherit.aes = FALSE, hjust = 1, size = 4.4) +
+  facet_wrap(~Genotype, ncol = 3) +
+  scale_fill_manual(values = DAY_COL, name = NULL) +
+  coord_cartesian(ylim = c(0, 1.5)) +
+  scale_x_continuous(breaks = 1:4) +
+  labs(x = "Vapor Pressure Deficit (kPa)",
+       y = expression(Stomatal~conductance~(mol~m^{-2}~s^{-1}))) +
+  theme_bw(base_size = 14) +
+  theme(panel.grid = element_blank(), legend.position = "top",
+        panel.border = element_rect(colour = "black", linewidth = 0.7, fill = NA),
+        strip.background = element_rect(fill = "white", colour = "black", linewidth = 0.7),
+        strip.text = element_text(size = 13, colour = "black"),
+        axis.text = element_text(size = 13, colour = "black"),
+        axis.title = element_text(size = 15), legend.text = element_text(size = 13),
+        plot.background = element_rect(fill = "white", colour = NA))
+ggsave("figures/presentation/Fig_gsw_raw_VPD_presentation.png", p_raw, width = 9, height = 8.6, dpi = 300, bg = "white")
+ggsave("figures/presentation/Fig_gsw_raw_VPD_presentation.tiff", p_raw, width = 9, height = 8.6, dpi = 600, bg = "white",
+       device = "tiff", compression = "lzw", type = "cairo")
+cat("Saved figures/presentation/Fig_gsw_raw_VPD_presentation.png\n")
